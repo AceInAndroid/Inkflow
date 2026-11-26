@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dictionary_settings_title">Offline dictionaries</string>
+    <string name="dictionary_import_help">Import JSON, a compressed JSON.GZ shard, a ZIP of JSON shards, or unencrypted MDX v2 with zlib/uncompressed blocks. MDX supports UTF-8, UTF-16LE, and GB18030/GBK text; definitions are imported as plain text. Encrypted MDX, LZO, MDX v1/v3, and MDD resources are unsupported. Flutter Chinese w/p/s entries are supported. Full OCR builds look up bundled Chinese words automatically, reading one shard on demand. The install button optionally creates a persistent import. Standard builds can import a dictionary file. Imports stay on this device.</string>
+    <string name="dictionary_import_file">Import dictionary file</string>
+    <string name="dictionary_import_chinese">Install bundled Chinese dictionary</string>
+    <string name="dictionary_import_success">Dictionary settings updated</string>
+    <string name="dictionary_entry_count">%1$d entries</string>
+    <string name="dictionary_online_not_found">No online definition found. Your offline result is retained.</string>
+    <string name="dictionary_pronounce">Pronounce</string>
+    <string name="dictionary_pronounce_failed">Pronunciation unavailable</string>
+    <string name="dictionary_translate">Translate online</string>
+    <string name="dictionary_translate_ai">Ask AI</string>
+    <string name="dictionary_translation_title">Translation</string>
+    <string name="dictionary_translation_help">Only the button sends selected text. AI opens the current reading assistant with the selected source and target languages. Other services require your own API key, kept only while this panel is open. Use provider language codes, such as zh, en, or zh-Hans for Microsoft.</string>
+    <string name="dictionary_source_language">Source language (auto detects)</string>
+    <string name="dictionary_target_language">Target language</string>
+    <string name="dictionary_api_key_session">API key (this session only)</string>
+    <string name="dictionary_region">Microsoft region (if required)</string>
+    <string name="dictionary_deepl_free">DeepL API Free</string>
+    <string name="dictionary_translation_show">Translation options</string>
+    <string name="dictionary_manage">Manage offline dictionaries</string>
+</resources>

@@ -1,0 +1,597 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0C3F8AA79438EE0AA3647DEE /* TextPageLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F89DE96430E95024724C30F /* TextPageLayoutTests.swift */; };
+		16CA67F083EB6A5DFC894607 /* NativeReaderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8EB706F986B475FE806DAC /* NativeReaderViews.swift */; };
+		26D1D09F3131E10EFBE15E46 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BE35CC55CAAA60DF060960 /* LibraryStoreTests.swift */; };
+		3798DFA761C9348BE2630189 /* InkflowNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07C50F32F93DB92CE83D31B /* InkflowNativeApp.swift */; };
+		4BF18A2DD4A624FC7148DDCA /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8EB6F5AE244A9247C004422 /* LibraryStore.swift */; };
+		61ECFA1D6428F4DA5585EFBD /* SharedCoreBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09E18657CB7C22A6A33E2976 /* SharedCoreBridge.swift */; };
+		7A096479E05DDE444788BB02 /* TextPageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110064BA5C10885F4010DDE4 /* TextPageLayout.swift */; };
+		8CBA69F651FB93B1BB000266 /* SpeechController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D9DC46A87B99EEB97BC485 /* SpeechController.swift */; };
+		B38D95A43A7F297E1E0401A5 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072E8A6E344CA523FF6CF515 /* ReaderView.swift */; };
+		D5B9F8BF20D68864F0B63E6C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1822B58FD8EB438308CD44D0 /* Foundation.framework */; };
+		E7D75F8E34AFBA43B58740A7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1822B58FD8EB438308CD44D0 /* Foundation.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		62CF9E43C9C4956632DB23ED /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D13236EAF4F304ED99655080 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4489C3321CC57091799E40F6;
+			remoteInfo = InkflowNative;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		01BE35CC55CAAA60DF060960 /* LibraryStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LibraryStoreTests.swift; sourceTree = "<group>"; };
+		072E8A6E344CA523FF6CF515 /* ReaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
+		09E18657CB7C22A6A33E2976 /* SharedCoreBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedCoreBridge.swift; sourceTree = "<group>"; };
+		110064BA5C10885F4010DDE4 /* TextPageLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextPageLayout.swift; sourceTree = "<group>"; };
+		1822B58FD8EB438308CD44D0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		21D9DC46A87B99EEB97BC485 /* SpeechController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechController.swift; sourceTree = "<group>"; };
+		4F89DE96430E95024724C30F /* TextPageLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextPageLayoutTests.swift; sourceTree = "<group>"; };
+		5D8EB706F986B475FE806DAC /* NativeReaderViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativeReaderViews.swift; sourceTree = "<group>"; };
+		66549FC2D74F528B365195A4 /* InkflowNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InkflowNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B8EB6F5AE244A9247C004422 /* LibraryStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		C07C50F32F93DB92CE83D31B /* InkflowNativeApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InkflowNativeApp.swift; sourceTree = "<group>"; };
+		E5DD117D1A890BACBB0FA5F2 /* InkflowNativeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InkflowNativeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5E024E02BEC5536A4448A667 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E7D75F8E34AFBA43B58740A7 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		90F91769D285134EA9E676CE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D5B9F8BF20D68864F0B63E6C /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		6F5BEB1E5CAF7608E18316ED = {
+			isa = PBXGroup;
+			children = (
+				F6E9EE4B1B940A688588892E /* Products */,
+				FDBD8267395123AB69227987 /* Frameworks */,
+				92CFFEC0691A89CEA1B075F1 /* InkflowNative */,
+				F91DD2BE8BED6F58DE003E63 /* InkflowNativeTests */,
+			);
+			sourceTree = "<group>";
+		};
+		92CFFEC0691A89CEA1B075F1 /* InkflowNative */ = {
+			isa = PBXGroup;
+			children = (
+				C07C50F32F93DB92CE83D31B /* InkflowNativeApp.swift */,
+				B8EB6F5AE244A9247C004422 /* LibraryStore.swift */,
+				5D8EB706F986B475FE806DAC /* NativeReaderViews.swift */,
+				072E8A6E344CA523FF6CF515 /* ReaderView.swift */,
+				09E18657CB7C22A6A33E2976 /* SharedCoreBridge.swift */,
+				21D9DC46A87B99EEB97BC485 /* SpeechController.swift */,
+				110064BA5C10885F4010DDE4 /* TextPageLayout.swift */,
+			);
+			name = InkflowNative;
+			path = InkflowNative;
+			sourceTree = "<group>";
+		};
+		A62DEF72A8AAE0DEA8CC7F8B /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				1822B58FD8EB438308CD44D0 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		F6E9EE4B1B940A688588892E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				66549FC2D74F528B365195A4 /* InkflowNative.app */,
+				E5DD117D1A890BACBB0FA5F2 /* InkflowNativeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F91DD2BE8BED6F58DE003E63 /* InkflowNativeTests */ = {
+			isa = PBXGroup;
+			children = (
+				01BE35CC55CAAA60DF060960 /* LibraryStoreTests.swift */,
+				4F89DE96430E95024724C30F /* TextPageLayoutTests.swift */,
+			);
+			name = InkflowNativeTests;
+			path = InkflowNativeTests;
+			sourceTree = "<group>";
+		};
+		FDBD8267395123AB69227987 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A62DEF72A8AAE0DEA8CC7F8B /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4489C3321CC57091799E40F6 /* InkflowNative */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6D47BF3AD85B2EC42E2E059E /* Build configuration list for PBXNativeTarget "InkflowNative" */;
+			buildPhases = (
+				1967C42BF9971607881E6514 /* Sources */,
+				5E024E02BEC5536A4448A667 /* Frameworks */,
+				DBDD1D26AD47D49B8288800F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = InkflowNative;
+			productName = InkflowNative;
+			productReference = 66549FC2D74F528B365195A4 /* InkflowNative.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E01143CCDD0C48B3DDA52C65 /* InkflowNativeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 16BA89ABFFCFFC47FC05FED2 /* Build configuration list for PBXNativeTarget "InkflowNativeTests" */;
+			buildPhases = (
+				CCE04F106B4F4647C1DEF919 /* Sources */,
+				90F91769D285134EA9E676CE /* Frameworks */,
+				3825EB0D13AAB1BD0963F458 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				18F886FD01456FAA1159C2E7 /* PBXTargetDependency */,
+			);
+			name = InkflowNativeTests;
+			productName = InkflowNativeTests;
+			productReference = E5DD117D1A890BACBB0FA5F2 /* InkflowNativeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D13236EAF4F304ED99655080 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 94B7A311D2EC5CD0CDA046CB /* Build configuration list for PBXProject "InkflowNative" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 6F5BEB1E5CAF7608E18316ED;
+			minimizedProjectReferenceProxies = 0;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F6E9EE4B1B940A688588892E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4489C3321CC57091799E40F6 /* InkflowNative */,
+				E01143CCDD0C48B3DDA52C65 /* InkflowNativeTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3825EB0D13AAB1BD0963F458 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DBDD1D26AD47D49B8288800F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1967C42BF9971607881E6514 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3798DFA761C9348BE2630189 /* InkflowNativeApp.swift in Sources */,
+				4BF18A2DD4A624FC7148DDCA /* LibraryStore.swift in Sources */,
+				16CA67F083EB6A5DFC894607 /* NativeReaderViews.swift in Sources */,
+				B38D95A43A7F297E1E0401A5 /* ReaderView.swift in Sources */,
+				61ECFA1D6428F4DA5585EFBD /* SharedCoreBridge.swift in Sources */,
+				8CBA69F651FB93B1BB000266 /* SpeechController.swift in Sources */,
+				7A096479E05DDE444788BB02 /* TextPageLayout.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CCE04F106B4F4647C1DEF919 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26D1D09F3131E10EFBE15E46 /* LibraryStoreTests.swift in Sources */,
+				0C3F8AA79438EE0AA3647DEE /* TextPageLayoutTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		18F886FD01456FAA1159C2E7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = InkflowNative;
+			target = 4489C3321CC57091799E40F6 /* InkflowNative */;
+			targetProxy = 62CF9E43C9C4956632DB23ED /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		00F1A0945FAEE479CCB87FE3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		6371F913B31B5B8EC86BB7EB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.inkflow.native.tests;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/InkflowNative.app/InkflowNative";
+			};
+			name = Debug;
+		};
+		6F414AEF3A27B4D978A880C5 /* SharedCore */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.inkflow.native.tests;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/InkflowNative.app/InkflowNative";
+			};
+			name = SharedCore;
+		};
+		75903031E95FADA583E9DD7F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Inkflow Native";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.inkflow.native;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		7F4CF248FBDE4D8032289C58 /* SharedCore */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = SharedCore;
+		};
+		8B26F8611CBAC8C5BBBF013F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Inkflow Native";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.inkflow.native;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B64AAF26F2CAFEB5F87733F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.inkflow.native.tests;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/InkflowNative.app/InkflowNative";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BB0A9E3A79ACFBD8BD08CBDC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		FB4BA0459AB8F6119613003E /* SharedCore */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../android/core/build/XCFrameworks/debug",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Inkflow Native";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					InkflowCore,
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.inkflow.native;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG INKFLOW_SHARED_CORE";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = SharedCore;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		16BA89ABFFCFFC47FC05FED2 /* Build configuration list for PBXNativeTarget "InkflowNativeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B64AAF26F2CAFEB5F87733F5 /* Release */,
+				6371F913B31B5B8EC86BB7EB /* Debug */,
+				6F414AEF3A27B4D978A880C5 /* SharedCore */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6D47BF3AD85B2EC42E2E059E /* Build configuration list for PBXNativeTarget "InkflowNative" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75903031E95FADA583E9DD7F /* Release */,
+				8B26F8611CBAC8C5BBBF013F /* Debug */,
+				FB4BA0459AB8F6119613003E /* SharedCore */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		94B7A311D2EC5CD0CDA046CB /* Build configuration list for PBXProject "InkflowNative" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00F1A0945FAEE479CCB87FE3 /* Debug */,
+				BB0A9E3A79ACFBD8BD08CBDC /* Release */,
+				7F4CF248FBDE4D8032289C58 /* SharedCore */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D13236EAF4F304ED99655080 /* Project object */;
+}

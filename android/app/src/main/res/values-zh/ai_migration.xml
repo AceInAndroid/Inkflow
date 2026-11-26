@@ -1,0 +1,28 @@
+<resources>
+    <string name="ai_keys_hint">每行一个 API Key；失败时仅在同一供应商内轮换。</string>
+    <string name="ai_expand">展开工作台</string>
+    <string name="ai_book_hub">本书</string>
+    <string name="ai_new_session">新建会话</string>
+    <string name="ai_sessions">本书会话</string>
+    <string name="ai_rename_session">重命名会话</string>
+    <string name="ai_skill">阅读方法</string>
+    <string name="ai_you">我</string>
+    <string name="ai_roles_hint">指定主对话模型及可选的轻量翻译模型；密钥只保存在本机。</string>
+    <string name="ai_key_count">个密钥</string>
+    <string name="ai_role_main">主对话</string>
+    <string name="ai_role_light">轻量翻译</string>
+    <string name="ai_edit_provider">编辑</string>
+    <string name="ai_test_provider">测试连接</string>
+    <string name="ai_add_provider">添加供应商</string>
+    <string name="ai_test_ok">供应商已成功返回回答</string>
+    <string name="ai_token_usage">按日期与模型统计用量</string>
+    <string name="ai_estimate_hint">输入 + 输出 Token；≈ 表示供应商未提供用量时包含本地估算。</string>
+    <string name="ai_import_skill">导入自定义阅读方法 JSON</string>
+    <string name="ai_export_skill">导出阅读方法</string>
+    <string name="ai_skill_imported">阅读方法已导入</string>
+    <string name="ai_skill_exported">阅读方法已导出</string>
+    <string name="ai_delete_item">删除</string>
+    <string name="ai_selection_boundary">请先显示选区末尾，再发送给 AI。</string>
+    <string name="ai_source_opened">已打开原文来源</string>
+    <string name="ai_source_return">返回阅读位置</string>
+</resources>

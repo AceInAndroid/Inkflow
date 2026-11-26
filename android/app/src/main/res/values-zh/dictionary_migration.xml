@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dictionary_settings_title">离线词典</string>
+    <string name="dictionary_import_help">可导入 JSON、压缩 JSON.GZ 分片、包含 JSON 分片的 ZIP，或采用 zlib／未压缩数据块的未加密 MDX v2。MDX 支持 UTF-8、UTF-16LE 和 GB18030／GBK 编码，释义以纯文本导入。不支持加密 MDX、LZO、MDX v1／v3 和 MDD 资源。兼容中文词典的 w／p／s 字段。完整离线版会按需读取内置中文分片，无需预先安装；也可点击安装以保存导入结果。轻量版可自行导入词典文件。词典仅保存在此设备。</string>
+    <string name="dictionary_import_file">导入词典文件</string>
+    <string name="dictionary_import_chinese">安装内置中文词典</string>
+    <string name="dictionary_import_success">词典设置已更新</string>
+    <string name="dictionary_entry_count">%1$d 个词条</string>
+    <string name="dictionary_online_not_found">未找到在线释义，已保留离线结果。</string>
+    <string name="dictionary_pronounce">发音</string>
+    <string name="dictionary_pronounce_failed">暂时无法发音</string>
+    <string name="dictionary_translate">在线翻译</string>
+    <string name="dictionary_translate_ai">询问 AI</string>
+    <string name="dictionary_translation_title">翻译</string>
+    <string name="dictionary_translation_help">点击按钮才会发送选中文本。AI 会打开当前阅读助手并携带源语言和目标语言。其他服务需要你自己的 API Key，仅在此面板打开期间保留。请使用服务支持的语言代码，例如 zh、en，或 Microsoft 的 zh-Hans。</string>
+    <string name="dictionary_source_language">源语言（可自动检测）</string>
+    <string name="dictionary_target_language">目标语言</string>
+    <string name="dictionary_api_key_session">API Key（仅本次会话）</string>
+    <string name="dictionary_region">Microsoft 区域（如需）</string>
+    <string name="dictionary_deepl_free">DeepL 免费 API</string>
+    <string name="dictionary_translation_show">翻译选项</string>
+    <string name="dictionary_manage">管理离线词典</string>
+</resources>

@@ -1,0 +1,47 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFrameworkConfig
+
+plugins {
+    id 'org.jetbrains.kotlin.multiplatform'
+}
+
+kotlin {
+    jvmToolchain(17)
+    jvm()
+    // Keep Android/JVM builds free of Kotlin/Native downloads unless explicitly requested.
+    if (providers.gradleProperty('enableIos').orNull == 'true') {
+        def xcframework = new XCFrameworkConfig(project, 'InkflowCore')
+        [iosArm64(), iosSimulatorArm64()].each { target ->
+            target.binaries.framework {
+                baseName = 'InkflowCore'
+                isStatic = true
+                xcframework.add(it)
+            }
+        }
+    }
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                // Pure KMP domain, pagination, AI prompt/stream, and offline lookup core.
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation kotlin('test')
+            }
+        }
+        jvmMain {
+            dependencies {
+                api 'org.jsoup:jsoup:1.21.2'
+                api 'org.commonmark:commonmark:0.24.0'
+                api 'org.commonmark:commonmark-ext-gfm-tables:0.24.0'
+                api 'org.commonmark:commonmark-ext-gfm-strikethrough:0.24.0'
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation 'junit:junit:4.13.2'
+            }
+        }
+    }
+}

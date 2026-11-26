@@ -1,0 +1,28 @@
+<resources>
+    <string name="ai_keys_hint">One API key per line. Failed keys rotate within this provider.</string>
+    <string name="ai_expand">Expand workspace</string>
+    <string name="ai_book_hub">This book</string>
+    <string name="ai_new_session">New conversation</string>
+    <string name="ai_sessions">Book conversations</string>
+    <string name="ai_rename_session">Rename conversation</string>
+    <string name="ai_skill">Reading method</string>
+    <string name="ai_you">You</string>
+    <string name="ai_roles_hint">Assign a main model and an optional lightweight model for translation. API keys stay on this device.</string>
+    <string name="ai_key_count">keys</string>
+    <string name="ai_role_main">Main</string>
+    <string name="ai_role_light">Lightweight</string>
+    <string name="ai_edit_provider">Edit</string>
+    <string name="ai_test_provider">Test</string>
+    <string name="ai_add_provider">Add provider</string>
+    <string name="ai_test_ok">Provider replied successfully</string>
+    <string name="ai_token_usage">Usage by day and model</string>
+    <string name="ai_estimate_hint">Input + output tokens. ≈ includes local estimates when the provider omits usage.</string>
+    <string name="ai_import_skill">Import custom reading method JSON</string>
+    <string name="ai_export_skill">Export method</string>
+    <string name="ai_skill_imported">Reading method imported</string>
+    <string name="ai_skill_exported">Reading method exported</string>
+    <string name="ai_delete_item">Delete</string>
+    <string name="ai_selection_boundary">Display the end of the selection before sending it to AI.</string>
+    <string name="ai_source_opened">Opened source passage</string>
+    <string name="ai_source_return">Return to reading</string>
+</resources>

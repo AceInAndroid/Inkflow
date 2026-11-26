@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="p2_wireless_transfer">无线传书</string>
+    <string name="p2_transfer_instructions">将此设备与电脑连接到同一 Wi-Fi。启动传书后，在电脑浏览器打开显示的地址，即可选择多本书。请保持此页面打开；离开页面或将应用切到后台会停止传输。</string>
+    <string name="p2_transfer_limits">通过 Wi-Fi 局域网 HTTP 传输，请仅向可信的人分享临时地址。支持 EPUB、FB2、TXT、Markdown、PDF、MOBI 和 AZW3。每次会话最多接收 20 本书，单本不超过 128 MiB，总计不超过 512 MiB。文件依次导入，内容相同的已有书籍会复用。</string>
+    <string name="p2_transfer_start">启动传书</string>
+    <string name="p2_transfer_stop">停止传书</string>
+    <string name="p2_transfer_address">在浏览器中打开此地址</string>
+    <string name="p2_transfer_count">已导入或已在书库：%1$d 本</string>
+    <string name="p2_transfer_imported">已在书库中就绪：%1$s</string>
+    <string name="p2_transfer_stopped">传书已停止。重新启动会生成新地址。</string>
+    <string name="p2_transfer_start_failed">无法启动无线传书。</string>
+    <string name="p2_reading_heatmap">年度阅读热力图</string>
+    <string name="p2_current_streak">当前连续阅读</string>
+    <string name="p2_longest_streak">最长连续阅读</string>
+    <string name="p2_streak_days">%1$d 天</string>
+    <string name="p2_heatmap_year">%1$d 年 · 阅读 %2$d 天</string>
+    <string name="p2_heatmap_legend">从周一到周日，每列一周。颜色越深代表阅读时间越长：不足 15、30、60 分钟，以及 60 分钟以上。点击日期查看当天时长。连续天数使用全部阅读记录计算，当前连续记录允许截至昨天。</string>
+    <string name="p2_tts_online">使用在线朗读</string>
+    <string name="p2_tts_system_active">当前使用系统朗读。</string>
+    <string name="p2_tts_online_active">当前使用在线朗读，请在下方配置音色；系统音色选择仅适用于系统朗读。</string>
+    <string name="p2_tts_configure">配置在线朗读</string>
+    <string name="p2_tts_privacy">点击朗读后，会向配置的语音接口发送当前文本片段，并最多提前缓存一个片段。请选择可信的 OpenAI 兼容 HTTPS 接口，或配置 Azure 区域接口、音色和语言。API Key 在此设备加密保存，保存配置不会发起请求。OpenAI 语速范围为 0.25–4 倍，Azure 为 0.5–2 倍；修改在已缓存音频播放后生效。暂停会取消待处理请求，恢复时从当前片段起点播放。在线失败时，若系统引擎已就绪且安装了离线音色，会从当前片段继续；否则显示错误。在线朗读偏好会保留，供下次播放使用。</string>
+    <string name="p2_tts_endpoint">完整 HTTPS 语音接口地址</string>
+    <string name="p2_tts_api_key">语音 API Key</string>
+    <string name="p2_tts_model">语音模型</string>
+    <string name="p2_tts_voice">在线音色</string>
+    <string name="p2_tts_save_enable">保存并启用</string>
+    <string name="p2_tts_openai">OpenAI 兼容语音</string>
+    <string name="p2_tts_azure">Azure Speech REST</string>
+    <string name="p2_tts_language">SSML 语言（例如 zh-CN 或 en-US）</string>
+    <string name="p2_tts_azure_help">接口：https://&lt;region&gt;.tts.speech.microsoft.com/cognitiveservices/v1。填写 Azure 订阅密钥和音色名称（例如 zh-CN-XiaoxiaoNeural），无需填写语音模型。</string>
+    <string name="p2_tts_fallback_active">在线朗读失败，本次播放将使用系统离线音色继续。</string>
+    <string name="p2_tts_fallback_unavailable">系统朗读未就绪，或未安装离线音色。请安装系统语音后重新播放。</string>
+    <string name="p2_tts_system_failed">系统音色无法朗读，请检查已安装的系统语音后重新播放。</string>
+</resources>

@@ -1,0 +1,6 @@
+<resources>
+    <string name="incremental_sync_description">使用此 WebDAV 账号同步阅读助手数据和词汇，不包含书籍文件。</string>
+    <string name="incremental_sync_automatic">自动同步阅读数据</string>
+    <string name="incremental_sync_now">立即同步阅读数据</string>
+    <string name="incremental_sync_result">已合并 %1$d 个数据包，上传 %2$d 个；保留 %3$d 个冲突，跳过 %4$d 个数据包。</string>
+</resources>

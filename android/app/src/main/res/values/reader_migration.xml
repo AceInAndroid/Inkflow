@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="migration_image">Illustration</string>
+    <string name="migration_image_unavailable">Illustration unavailable</string>
+    <string name="migration_reset_zoom">Reset zoom</string>
+    <string name="migration_page_margin">Page margins: %1$d dp</string>
+    <string name="migration_paragraph_spacing">Paragraph spacing: %1$d</string>
+    <string name="migration_indent">First line indent: %1$d sp</string>
+    <string name="migration_align_book">Book alignment</string>
+    <string name="migration_align_start">Start</string>
+    <string name="migration_align_justify">Justify</string>
+    <string name="migration_align_center">Center</string>
+    <string name="migration_header">Chapter header</string>
+    <string name="migration_footer">Progress footer</string>
+    <string name="migration_time">Show time in footer</string>
+    <string name="migration_battery">Show battery in footer</string>
+    <string name="migration_swipe_paging">Swipe to turn pages (off: drag to select sentences)</string>
+    <string name="migration_selection_start">Start point</string>
+    <string name="migration_selection_end">End point</string>
+    <string name="migration_character">Character</string>
+    <string name="migration_word">Word</string>
+    <string name="migration_sentence">Sentence</string>
+    <string name="migration_endpoint_back">Move back</string>
+    <string name="migration_endpoint_forward">Move forward</string>
+    <string name="migration_selection_show_end">Show end</string>
+    <string name="migration_selection_extend">Extend to next page</string>
+    <string name="migration_selection_retract">Retract extension</string>
+    <string name="migration_book_details">Book details</string>
+    <string name="migration_cover">Book cover</string>
+    <string name="migration_change_cover">Change cover</string>
+    <string name="migration_book_title">Book title</string>
+    <string name="migration_book_author">Author</string>
+    <string name="migration_book_format">Format: %1$s</string>
+    <string name="migration_book_progress">Reading progress: %1$d%%</string>
+    <string name="migration_book_time">Reading time: %1$d min</string>
+    <string name="migration_book_notes">Book notes (%1$d)</string>
+    <string name="migration_no_notes">No notes yet</string>
+    <string name="migration_metadata_failed">Could not save book details</string>
+    <string name="migration_save_details">Save details</string>
+    <string name="migration_read_book">Read book</string>
+    <string name="migration_pdf_zoom_hint">Pinch to zoom, drag to pan, double tap to reset, long press to expand</string>
+</resources>

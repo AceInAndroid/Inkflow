@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="migration_image">插图</string>
+    <string name="migration_image_unavailable">插图暂不可用</string>
+    <string name="migration_reset_zoom">重置缩放</string>
+    <string name="migration_page_margin">页边距：%1$d dp</string>
+    <string name="migration_paragraph_spacing">段间距：%1$d</string>
+    <string name="migration_indent">首行缩进：%1$d sp</string>
+    <string name="migration_align_book">沿用书籍对齐</string>
+    <string name="migration_align_start">起始对齐</string>
+    <string name="migration_align_justify">两端对齐</string>
+    <string name="migration_align_center">居中</string>
+    <string name="migration_header">章节页眉</string>
+    <string name="migration_footer">进度页脚</string>
+    <string name="migration_time">页脚显示时间</string>
+    <string name="migration_battery">页脚显示电量</string>
+    <string name="migration_swipe_paging">滑动翻页（关闭时滑动选句）</string>
+    <string name="migration_selection_start">起点</string>
+    <string name="migration_selection_end">终点</string>
+    <string name="migration_character">字</string>
+    <string name="migration_word">词</string>
+    <string name="migration_sentence">句</string>
+    <string name="migration_endpoint_back">向前移</string>
+    <string name="migration_endpoint_forward">向后移</string>
+    <string name="migration_selection_show_end">显示末尾</string>
+    <string name="migration_selection_extend">延至下一页</string>
+    <string name="migration_selection_retract">撤回延伸</string>
+    <string name="migration_book_details">书籍详情</string>
+    <string name="migration_cover">书籍封面</string>
+    <string name="migration_change_cover">更换封面</string>
+    <string name="migration_book_title">书名</string>
+    <string name="migration_book_author">作者</string>
+    <string name="migration_book_format">格式：%1$s</string>
+    <string name="migration_book_progress">阅读进度：%1$d%%</string>
+    <string name="migration_book_time">阅读时长：%1$d 分钟</string>
+    <string name="migration_book_notes">本书笔记（%1$d）</string>
+    <string name="migration_no_notes">暂无笔记</string>
+    <string name="migration_metadata_failed">书籍详情保存失败</string>
+    <string name="migration_save_details">保存详情</string>
+    <string name="migration_read_book">开始阅读</string>
+    <string name="migration_pdf_zoom_hint">双指缩放、拖动平移、双击重置、长按全屏</string>
+</resources>

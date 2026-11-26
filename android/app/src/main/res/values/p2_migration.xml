@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="p2_wireless_transfer">Wireless book transfer</string>
+    <string name="p2_transfer_instructions">Connect this device and your computer to the same Wi-Fi network. Start transfer, open the address in your computer browser, and select several books. Keep this screen open. Transfer stops when you leave this screen or put the app in the background.</string>
+    <string name="p2_transfer_limits">Uses local HTTP on your Wi-Fi network. Share the temporary address only with people you trust. Supports EPUB, FB2, TXT, Markdown, PDF, MOBI and AZW3. Each session accepts up to 20 books, 128 MiB per book and 512 MiB in total. Files import one at a time; existing identical books are reused.</string>
+    <string name="p2_transfer_start">Start transfer</string>
+    <string name="p2_transfer_stop">Stop transfer</string>
+    <string name="p2_transfer_address">Open this address in your browser</string>
+    <string name="p2_transfer_count">Books imported or already in library: %1$d</string>
+    <string name="p2_transfer_imported">Ready in library: %1$s</string>
+    <string name="p2_transfer_stopped">Transfer stopped. Start again to get a new address.</string>
+    <string name="p2_transfer_start_failed">Could not start wireless transfer.</string>
+    <string name="p2_reading_heatmap">Yearly reading activity</string>
+    <string name="p2_current_streak">Current streak</string>
+    <string name="p2_longest_streak">Longest streak</string>
+    <string name="p2_streak_days">%1$d days</string>
+    <string name="p2_heatmap_year">%1$d · %2$d reading days</string>
+    <string name="p2_heatmap_legend">Monday to Sunday, one column per week. Darker squares mean more reading: under 15, 30, 60 minutes, then 60 minutes or more. Tap a day for its reading time. Streaks use all recorded days; a current streak may end yesterday.</string>
+    <string name="p2_tts_online">Use online speech</string>
+    <string name="p2_tts_system_active">System speech is selected.</string>
+    <string name="p2_tts_online_active">Online speech is selected. Configure its voice below; the system voice selector applies to system speech.</string>
+    <string name="p2_tts_configure">Configure online speech</string>
+    <string name="p2_tts_privacy">Read Aloud sends the current text and at most one chunk ahead to the configured speech endpoint. Choose a trusted OpenAI-compatible HTTPS endpoint or Azure Speech with its regional endpoint, voice and language. The API key stays encrypted on this device. Saving does not send a request. OpenAI speed is limited to 0.25–4× and Azure to 0.5–2×; changes apply after already buffered audio. Pause cancels pending requests and resumes from the current chunk boundary. If online speech fails, playback continues from the current chunk using an installed offline system voice when the engine is ready. Otherwise playback reports an error. Your saved online preference is kept for the next Play.</string>
+    <string name="p2_tts_endpoint">Full HTTPS speech endpoint</string>
+    <string name="p2_tts_api_key">Speech API key</string>
+    <string name="p2_tts_model">Speech model</string>
+    <string name="p2_tts_voice">Online voice</string>
+    <string name="p2_tts_save_enable">Save and enable</string>
+    <string name="p2_tts_openai">OpenAI-compatible speech</string>
+    <string name="p2_tts_azure">Azure Speech REST</string>
+    <string name="p2_tts_language">SSML language (e.g. en-US or zh-CN)</string>
+    <string name="p2_tts_azure_help">Endpoint: https://&lt;region&gt;.tts.speech.microsoft.com/cognitiveservices/v1. Enter an Azure subscription key and voice name (e.g. en-US-JennyNeural). No speech model is required.</string>
+    <string name="p2_tts_fallback_active">Online speech failed. Continuing with an offline system voice for this playback.</string>
+    <string name="p2_tts_fallback_unavailable">System speech is not ready or no installed offline voice is available. Install a system voice and try Play again.</string>
+    <string name="p2_tts_system_failed">The system voice could not speak. Check the installed system speech voice and try Play again.</string>
+</resources>
