@@ -184,9 +184,27 @@ class NativeLocalizedScreensTest {
             AccessibilityNodeInfo.ACTION_SET_TEXT,
             Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, title) },
         ))
-        waitForLabel(title, nonEditable = true)
-        // ACTION_SET_TEXT can focus the search field and show an IME over bottom navigation.
+        // Dismiss before looking for the result: a tall grid cover can leave its title
+        // below the viewport, especially while ACTION_SET_TEXT has opened the IME.
         dismissKeyboard(scenario)
+        var nextScrollAt = 0L
+        waitUntil("filtered fixture title visible after scrolling") {
+            if (findNode { node -> !node.isEditable &&
+                (node.text?.toString()?.lineSequence()?.any { it == title } == true ||
+                    node.contentDescription?.toString() == title) } != null) {
+                true
+            } else {
+                val now = SystemClock.uptimeMillis()
+                if (now >= nextScrollAt) {
+                    // Restrict scrolling to the vertical results, never the horizontal group chips.
+                    findNode { node -> node.isScrollable && node.actionList.any {
+                        it.id == AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                    } }?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                    nextScrollAt = now + 300
+                }
+                false
+            }
+        }
         waitForLabel(title, nonEditable = true)
     }
 

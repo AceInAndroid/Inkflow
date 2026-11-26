@@ -3,20 +3,22 @@ package com.aceinandroid.inkflow
 import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
+import android.os.Bundle
 import android.os.SystemClock
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import android.view.inputmethod.InputMethodManager
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.aceinandroid.inkflow.core.ReaderEngineMode
 import com.aceinandroid.inkflow.core.sync.SyncGate
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
 import com.aceinandroid.inkflow.ui.reader.resolveEpubResumeOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -26,6 +28,7 @@ import java.io.File
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.math.roundToInt
 import kotlin.math.abs
 
 @RunWith(AndroidJUnit4::class)
@@ -65,7 +68,7 @@ class NativeReaderLifecycleTest {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
             scenario = launched
-            click(title)
+            openLibraryBook(launched, title)
             waitUntil("restored middle page") {
                 val description = findNode { it.contentDescription?.toString()?.startsWith("${chapter.title}, ") == true }
                     ?.contentDescription?.toString()
@@ -222,22 +225,7 @@ class NativeReaderLifecycleTest {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
             scenario = launched
-            instrumentation.waitForIdleSync()
-            // A previous test's IME must not change the reader's measured page size.
-            launched.onActivity { activity ->
-                activity.getSystemService(InputMethodManager::class.java)
-                    .hideSoftInputFromWindow(activity.window.decorView.windowToken, 0)
-                activity.currentFocus?.clearFocus()
-            }
-            waitUntil("software keyboard dismissed before opening EPUB") {
-                var hidden = false
-                launched.onActivity { activity ->
-                    hidden = ViewCompat.getRootWindowInsets(activity.window.decorView)
-                        ?.isVisible(WindowInsetsCompat.Type.ime()) == false
-                }
-                hidden
-            }
-            click(title)
+            openLibraryBook(launched, title)
             waitUntil("EPUB resumed at the single-page second chapter") {
                 readerPage(second.title) == (1 to 1) &&
                     NativeSyncIntegration.gate.state().activity == SyncGate.Activity.ACTIVE_READING
@@ -262,8 +250,19 @@ class NativeReaderLifecycleTest {
             assertEquals(0, EpubCfi.chapterIndex(saved.cfi, document.chapters))
             val savedOffset = requireNotNull(firstText.offsetForCfi(saved.cfi))
             assertTrue("Last-page CFI must resolve beyond the chapter opening", savedOffset > 0)
-            assertEquals(savedOffset.toDouble() / firstText.text.length / document.chapters.size,
+            // Pagination may begin on a generated paragraph separator. That separator
+            // has no DOM text node, so its CFI can resolve to the next text run instead.
+            // Check exact progress against its source offset and require both offsets to
+            // identify the same CFI with only whitespace between them.
+            val persistedOffset = (saved.progress * document.chapters.size * firstText.text.length).roundToInt()
+            assertTrue("Saved progress must identify a source offset", persistedOffset in 1..firstText.text.length)
+            assertEquals(persistedOffset.toDouble() / firstText.text.length / document.chapters.size,
                 saved.progress, 0.000000001)
+            assertEquals("Saved progress and CFI identify different source locations", saved.cfi,
+                firstText.cfiAt(requireNotNull(first.baseCfi), persistedOffset))
+            assertTrue("CFI normalization crossed non-whitespace text",
+                firstText.text.substring(minOf(savedOffset, persistedOffset), maxOf(savedOffset, persistedOffset))
+                    .all(Char::isWhitespace))
 
             launched.recreate()
             waitUntil("recreation restored the previous chapter's last page and exact CFI") {
@@ -391,11 +390,39 @@ class NativeReaderLifecycleTest {
         }
     }
 
-    private fun click(label: String) {
+    private fun openLibraryBook(scenario: ActivityScenario<MainActivity>, title: String) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.waitForIdleSync()
+        waitUntil("library search ready after splash") {
+            findNode { it.isVisibleToUser && it.isEditable } != null &&
+                findNode { it.isVisibleToUser && it.text?.toString() == "A modern reader, elevated by AI." } == null
+        }
+        dismissLibraryKeyboard(scenario)
+        val search = requireNotNull(findNode { it.isVisibleToUser && it.isEditable })
+        assertTrue("Cannot filter imported fixture", search.performAction(
+            AccessibilityNodeInfo.ACTION_SET_TEXT,
+            Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, title) },
+        ))
+        // Search can open the IME again. Settle it before measuring visibility or reader pages.
+        dismissLibraryKeyboard(scenario)
         var found: AccessibilityNodeInfo? = null
-        waitUntil("book $label became visible") {
-            findNode { it.text?.toString()?.contains(label) == true || it.contentDescription?.toString() == label }
-                ?.also { found = it } != null
+        var nextScrollAt = 0L
+        waitUntil("filtered book became visible after scrolling") {
+            found = findNode { it.isVisibleToUser && !it.isEditable &&
+                (it.text?.toString()?.contains(title) == true || it.contentDescription?.toString() == title) }
+            if (found != null) {
+                true
+            } else {
+                val now = SystemClock.uptimeMillis()
+                if (now >= nextScrollAt) {
+                    // Only the vertical grid/list may move; leave horizontal group selection alone.
+                    findNode { node -> node.isVisibleToUser && node.isScrollable && node.actionList.any {
+                        it.id == AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                    } }?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                    nextScrollAt = now + 300
+                }
+                false
+            }
         }
         var clickable = found
         while (clickable != null && !clickable.isClickable) clickable = clickable.parent
@@ -416,6 +443,43 @@ class NativeReaderLifecycleTest {
         } finally {
             down.recycle()
             up.recycle()
+        }
+    }
+
+    private fun dismissLibraryKeyboard(scenario: ActivityScenario<MainActivity>) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.waitForIdleSync()
+        val settings = NativeLocaleContext(instrumentation.targetContext).getString(R.string.settings)
+        var backSent = false
+        var hiddenSince: Long? = null
+        waitUntil("library keyboard stably hidden with Settings visible") {
+            var imeVisible: Boolean? = null
+            var windowFocused = false
+            scenario.onActivity { activity ->
+                val decor = activity.window.decorView
+                imeVisible = ViewCompat.getRootWindowInsets(decor)?.isVisible(WindowInsetsCompat.Type.ime())
+                windowFocused = decor.hasWindowFocus()
+            }
+            if (imeVisible != false || !windowFocused) {
+                hiddenSince = null
+                if (imeVisible == true && windowFocused) {
+                    if (!backSent) {
+                        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+                        backSent = true
+                    } else {
+                        scenario.onActivity { activity ->
+                            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                                .hide(WindowInsetsCompat.Type.ime())
+                        }
+                    }
+                }
+                false
+            } else {
+                val now = SystemClock.uptimeMillis()
+                if (hiddenSince == null) hiddenSince = now
+                now - requireNotNull(hiddenSince) >= 500 && findNode { it.isVisibleToUser &&
+                    (it.text?.toString() == settings || it.contentDescription?.toString() == settings) } != null
+            }
         }
     }
 
