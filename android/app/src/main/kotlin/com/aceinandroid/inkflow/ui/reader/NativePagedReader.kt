@@ -131,16 +131,17 @@ fun buildUnifiedChapterAnnotatedString(
 
     return buildAnnotatedString {
         append(source)
+        val paragraphs = mutableListOf<AnnotatedString.Range<ParagraphStyle>>()
         if (source.isNotEmpty()) {
-            addStyle(ParagraphStyle(
+            paragraphs += AnnotatedString.Range(ParagraphStyle(
                 textAlign = appearance.textAlign ?: TextAlign.Unspecified,
                 textIndent = TextIndent(firstLine = appearance.firstLineIndent.sp),
             ), 0, source.length)
         }
-        if (appearance.textAlign == null) epubText?.alignments?.forEach { range ->
+        if (appearance.textAlign == null) epubText?.alignments?.asReversed()?.forEach { range ->
             val start = range.start.coerceIn(0, source.length)
             val end = range.end.coerceIn(start, source.length)
-            if (start < end) addStyle(ParagraphStyle(textAlign = when (range.alignment) {
+            if (start < end) paragraphs += AnnotatedString.Range(ParagraphStyle(textAlign = when (range.alignment) {
                 EpubTextAlignment.START -> TextAlign.Start
                 EpubTextAlignment.END -> TextAlign.End
                 EpubTextAlignment.LEFT -> TextAlign.Left
@@ -170,9 +171,33 @@ fun buildUnifiedChapterAnnotatedString(
             if (image.offset in source.indices) {
                 val start = source.lastIndexOf('\n', image.offset).let { if (it < 0) 0 else it + 1 }
                 val end = source.indexOf('\n', image.offset).let { if (it < 0) source.length else it + 1 }
-                if (start < end) addStyle(ParagraphStyle(textIndent = TextIndent.None), start, end)
+                if (start < end) paragraphs += AnnotatedString.Range(ParagraphStyle(textIndent = TextIndent.None), start, end)
             }
         }
+        // EPUB block alignment and image indentation can overlap by a trailing newline.
+        // Compose rejects partially overlapping paragraph ranges, so merge the active
+        // styles into disjoint intervals. Apply outer blocks before inner blocks,
+        // as Compose does for valid nested paragraph ranges (HTML closes inner first).
+        val ordered = paragraphs.sortedWith(compareBy<AnnotatedString.Range<ParagraphStyle>> { it.start }
+            .thenByDescending { it.end })
+        val starts = ordered.indices.groupBy { ordered[it].start }
+        val ends = ordered.indices.groupBy { ordered[it].end }
+        val boundaries = (starts.keys + ends.keys).sorted()
+        val active = java.util.TreeMap<Int, ParagraphStyle>()
+        val resolved = mutableListOf<AnnotatedString.Range<ParagraphStyle>>()
+        boundaries.forEachIndexed { index, start ->
+            ends[start]?.forEach { active.remove(it) }
+            starts[start]?.forEach { active[it] = ordered[it].item }
+            val end = boundaries.getOrNull(index + 1)
+            if (end != null && start < end && active.isNotEmpty()) {
+                val merged = active.values.fold(ParagraphStyle()) { style, next -> style.merge(next) }
+                val previous = resolved.lastOrNull()
+                if (previous != null && previous.end == start && previous.item == merged) {
+                    resolved[resolved.lastIndex] = previous.copy(end = end)
+                } else resolved += AnnotatedString.Range(merged, start, end)
+            }
+        }
+        resolved.forEach { addStyle(it.item, it.start, it.end) }
         annotationSpans.forEach { span ->
             val start = span.start.coerceIn(0, source.length)
             val end = span.end.coerceIn(start, source.length)

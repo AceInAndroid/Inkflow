@@ -1,6 +1,8 @@
 # Native Android migration
 
-Branch: `codex/native-android`. The new package is `com.aceinandroid.inkflow`; it installs alongside the Flutter application. The native build uses Kotlin and Compose with minSdk 24, compileSdk 36, and targetSdk 35.
+后续生成任务、向前跨章修复及持续阅读验证见 [CONTINUED_TEST_2026-11-26.md](CONTINUED_TEST_2026-11-26.md)。
+
+Inkflow is an independent project on `main`. The Android package is `com.aceinandroid.inkflow`; it installs alongside the Flutter application. The native build uses Kotlin and Compose with minSdk 24, compileSdk 36, and targetSdk 35.
 
 ## Native v0.2 migration (2026-11-26)
 
@@ -17,7 +19,7 @@ names, for example `:app:assembleStandardDebug` and `:app:assembleFullOcrDebug`;
 historical unflavored commands below describe earlier acceptance runs.
 
 
-Latest functional acceptance (Android 34 AOSP emulator, 2026-11-26):
+Earlier functional acceptance (Android 34 AOSP emulator, 2026-11-26; see the linked continued report for the current build):
 
 - Shared core: 104 JVM tests passed. Android: 64 JVM tests passed.
 - Both flavors and their instrumentation APKs built successfully. Final debug APKs

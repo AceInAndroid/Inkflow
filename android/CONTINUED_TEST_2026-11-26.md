@@ -1,0 +1,90 @@
+# inkflow 后续生成任务与持续阅读验证
+
+日期：2026-11-26。测试起点为 `a0d5e6d2`，该提交已推送至 `origin/main`。继续使用上一轮同一个《纳瓦尔宝典》EPUB 和用户配置的局域网模型，不在记录中保存 API Key。
+
+## 范围与全书生成缺口
+
+原生 Android 当前路径为“AI 助手 → 本书 → 建立 Wiki / 整理故事档案 / 建议笔记”。确认框显示“从已完成章节生成资料？”，在本书第 16/66 章阅读位置，只纳入 12 个已完成的正文章节，捕获范围约 22%。
+
+检查 `BookHubContent` 和 `NativeBookGenerationService` 确认：没有独立的全书范围、全书二次确认或越过当前阅读边界的授权模式。调度器要求每个章节都在已完成章节范围内。**因此全书生成不能标记为验收通过，这是原生功能缺口，而非已运行完成的全书测试。** 本轮没有通过修改数据库进度或假装读完来扩大生成范围。
+
+本轮继续验证现有已读章节生成的真实请求、checkpoint、失败恢复和证据约束；这与覆盖全书是两个不同的验收结论。
+
+## 设备与持续阅读方法
+
+- 实书持续阅读：Android 14 / API 34，隔离模拟器 `emulator-5554`，1080×2400 / 420 dpi，`fullOcr`，原生分页阅读器。
+- 定向及更广仪器回归：新的隔离 Android 12 / API 31 模拟器 `emulator-5556`，`standard`，未配置真实模型。
+- 持续阅读目标为实际墙钟 30 分钟。正文边缘点击逐页前进/后退，每次操作重新读取阅读器页码；期间执行前后台切换及保存退出后的进程强停、重开。
+- 每次重开核对章节/页码、精确 EPUB CFI 和数据库阅读进度；定期记录进程 PSS，并检查崩溃日志。PSS 采样只用于短时趋势观察，不等价于专业泄漏分析。
+- 普通阅读前后比较 AI Token 用量和会话/任务/笔记数量；此检查可发现成功的额外调用或新建记录，不能单独证明网络上没有失败请求。
+
+## 测试结果
+
+### 真实缺陷及修复
+
+第一次持续阅读在约 269 秒发现向前跨章缺陷：从“找到天赋所在，积累专长”1/18 页向前翻，错误落到“认识财富创造的原理”1/37 页，随后继续向前会跳过整章。约 6 分钟后运行中止，记录为失败，不计入通过时长。
+
+原因是上一章末页定位与载入 EPUB 时的 `resumeOffset=0` 同时待处理；首次设置末页后，第二次 Compose effect 又按旧 offset 覆盖为首页。`ReaderScreen` 在处理明确的上一章末页导航时消费该 offset。覆盖安装修复版后，同一实书操作已观察到正确的 37/37 页。新增两章 EPUB 仪器回归，检查真实正文边缘点击、末页及精确 CFI、Activity 重建后恢复和再次往返；API 31 定向运行通过。
+
+修复后的首次脚本在约 112 秒点击到内嵌插图，正常打开全屏图片查看器；脚本未处理此分支而中止，记录为脚本失败。脚本改用当前 UI 节点中的插图边界选择空白的正文边缘点击点，重新从零开始 30 分钟计时，不累计中止运行时长。
+
+### 第二个真实缺陷：特定 EPUB 章节排版崩溃
+
+随后一次重跑在 574 秒、95 次翻页后，从“找到杠杆”末页进入“用判断力赚钱”时崩溃。API 34 crash buffer 确认 `IllegalArgumentException: Paragraph overlap not allowed, end 896 should be less than or equal to 895`，堆栈指向 `buildUnifiedChapterAnnotatedString`。
+
+EPUB 的块级对齐范围与图片段落的无缩进范围可能因尾部换行发生部分交叠，Compose 不接受这种 paragraph style 范围。现将样式按外层到内层顺序合并成不交叠区间，并合并相邻相同样式；原文、CFI 坐标、图片占位符和用户指定对齐方式保持对应。没有通过删掉出版方样式或吞掉异常跳过章节。
+
+三个新排版测试覆盖真实 HTML 解析出来的 `[0,10)` 与 `[9,11)` 交叠、嵌套及完全相同范围的样式优先级、用户对齐覆盖和图片无缩进边界。**在修复前 APK 上，两项定向检查（跨章末页和嵌套排版）均如预期失败；修复后阅读器/排版定向 7/7 通过。** 最终 fullOcr 上对本书全部 66 章逐章解析、构建 AnnotatedString 并运行 TextMeasurer，通过 1/1；实际界面已成功打开此前崩溃的“用判断力赚钱”第 1/6 页。
+
+本次崩溃运行记为失败，保留日志；两个阅读修复全部安装后从零开始最终 30 分钟计时。
+
+### 真实模型生成：未完成
+
+恢复上一轮创建的 Wiki 任务，保留原有 2 个 checkpoint。实际经 `NativeAiGateway` 调用本地 Anthropic 接口：
+
+- 第一个新请求针对 36 字符分块，返回 243 字符，合法 JSON、字段和来源证据通过校验，checkpoint 增至 3，写入 1 条有来源的 Wiki 资料。
+- 下一个请求针对 1,052 字符章节，网关完成并返回 1,052 字符，但输出不是合法 JSON 数组；`NativeBookGenerationService.parse` 抛出 `JSONException`，任务转为 failed，保留前 3 个 checkpoint，未推进失败分块。
+- 真实任务没有完成，不能称为整书或已读范围生成成功。此结果证明本次本地模型输出与结构化生成要求存在兼容性问题；没有放宽 JSON/引用校验或制造资料来通过测试。
+- 新增的默认跳过实网诊断仅在显式参数下恢复指定任务，记录请求标识、长度、结构校验布尔值和安全错误分类，不记录凭据、提示词或返回正文。
+
+### 调度器与界面定向回归
+
+- API 31：新增 5 项生成任务测试通过。覆盖显式授权、捕获已完成章节边界、Wiki/Atlas/Notes 证据及 checkpoint、写入与 checkpoint 原子回滚、暂停和模拟重启后从 checkpoint 恢复且不重复请求，以及无效 JSON/伪造引用/其他章节引用拒绝。
+- 首次更广仪器测试发现 6 项语言页面测试失败，日志显示搜索输入后的 IME 遮挡底部设置入口。两个测试类最初补充一次性收起 IME 与等待启动完成；定向重跑 16 项中 14 通过、2 项因 API 33 系统接口要求在 API 31 上跳过。随后完整 165 项重跑仍出现 7 项键盘相关失败，说明定向通过不足以证明跨测试稳定性。最终辅助逻辑只在 IME 确认显示且窗口有焦点时发送一次返回键，后续使用 InsetsController 收起，并要求连续隐藏 500 ms 且设置导航可见；没有删除或放宽业务断言。最终完整结果见下。
+- 共享核心 123/123；standard 与 fullOcr Android 单元测试各 70/70。
+- 两个版本构建成功；strict lint 均为 0 errors、111 warnings，MissingTranslation=0；未新增翻译豁免。
+
+### 修复后持续阅读与完整仪器回归
+
+- 最终 standard APK / Android 12、API 31 全量仪器测试：169 项发现、154 项通过、15 项按条件跳过、0 失败，227.848 秒。
+- 跳过分类：2 项 API 33 平台语言接口、5 项缺少系统 TTS 引擎、3 项默认关闭的真实模型诊断、1 项默认关闭的指定已安装书籍排版诊断、1 项 standard 无 OCR、2 项 fullOcr 专属词典，以及 1 项模拟器未提供的字体格式。指定书籍排版另在 API 34 显式启用并通过；真实模型失败结果见上，不纳入离线通过计数。
+- 阅读器生命周期与诊断脱敏早期定向 5/5；最终套件包含 3 项新排版回归、跨章末页定位和全部已有阅读用例，均通过。修复前的两项失败记录与修复后的通过记录均保留。
+- 最终 fullOcr 的 66 章排版诊断 1/1 通过。小屏/宽屏和完整 30 分钟持续阅读正在进行；最终结果在结束后补充。
+
+## 当前可安装 APK
+
+以下路径相对于 `android/`；构建产物保留在本地，不把 APK、书籍或设备数据加入 Git。
+
+| 版本 | 路径 | 字节数 | SHA-256 |
+| --- | --- | ---: | --- |
+| standard debug | `app/build/outputs/apk/standard/debug/app-standard-debug.apk` | 33,364,084 | `89c21a471a9b43cfe1864192a79e1cc53260865b3bde24cb26e6c1a95a9f0727` |
+| fullOcr debug | `app/build/outputs/apk/fullOcr/debug/app-fullOcr-debug.apk` | 94,731,305 | `8bd8a7cdef4a21959738e18b4b6323c9f8fe56ef13074e2a289e6f30438e55d2` |
+
+## 可复现的离线检查
+
+在 `android/` 中执行：
+
+```sh
+./gradlew :core:jvmTest :app:testStandardDebugUnitTest :app:testFullOcrDebugUnitTest
+./gradlew :app:assembleStandardDebug :app:assembleFullOcrDebug :app:assembleStandardDebugAndroidTest
+./gradlew :app:lintStandardDebug :app:lintFullOcrDebug
+adb -s <test-device> install -r app/build/outputs/apk/standard/debug/app-standard-debug.apk
+adb -s <test-device> install -r app/build/outputs/apk/androidTest/standard/debug/app-standard-debug-androidTest.apk
+adb -s <test-device> shell am instrument -w -r \
+  -e class com.aceinandroid.inkflow.NativeBookGenerationTest,com.aceinandroid.inkflow.NativeReaderLifecycleTest \
+  com.aceinandroid.inkflow.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+实网诊断类 `NativeBookGenerationDiagnosticTest` 默认跳过，只有传入 `exerciseLocalGeneration=true`、明确 `bookId` 和现有失败/暂停任务的 UUID 后才会发请求；设备需已有有效 provider 配置。此测试会恢复任务并可能写入有证据的资料，不能混入“普通阅读零请求”测量时段。
+
+证据保存在忽略目录 `build/outputs/live-device-validation/continued/`；原 EPUB、设备数据库、加密配置与临时诊断文件均不加入 Git。

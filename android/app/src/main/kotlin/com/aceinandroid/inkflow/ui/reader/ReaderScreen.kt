@@ -556,6 +556,9 @@ private fun ReaderContent(
         if (openPreviousAtEnd) {
             val lastIdx = (summary.pageCount - 1).coerceAtLeast(0)
             currentPage = lastIdx
+            // The EPUB load also supplies an opening offset. Consume it here so a
+            // second effect cannot override the explicit previous-chapter end.
+            resumeOffset = null
             openPreviousAtEnd = false
             val sliceOffset = summary.pages.getOrNull(lastIdx)?.startOffset ?: 0
             persistCurrentOffset(sliceOffset)

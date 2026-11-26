@@ -1,5 +1,7 @@
 # Inkflow Android localization
 
+后续生成任务、向前跨章修复及持续阅读验证见 [CONTINUED_TEST_2026-11-26.md](CONTINUED_TEST_2026-11-26.md)。
+
 This document describes the implementation, reproducible validation commands, and the results observed on November 26, 2026. The final section distinguishes completed checks from remaining coverage gaps.
 
 ## Language options and resources

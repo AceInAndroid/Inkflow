@@ -12,9 +12,15 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.inputmethod.InputMethodManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import com.aceinandroid.inkflow.core.ReaderEngineMode
 import com.aceinandroid.inkflow.core.localization.AppLanguage
 import com.aceinandroid.inkflow.core.sync.SyncGate
@@ -122,6 +128,7 @@ class NativeAppLanguageTest {
     @Test fun settingsLanguagePickerKeepsSettingsOpenAcrossSwitchesAndRecreation() {
         select(AppLanguage.ENGLISH)
         launch().use { scenario ->
+            prepareLibrary(scenario)
             var initialActivity: MainActivity? = null
             scenario.onActivity { initialActivity = it }
             click(localized.getString(R.string.settings))
@@ -166,6 +173,7 @@ class NativeAppLanguageTest {
     @Test fun alreadyOpenDialogRefreshesWithTheEffectiveLanguage() {
         select(AppLanguage.ENGLISH)
         launch().use { scenario ->
+            prepareLibrary(scenario)
             var activity: MainActivity? = null
             scenario.onActivity { activity = it }
             click(localized.getString(R.string.settings))
@@ -270,6 +278,7 @@ class NativeAppLanguageTest {
             store.saveTextPosition(book.id, chapterIndex, middleOffset,
                 (chapterIndex + middleOffset.toDouble() / chapterLength) / document.chapters.size)
             launch().use { scenario ->
+                prepareLibrary(scenario)
                 var initialActivity: MainActivity? = null
                 scenario.onActivity { initialActivity = it }
                 click(title)
@@ -385,6 +394,15 @@ class NativeAppLanguageTest {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         })
 
+    private fun prepareLibrary(scenario: ActivityScenario<MainActivity>) {
+        instrumentation.waitForIdleSync()
+        waitForLabel(localized.getString(R.string.library))
+        waitUntil("launch splash dismissed") {
+            findLabel("A modern reader, elevated by AI.") == null
+        }
+        dismissKeyboard(scenario)
+    }
+
     private fun assertSettingsVisible() {
         waitForLabel(localized.getString(R.string.app_language))
         waitForLabel(localized.getString(R.string.reading_settings))
@@ -398,6 +416,45 @@ class NativeAppLanguageTest {
         scenario.onActivity { activity ->
             assertTrue("Reader did not handle page down", activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PAGE_DOWN)))
             assertTrue(activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_PAGE_DOWN)))
+        }
+    }
+
+    private fun dismissKeyboard(scenario: ActivityScenario<MainActivity>) {
+        instrumentation.waitForIdleSync()
+        val settings = NativeLocaleContext(context).getString(R.string.settings)
+        var backSent = false
+        var hiddenSince: Long? = null
+        waitUntil("software keyboard stably dismissed with Settings navigation visible") {
+            var imeVisible: Boolean? = null
+            var windowFocused = false
+            scenario.onActivity { activity ->
+                val decor = activity.window.decorView
+                imeVisible = ViewCompat.getRootWindowInsets(decor)?.isVisible(WindowInsetsCompat.Type.ime())
+                windowFocused = decor.hasWindowFocus()
+            }
+            if (imeVisible != false || !windowFocused) {
+                hiddenSince = null
+                if (imeVisible == true && windowFocused) {
+                    if (!backSent) {
+                        // Route through the IME, not Activity.dispatchKeyEvent. Never send
+                        // Back with a hidden/unknown IME, or a second Back that could navigate.
+                        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+                        backSent = true
+                    } else {
+                        scenario.onActivity { activity ->
+                            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                                .hide(WindowInsetsCompat.Type.ime())
+                        }
+                    }
+                }
+                false
+            } else {
+                // Android View.clearFocus() does not clear Compose's field focus. Avoid
+                // restarting that input session, and allow queued show/animation work to settle.
+                val now = SystemClock.uptimeMillis()
+                if (hiddenSince == null) hiddenSince = now
+                now - requireNotNull(hiddenSince) >= 500 && findLabel(settings) != null
+            }
         }
     }
 
@@ -443,13 +500,40 @@ class NativeAppLanguageTest {
         return find(instrumentation.uiAutomation.rootInActiveWindow)
     }
 
+    // Never dump arbitrary node text: Settings may contain provider credentials.
+    private fun safeUiState(): String = runCatching {
+        val root = instrumentation.uiAutomation.rootInActiveWindow
+        var imeVisible: Boolean? = null
+        var windowFocused = false
+        instrumentation.runOnMainSync {
+            val activity = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)
+                .filterIsInstance<MainActivity>().firstOrNull()
+            activity?.window?.decorView?.let { decor ->
+                imeVisible = ViewCompat.getRootWindowInsets(decor)?.isVisible(WindowInsetsCompat.Type.ime())
+                windowFocused = decor.hasWindowFocus()
+            }
+        }
+        listOf(
+            "imeInsetsKnown=${imeVisible != null}",
+            "imeVisible=${imeVisible == true}",
+            "windowFocused=$windowFocused",
+            "rootPresent=${root != null}",
+            "rootIsApp=${root?.packageName?.toString() == context.packageName}",
+            "focusedEditable=${findNode { it.isEditable && it.isFocused } != null}",
+            "imeAcceptingText=${context.getSystemService(InputMethodManager::class.java).isAcceptingText}",
+            "libraryVisible=${findLabel(localized.getString(R.string.library)) != null}",
+            "settingsVisible=${findLabel(localized.getString(R.string.settings)) != null}",
+            "splashVisible=${findLabel("A modern reader, elevated by AI.") != null}",
+        ).joinToString()
+    }.getOrDefault("uiDiagnosticsUnavailable=true")
+
     private fun waitUntil(description: String, condition: () -> Boolean) {
         val deadline = SystemClock.uptimeMillis() + 15_000
         while (SystemClock.uptimeMillis() < deadline) {
             if (condition()) return
             SystemClock.sleep(100)
         }
-        throw AssertionError("Timed out waiting for $description")
+        throw AssertionError("Timed out waiting for $description; ${safeUiState()}")
     }
 
     // Separate class avoids newer framework types in synthetic lambda signatures on API 24–32.

@@ -8,6 +8,9 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.inputmethod.InputMethodManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -21,6 +24,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import java.util.UUID
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.math.abs
 
 @RunWith(AndroidJUnit4::class)
@@ -139,6 +144,180 @@ class NativeReaderLifecycleTest {
         }
     }
 
+    @Test fun explicitlySelectedInstalledEpubBuildsEveryChapterLayout() {
+        val args = InstrumentationRegistry.getArguments()
+        org.junit.Assume.assumeTrue("Installed EPUB layout requires an explicit opt-in",
+            args.getString("exerciseInstalledBookLayout") == "true")
+        val bookId = requireNotNull(args.getString("bookId")?.toLongOrNull())
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        BookStore(context).use { store ->
+            val book = store.all().single { it.id == bookId }
+            require(book.format == "epub")
+            val document = BookParser.inspect(book.file, book.title)
+            assertTrue(document.chapters.isNotEmpty())
+            val measurer = androidx.compose.ui.text.TextMeasurer(
+                androidx.compose.ui.text.font.createFontFamilyResolver(context),
+                androidx.compose.ui.unit.Density(1f), androidx.compose.ui.unit.LayoutDirection.Ltr)
+            document.chapters.forEachIndexed { index, chapter ->
+                val text = BookParser.readEpubText(book.file, chapter)
+                val annotated = com.aceinandroid.inkflow.ui.reader.buildUnifiedChapterAnnotatedString(
+                    text.text, text, emptyList(), ReaderAppearance())
+                assertEquals("Source offsets changed in chapter $index", text.text, annotated.text)
+                measurer.measure(annotated, androidx.compose.ui.text.TextStyle(),
+                    constraints = androidx.compose.ui.unit.Constraints(maxWidth = 400))
+            }
+            android.util.Log.i("InstalledBookLayout", "bookId=$bookId chapters=${document.chapters.size} layoutSuccess=true")
+        }
+    }
+
+    @Test fun epubBackwardBodyEdgeTapOpensPreviousChapterLastPageAndRestoresCfi() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val controls = ReaderControlsStore(context)
+        val originalEngine = controls.readerEngineMode()
+        val offlineLease = checkNotNull(NativeSyncIntegration.gate.tryAcquire(SyncGate.Trigger.LOCAL_MUTATION)) {
+            "Cannot isolate EPUB boundary test while another sync operation is running"
+        }
+        val title = "EPUB chapter boundary ${UUID.randomUUID()}"
+        val source = File(context.cacheDir, "$title.epub")
+        val store = BookStore(context)
+        var bookId: Long? = null
+        var scenario: ActivityScenario<MainActivity>? = null
+        try {
+            controls.setReaderEngineMode(ReaderEngineMode.NATIVE_PAGED)
+            ZipOutputStream(source.outputStream()).use { zip ->
+                fun entry(path: String, value: String) {
+                    zip.putNextEntry(ZipEntry(path))
+                    zip.write(value.toByteArray(Charsets.UTF_8))
+                    zip.closeEntry()
+                }
+                entry("META-INF/container.xml",
+                    "<container><rootfiles><rootfile full-path=\"OPS/book.opf\"/></rootfiles></container>")
+                entry("OPS/book.opf", """
+                    <package><metadata><title>$title</title></metadata><manifest>
+                    <item id="one" href="one.xhtml" media-type="application/xhtml+xml"/>
+                    <item id="two" href="two.xhtml" media-type="application/xhtml+xml"/>
+                    </manifest><spine><itemref idref="one"/><itemref idref="two"/></spine></package>
+                """.trimIndent())
+                val paragraphs = (1..150).joinToString("\n") { line ->
+                    "<p>Paragraph $line has enough distinct words to fill many pages in the first chapter. " +
+                        "Turning back from the next chapter must return to the final page of this text.</p>"
+                }
+                entry("OPS/one.xhtml", "<html><body><h1>Long first chapter</h1>$paragraphs</body></html>")
+                entry("OPS/two.xhtml", "<html><body><h1>Short second chapter</h1><p>The end.</p></body></html>")
+            }
+            val book = store.import(Uri.fromFile(source))
+            bookId = book.id
+            val document = BookParser.inspect(book.file, book.title)
+            assertEquals("Fixture must have exactly two EPUB spine chapters", 2, document.chapters.size)
+            val first = document.chapters[0]
+            val second = document.chapters[1]
+            val firstText = BookParser.readEpubText(book.file, first)
+            val secondText = BookParser.readEpubText(book.file, second)
+            val openingCfi = requireNotNull(secondText.cfiAt(requireNotNull(second.baseCfi), 0))
+            assertEquals(1, EpubCfi.chapterIndex(openingCfi, document.chapters))
+            store.savePosition(book.id, 1, openingCfi, 0.5)
+
+            val launched = ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            })
+            scenario = launched
+            instrumentation.waitForIdleSync()
+            // A previous test's IME must not change the reader's measured page size.
+            launched.onActivity { activity ->
+                activity.getSystemService(InputMethodManager::class.java)
+                    .hideSoftInputFromWindow(activity.window.decorView.windowToken, 0)
+                activity.currentFocus?.clearFocus()
+            }
+            waitUntil("software keyboard dismissed before opening EPUB") {
+                var hidden = false
+                launched.onActivity { activity ->
+                    hidden = ViewCompat.getRootWindowInsets(activity.window.decorView)
+                        ?.isVisible(WindowInsetsCompat.Type.ime()) == false
+                }
+                hidden
+            }
+            click(title)
+            waitUntil("EPUB resumed at the single-page second chapter") {
+                readerPage(second.title) == (1 to 1) &&
+                    NativeSyncIntegration.gate.state().activity == SyncGate.Activity.ACTIVE_READING
+            }
+            assertEquals(openingCfi, store.all().single { it.id == book.id }.cfi)
+
+            tapReaderEdge(second.title, forward = false)
+            waitUntil("backward body tap reached and saved the previous chapter's last page") {
+                val page = readerPage(first.title)
+                val saved = store.all().single { it.id == book.id }
+                page != null && page.second > 1 && page.first == page.second && saved.position == 0 &&
+                    EpubCfi.chapterIndex(saved.cfi, document.chapters) == 0 &&
+                    (firstText.offsetForCfi(saved.cfi) ?: 0) > 0
+            }
+            // The stale resume offset used to override the last page in a second Compose effect.
+            instrumentation.waitForIdleSync()
+            val lastPage = requireNotNull(readerPage(first.title))
+            assertTrue("The first chapter must span multiple pages", lastPage.second > 1)
+            assertEquals("Backward navigation snapped to the chapter opening", lastPage.second, lastPage.first)
+            val saved = store.all().single { it.id == book.id }
+            assertEquals(0, saved.position)
+            assertEquals(0, EpubCfi.chapterIndex(saved.cfi, document.chapters))
+            val savedOffset = requireNotNull(firstText.offsetForCfi(saved.cfi))
+            assertTrue("Last-page CFI must resolve beyond the chapter opening", savedOffset > 0)
+            assertEquals(savedOffset.toDouble() / firstText.text.length / document.chapters.size,
+                saved.progress, 0.000000001)
+
+            launched.recreate()
+            waitUntil("recreation restored the previous chapter's last page and exact CFI") {
+                readerPage(first.title) == lastPage &&
+                    NativeSyncIntegration.gate.state().activity == SyncGate.Activity.ACTIVE_READING &&
+                    store.all().single { it.id == book.id }.cfi == saved.cfi
+            }
+            instrumentation.waitForIdleSync()
+            assertEquals("Recreation changed the visible page", lastPage, readerPage(first.title))
+            val restored = store.all().single { it.id == book.id }
+            assertEquals(0, restored.position)
+            assertEquals("Recreation changed the exact EPUB CFI", saved.cfi, restored.cfi)
+            assertEquals(saved.progress, restored.progress, 0.000000001)
+
+            // Crossing forward again also proves the restored page really was the final one.
+            tapReaderEdge(first.title, forward = true)
+            waitUntil("forward body tap crossed back into the second chapter") {
+                readerPage(second.title) == (1 to 1)
+            }
+            tapReaderEdge(second.title, forward = false)
+            waitUntil("a second backward crossing restored the same final page and CFI") {
+                readerPage(first.title) == lastPage && store.all().single { it.id == book.id }.cfi == saved.cfi
+            }
+            instrumentation.waitForIdleSync()
+            assertEquals(lastPage, readerPage(first.title))
+            assertEquals(saved.cfi, store.all().single { it.id == book.id }.cfi)
+        } finally {
+            try {
+                scenario?.close()
+            } finally {
+                try {
+                    bookId?.let { id ->
+                        store.removeBook(id)
+                        val args = arrayOf(id.toString())
+                        store.writableDatabase.delete("tb_reading_time", "book_id = ?", args)
+                        store.writableDatabase.delete("tb_book_device_positions", "book_id = ?", args)
+                        store.writableDatabase.delete("tb_books", "id = ?", args)
+                    }
+                } finally {
+                    try {
+                        store.close()
+                    } finally {
+                        try {
+                            source.delete()
+                        } finally {
+                            try { controls.setReaderEngineMode(originalEngine) }
+                            finally { offlineLease.close() }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Test fun epubExplicitDestinationsTakePrecedenceOverSavedOpeningCfi() {
         val text = EpubText.fromHtml("<html><body><p>Opening words.</p>" +
             "<p id='source'>Source quotation for the reader.</p><p>Return to these words.</p></body></html>")
@@ -179,6 +358,37 @@ class NativeReaderLifecycleTest {
         val returnCfi = requireNotNull(original.cfiAt("/6/10", returnTarget))
         assertEquals(returnOffset, original.offsetForCfi(returnCfi))
         assertEquals(returnOffset, resolveEpubResumeOffset(original, returnCfi, null, 0, savedOpening))
+    }
+
+    private fun readerPage(chapterTitle: String): Pair<Int, Int>? {
+        val description = findNode {
+            it.isVisibleToUser && it.contentDescription?.toString()?.startsWith("$chapterTitle, ") == true
+        }?.contentDescription?.toString() ?: return null
+        val pages = description.removePrefix("$chapterTitle, ").split('/')
+        if (pages.size != 2) return null
+        return (pages[0].toIntOrNull() ?: return null) to (pages[1].toIntOrNull() ?: return null)
+    }
+
+    private fun tapReaderEdge(chapterTitle: String, forward: Boolean) {
+        val body = requireNotNull(findNode {
+            it.isVisibleToUser && it.contentDescription?.toString()?.startsWith("$chapterTitle, ") == true
+        }) { "Reader body is missing for $chapterTitle" }
+        val bounds = Rect().also(body::getBoundsInScreen)
+        assertTrue("Reader body has no visible bounds", !bounds.isEmpty)
+        val x = bounds.left + bounds.width() * (if (forward) 0.9f else 0.1f)
+        val time = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, x, bounds.exactCenterY(), 0)
+        val up = MotionEvent.obtain(time, time + 80, MotionEvent.ACTION_UP, x, bounds.exactCenterY(), 0)
+        down.source = InputDevice.SOURCE_TOUCHSCREEN
+        up.source = InputDevice.SOURCE_TOUCHSCREEN
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        try {
+            assertTrue("Reader edge touch down was not injected", automation.injectInputEvent(down, true))
+            assertTrue("Reader edge touch up was not injected", automation.injectInputEvent(up, true))
+        } finally {
+            down.recycle()
+            up.recycle()
+        }
     }
 
     private fun click(label: String) {
