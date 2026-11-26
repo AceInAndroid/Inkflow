@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.aceinandroid.inkflow.R
 import com.aceinandroid.inkflow.core.translate.*
+import com.aceinandroid.inkflow.ui.localization.localizedLanguageName
+import com.aceinandroid.inkflow.ui.localization.localizedTranslationProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,6 +20,7 @@ import kotlinx.coroutines.withContext
 /** Providers/languages are passive choices; only the action button can dispatch a request. */
 @Composable
 fun TranslationPanel(text: String, onAskAi: (TranslationRequest) -> Unit) {
+    val context = LocalContext.current
     var provider by remember { mutableStateOf(TranslationProvider.AI) }
     var source by remember { mutableStateOf("auto") }
     var target by remember { mutableStateOf("zh") }
@@ -33,11 +37,13 @@ fun TranslationPanel(text: String, onAskAi: (TranslationRequest) -> Unit) {
         OutlinedButton(enabled = !busy, onClick = {
             provider = TranslationProvider.entries[(provider.ordinal + 1) % TranslationProvider.entries.size]
             result = null
-        }) { Text(provider.name) }
+        }) { Text(localizedTranslationProvider(provider)) }
         OutlinedTextField(source, { source = it }, enabled = !busy,
-            label = { Text(stringResource(R.string.dictionary_source_language)) }, singleLine = true)
+            label = { Text(stringResource(R.string.dictionary_source_language)) },
+            supportingText = { Text(localizedLanguageName(source)) }, singleLine = true)
         OutlinedTextField(target, { target = it }, enabled = !busy,
-            label = { Text(stringResource(R.string.dictionary_target_language)) }, singleLine = true)
+            label = { Text(stringResource(R.string.dictionary_target_language)) },
+            supportingText = { Text(localizedLanguageName(target)) }, singleLine = true)
         if (provider != TranslationProvider.AI) {
             OutlinedTextField(key, { key = it }, enabled = !busy, visualTransformation = PasswordVisualTransformation(),
                 label = { Text(stringResource(R.string.dictionary_api_key_session)) }, singleLine = true)
@@ -59,7 +65,7 @@ fun TranslationPanel(text: String, onAskAi: (TranslationRequest) -> Unit) {
                     if (request.provider == TranslationProvider.AI) dispatcher.dispatch(request)
                     else result = withContext(Dispatchers.IO) { dispatcher.dispatch(request)?.text }
                 } catch (cancelled: CancellationException) { throw cancelled }
-                catch (failure: Exception) { result = failure.message }
+                catch (_: Exception) { result = context.getString(R.string.localization_translation_failed) }
                 finally { busy = false }
             }
         }) { Text(stringResource(if (provider == TranslationProvider.AI) R.string.dictionary_translate_ai else R.string.dictionary_translate)) }

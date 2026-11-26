@@ -20,33 +20,41 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.aceinandroid.inkflow.NativeNarrator
 import com.aceinandroid.inkflow.R
+import com.aceinandroid.inkflow.ui.localization.localizedLanguageName
 
 /** SettingsScreen hook. Existing rate/pitch/continuous controls continue to use this narrator. */
 @Composable
 fun TtsProviderSettings(narrator: NativeNarrator) {
+    val context = LocalContext.current
     var editing by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
+    val onlineSpeechLabel = stringResource(R.string.p2_tts_online)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(stringResource(R.string.p2_tts_online))
-            Switch(checked = narrator.onlineEnabled, onCheckedChange = { enabled ->
+            Text(onlineSpeechLabel, Modifier.weight(1f))
+            Switch(modifier = Modifier.semantics { contentDescription = onlineSpeechLabel },
+                checked = narrator.onlineEnabled, onCheckedChange = { enabled ->
                 if (enabled) editing = true else {
                     val old = narrator.onlineSettings()
                     runCatching { narrator.updateOnlineTts(OnlineTtsConfig(false, old.endpoint, old.apiKey, old.model, old.voice, old.provider, old.language)) }
-                        .onFailure { message = it.message.orEmpty() }
+                        .onFailure { message = context.getString(R.string.localization_tts_settings_failed) }
                 }
             })
         }
         Text(stringResource(if (narrator.onlineEnabled) R.string.p2_tts_online_active else R.string.p2_tts_system_active),
             style = MaterialTheme.typography.bodySmall)
         TextButton(onClick = { editing = true }) { Text(stringResource(R.string.p2_tts_configure)) }
-        narrator.onlineError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (narrator.onlineError != null) Text(stringResource(R.string.localization_tts_online_failed),
+            color = MaterialTheme.colorScheme.error)
         if (message.isNotBlank()) Text(message, color = MaterialTheme.colorScheme.error)
     }
     if (editing) {
@@ -85,7 +93,8 @@ fun TtsProviderSettings(narrator: NativeNarrator) {
                         label = { Text(stringResource(R.string.p2_tts_model)) }, singleLine = true)
                 } else {
                     OutlinedTextField(language, { language = it }, Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.p2_tts_language)) }, singleLine = true)
+                        label = { Text(stringResource(R.string.p2_tts_language)) },
+                        supportingText = { Text(localizedLanguageName(language)) }, singleLine = true)
                 }
                 OutlinedTextField(voice, { voice = it }, Modifier.fillMaxWidth(),
                     label = { Text(stringResource(R.string.p2_tts_voice)) }, singleLine = true)
@@ -96,7 +105,7 @@ fun TtsProviderSettings(narrator: NativeNarrator) {
                     narrator.updateOnlineTts(OnlineTtsConfig(true, endpoint, apiKey, model, voice, provider, language))
                     message = ""
                     editing = false
-                } catch (failure: Exception) { error = failure.message.orEmpty() }
+                } catch (_: Exception) { error = context.getString(R.string.localization_tts_settings_failed) }
             }) { Text(stringResource(R.string.p2_tts_save_enable)) } },
             dismissButton = { TextButton(onClick = { editing = false }) { Text(stringResource(R.string.cancel)) } })
     }

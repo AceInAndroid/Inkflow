@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.aceinandroid.inkflow.localization.LanguageSettingsRow
 import com.aceinandroid.inkflow.ai.NativeAiStore
 import com.aceinandroid.inkflow.ui.ai.AiSettingsScreen
 import com.aceinandroid.inkflow.core.ReaderEngineMode
@@ -107,6 +108,8 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            LanguageSettingsRow()
+            HorizontalDivider()
             Text(
                 stringResource(R.string.reading_settings),
                 style = MaterialTheme.typography.titleMedium,

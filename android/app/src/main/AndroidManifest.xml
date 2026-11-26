@@ -6,6 +6,8 @@
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
     </queries>
     <application
+        android:name=".localization.NativeLocaleApplication"
+        android:localeConfig="@xml/locales_config"
         android:allowBackup="false"
         android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
@@ -17,6 +19,7 @@
             android:foregroundServiceType="mediaPlayback" />
         <activity
             android:name="com.aceinandroid.inkflow.MainActivity"
+            android:configChanges="locale|layoutDirection"
             android:exported="true"
             android:launchMode="singleTop">
             <intent-filter>

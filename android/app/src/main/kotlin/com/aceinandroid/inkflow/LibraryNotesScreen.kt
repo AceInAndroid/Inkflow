@@ -496,8 +496,10 @@ fun LibraryNotesScreen(
                             Column(Modifier.fillMaxWidth()) {
                                 Text(stringResource(R.string.note_version_number, revisions.size - index),
                                     fontWeight = FontWeight.SemiBold)
-                                Text(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
-                                    .format(Date(revision.createdAt)),
+                                Text(DateFormat.getDateInstance(DateFormat.MEDIUM,
+                                    androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+                                    .format(Date(revision.createdAt)) + " " +
+                                    android.text.format.DateFormat.getTimeFormat(context).format(Date(revision.createdAt)),
                                     style = MaterialTheme.typography.bodySmall)
                                 Text(revision.title.ifBlank { revision.body }, maxLines = 2,
                                     overflow = TextOverflow.Ellipsis)

@@ -89,7 +89,7 @@ fun LookupSheet(
         try {
             entry = withContext(Dispatchers.IO) { dictionary.lookupOffline(query) }
         } catch (cancelled: CancellationException) { throw cancelled }
-        catch (failure: Exception) { onlineError = failure.message }
+        catch (_: Exception) { onlineError = context.getString(R.string.localization_dictionary_lookup_failed) }
         finally { loading = false }
     }
 
@@ -172,8 +172,8 @@ fun LookupSheet(
                                     val found = withContext(Dispatchers.IO) { dictionary.lookupOnline(query) }
                                     if (found != null) entry = found else onlineError = onlineNotFound
                                 } catch (cancelled: CancellationException) { throw cancelled }
-                                catch (failure: Exception) {
-                                    onlineError = failure.message
+                                catch (_: Exception) {
+                                    onlineError = context.getString(R.string.localization_dictionary_online_failed)
                                 } finally {
                                     loading = false
                                 }

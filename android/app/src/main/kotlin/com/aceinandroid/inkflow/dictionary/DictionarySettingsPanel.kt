@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.aceinandroid.inkflow.R
 import com.aceinandroid.inkflow.core.dictionary.ImportedDictionary
@@ -36,7 +38,7 @@ fun DictionarySettingsPanel(modifier: Modifier = Modifier, onChanged: () -> Unit
                 message = success
                 onChanged()
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { message = failure.message }
+            catch (_: Exception) { message = context.getString(R.string.localization_dictionary_update_failed) }
             finally { busy = false }
         }
     }
@@ -62,7 +64,9 @@ fun DictionarySettingsPanel(modifier: Modifier = Modifier, onChanged: () -> Unit
                     Text(stringResource(R.string.dictionary_entry_count, dictionary.entryCount),
                         style = MaterialTheme.typography.bodySmall)
                 }
+                val toggleLabel = stringResource(R.string.localization_dictionary_enabled, dictionary.name)
                 Switch(checked = dictionary.enabled, enabled = !busy,
+                    modifier = Modifier.semantics { contentDescription = toggleLabel },
                     onCheckedChange = { enabled -> runOperation { imports.repository.setEnabled(dictionary.id, enabled) } })
             }
         }

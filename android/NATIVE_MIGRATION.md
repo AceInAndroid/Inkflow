@@ -158,3 +158,25 @@ Run `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:assembleDebugAndro
 On Android 29 device `a15eae4`, eight instrumentation tests pass, including system TTS controls, persisted narration defaults, book removal, library-note filtering, reading-time aggregation, and a session spanning midnight. A `Target` highlight was saved in the second EPUB chapter, appeared in the library notes view, reopened at the target passage, and disappeared from the list after deletion. The notes export picker saved a Markdown file whose book, chapter, content, and CFI were checked on the device; the temporary highlight and file were then removed. The statistics view showed the current week and a compact month grid; choosing a day filtered the book list. The native settings screen and appearance dialog were inspected for text overlap and color consistency. The bookshelf removal menu and confirmation dialog were inspected without deleting the existing fixtures. A VIEW intent delivered to the already running `singleTop` activity reached the import handler; the test URI was deliberately invalid, so this checks dispatch rather than access to a real third-party document provider.
 
 From `android/`, run `./gradlew :app:assembleDebug :app:testDebugUnitTest`. The APK is `app/build/outputs/apk/debug/app-debug.apk`. Run `node app/src/test/fixtures/foliate_cfi_fixture.mjs` to generate CFI contract examples directly from the bundled foliate-js implementation. On an Android 29 device, the native app launched and created a v22 database with 44 tables and a successful SQLite integrity check. The rich EPUB fixture imports and displays its heading, styled text, and bitmap image without overlap. EPUB bookmarks were added, reopened after force-stop, navigated, and deleted on the device; a saved row was inspected in `tb_notes`. A two-chapter EPUB3 fixture with a nested table of contents opened its late second-chapter anchor; `tb_books.last_read_position` held `epubcfi(/6/4!/4/22/1:0)`, and the target heading remained visible after force-stop and reopening from the bookshelf. Searching from the first chapter found matches in both chapters, and choosing the late second-chapter result opened its target text and saved the second-chapter CFI. On the same device, long-press selected `Target` in the second chapter; the saved underline displayed in blue, its `tb_notes` row contained `epubcfi(/6/4!/4/22,/1:0,/1:6)`, and the note was editable from the annotation list. Choosing the annotation saved the collapsed text position in `tb_books.last_read_position`; force-stop and reopening restored the marked heading. Deleting the test annotation removed the database row and the visible underline. After paragraph splitting, long-pressing the late heading kept it onscreen; the nested TOC anchor and a full-book search result still navigated to that heading.
+
+
+## Android language selection (2026-11-26)
+
+The Android app now defaults to a device-local Automatic mode, resolving region,
+explicit IANA time zone, ordered raw system languages, then English. Settings has
+an immediate manual picker for Simplified Chinese, English, Japanese and Korean.
+Android 13+ application-language settings reconcile bidirectionally; Android
+12 and earlier retain ComponentActivity with configured resources. The locale
+preference is excluded from portable ZIP/WebDAV settings, with no schema change.
+
+Activity resources, Compose resources, existing dialogs, background media
+notifications and date/number presentation use the effective UI language. Stable
+contexts retain navigation and the current reader; existing reader save paths
+remain responsible for progress. Built-in Skills and statuses are localized by
+stable ID without translating stored content or triggering a model. Short-screen
+AI panels reserve room for translated controls and the composer. Both APK variants
+carry all four languages; AAB language splitting is disabled for offline selection.
+
+The exact contract, reproducible commands, device matrix and current validation
+results are recorded in [LOCALIZATION.md](LOCALIZATION.md). Earlier language
+smoke results above covered resource availability rather than this new controller.

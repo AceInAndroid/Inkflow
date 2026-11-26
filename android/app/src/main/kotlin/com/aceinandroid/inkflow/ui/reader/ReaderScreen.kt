@@ -610,7 +610,7 @@ private fun ReaderContent(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            snackbar.showSnackbar(failure.message ?: "Cannot search book")
+            snackbar.showSnackbar(context.getString(R.string.language_error_search))
         } finally {
             searching = false
         }
@@ -1581,7 +1581,7 @@ private fun ReaderContent(
                                     }
                                 }
                             } catch (failure: Exception) {
-                                snackbar.showSnackbar(failure.message ?: "Cannot save annotation")
+                                snackbar.showSnackbar(context.getString(R.string.language_error_save_annotation))
                             } finally {
                                 annotationSaving = false
                             }
@@ -1609,7 +1609,7 @@ private fun ReaderContent(
                                             }
                                         }
                                     } catch (failure: Exception) {
-                                        snackbar.showSnackbar(failure.message ?: "Cannot delete annotation")
+                                        snackbar.showSnackbar(context.getString(R.string.language_error_delete_annotation))
                                     } finally {
                                         annotationSaving = false
                                     }

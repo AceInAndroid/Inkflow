@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.aceinandroid.inkflow.R
+import com.aceinandroid.inkflow.ui.localization.localizedProviderName
 import com.aceinandroid.inkflow.ai.NativeAiGateway
 import com.aceinandroid.inkflow.ai.NativeAiStore
 import com.aceinandroid.inkflow.core.*
@@ -38,18 +40,24 @@ fun AiSettingsScreen(onDismiss: () -> Unit) {
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
             status = runCatching { withContext(Dispatchers.IO) {
-                val bytes = context.contentResolver.openInputStream(uri)?.use { input -> val output = java.io.ByteArrayOutputStream(); val buffer = ByteArray(8192); while (output.size() <= 128000) { val count = input.read(buffer, 0, minOf(buffer.size, 128001 - output.size())); if (count < 0) break; output.write(buffer, 0, count) }; output.toByteArray() } ?: error("Cannot read skill")
-                require(bytes.size <= 128000) { "Skill file is too large" }
+                val bytes = context.contentResolver.openInputStream(uri)?.use { input -> val output = java.io.ByteArrayOutputStream(); val buffer = ByteArray(8192); while (output.size() <= 128000) { val count = input.read(buffer, 0, minOf(buffer.size, 128001 - output.size())); if (count < 0) break; output.write(buffer, 0, count) }; output.toByteArray() } ?: error(context.getString(R.string.localization_skill_read_failed))
+                require(bytes.size <= 128000) { context.getString(R.string.localization_skill_too_large) }
                 store.importSkillJson(bytes.toString(Charsets.UTF_8))
-            }; customSkills = store.skills().skills.filter { it.id.startsWith("custom.") }; context.getString(R.string.ai_skill_imported) }.getOrElse { it.message.orEmpty() }
+            }; customSkills = store.skills().skills.filter { it.id.startsWith("custom.") }; context.getString(R.string.ai_skill_imported) }.getOrElse {
+                if (it is CancellationException) throw it
+                context.getString(R.string.localization_skill_import_failed)
+            }
         }
     }
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) scope.launch {
             status = runCatching { withContext(Dispatchers.IO) {
                 val json = store.exportSkillJson(exportId)
-                context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) } ?: error("Cannot export skill")
-            }; context.getString(R.string.ai_skill_exported) }.getOrElse { it.message.orEmpty() }
+                context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) } ?: error(context.getString(R.string.localization_skill_export_failed))
+            }; context.getString(R.string.ai_skill_exported) }.getOrElse {
+                if (it is CancellationException) throw it
+                context.getString(R.string.localization_skill_export_failed)
+            }
         }
     }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -60,13 +68,13 @@ fun AiSettingsScreen(onDismiss: () -> Unit) {
                 registry.providers.forEach { provider ->
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(12.dp)) {
-                            Text("${provider.name} · ${provider.config.model}")
-                            Text("${provider.apiKeys.filter(String::isNotBlank).size} ${stringResource(R.string.ai_key_count)}", style = MaterialTheme.typography.bodySmall)
+                            Text("${localizedProviderName(provider)} · ${provider.config.model}")
+                            Text(stringResource(R.string.localization_key_count, provider.apiKeys.filter(String::isNotBlank).size), style = MaterialTheme.typography.bodySmall)
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 FilterChip(selected = registry.conversationId == provider.id, onClick = { save(AiProviderRegistry(registry.providers, provider.id, registry.lightweightId)) }, label = { Text(stringResource(R.string.ai_role_main)) })
                                 FilterChip(selected = registry.lightweightId == provider.id, onClick = { save(AiProviderRegistry(registry.providers, registry.conversationId, if (registry.lightweightId == provider.id) null else provider.id)) }, label = { Text(stringResource(R.string.ai_role_light)) })
                             }
-                            Row {
+                            Row(Modifier.horizontalScroll(rememberScrollState())) {
                                 TextButton(enabled = !busy, onClick = { editing = provider }) { Text(stringResource(R.string.ai_edit_provider)) }
                                 TextButton(enabled = !busy, onClick = {
                                     busy = true
@@ -75,7 +83,7 @@ fun AiSettingsScreen(onDismiss: () -> Unit) {
                                             NativeAiGateway(context).testProvider(provider)
                                             status = context.getString(R.string.ai_test_ok)
                                         } catch (cancelled: CancellationException) { throw cancelled }
-                                        catch (failure: Exception) { status = failure.message.orEmpty() }
+                                        catch (_: Exception) { status = context.getString(R.string.localization_ai_test_failed) }
                                         finally { busy = false; usage = store.usageSummary() }
                                     }
                                 }) { Text(stringResource(R.string.ai_test_provider)) }

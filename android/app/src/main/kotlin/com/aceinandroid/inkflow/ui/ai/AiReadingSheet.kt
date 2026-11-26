@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -26,6 +27,9 @@ import com.aceinandroid.inkflow.R
 import com.aceinandroid.inkflow.ai.*
 import com.aceinandroid.inkflow.core.*
 import com.aceinandroid.inkflow.core.ai.*
+import com.aceinandroid.inkflow.ui.localization.localizedAiProvider
+import com.aceinandroid.inkflow.ui.localization.localizedSkillTitle
+import com.aceinandroid.inkflow.ui.localization.localizedSkillSummary
 import kotlinx.coroutines.*
 import java.util.Locale
 import java.util.UUID
@@ -117,8 +121,8 @@ fun AiReadingSheet(
                 usage = "${result.usage.input} + ${result.usage.output}${if (result.usage.estimated) " ≈" else ""}"
             } catch (cancelled: CancellationException) {
                 throw cancelled
-            } catch (failure: Exception) {
-                messages = messages.map { if (it.id == assistant.id) it.copy(content = buffer.toString() + "\n[${failure.message}]", isError = true) else it }
+            } catch (_: Exception) {
+                messages = messages.map { if (it.id == assistant.id) it.copy(content = buffer.toString() + "\n[${context.getString(R.string.localization_ai_request_failed)}]", isError = true) else it }
                 draft = prompt
             } finally {
                 persist(requestSession, messages, frozen, selectedSkill, selectedConfig)
@@ -140,8 +144,10 @@ fun AiReadingSheet(
     DisposableEffect(bookId) { onDispose { activeJob?.cancel() } }
     LaunchedEffect(visibleMessages.size) { if (visibleMessages.isNotEmpty()) listState.scrollToItem(visibleMessages.lastIndex) }
 
+    // Short screens need room for translated controls and the composer below the header.
+    val compactHeight = LocalConfiguration.current.screenHeightDp < 720
     val panel: @Composable () -> Unit = {
-        Column(Modifier.fillMaxWidth().fillMaxHeight(if (docked || expanded) 1f else .56f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(if (docked || expanded) 1f else if (compactHeight) .92f else .56f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             requestError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.ai_assistant), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
@@ -151,7 +157,7 @@ fun AiReadingSheet(
             }
             if (book != null && store != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = !bookTab, onClick = { bookTab = false }, label = { Text("AI") })
+                    FilterChip(selected = !bookTab, onClick = { bookTab = false }, label = { Text(stringResource(R.string.localization_ai_label)) })
                     FilterChip(selected = bookTab, onClick = { bookTab = true }, label = { Text(stringResource(R.string.ai_book_hub)) })
                 }
             }
@@ -159,11 +165,11 @@ fun AiReadingSheet(
                 BookHubContent(book, store, snapshot, onOpenSource)
             } else {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(enabled = !streaming, onClick = { sessionsOpen = true }) {
+                    TextButton(modifier = Modifier.weight(1f), enabled = !streaming, onClick = { sessionsOpen = true }) {
                         Text(sessionList.firstOrNull { it.id == activeId }?.title?.take(20) ?: stringResource(R.string.ai_new_session), maxLines = 1)
                     }
-                    TextButton(enabled = !streaming, onClick = { skillOpen = true }) {
-                        Text(aiStore.skills().find(skillId)?.title ?: stringResource(R.string.ai_skill))
+                    TextButton(modifier = Modifier.weight(1f), enabled = !streaming, onClick = { skillOpen = true }) {
+                        Text(aiStore.skills().find(skillId)?.let { localizedSkillTitle(it) } ?: stringResource(R.string.ai_skill))
                     }
                     if (usage.isNotBlank()) Text(usage, style = MaterialTheme.typography.labelSmall)
                 }
@@ -185,7 +191,7 @@ fun AiReadingSheet(
                     items(visibleMessages, key = { it.id }) { message ->
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(if (message.role == AiRole.USER) stringResource(R.string.ai_you) else "AI", style = MaterialTheme.typography.labelSmall)
+                                Text(if (message.role == AiRole.USER) stringResource(R.string.ai_you) else stringResource(R.string.localization_ai_label), style = MaterialTheme.typography.labelSmall)
                                 message.quote?.takeIf(String::isNotBlank)?.let { Text(it.take(400), style = MaterialTheme.typography.bodySmall) }
                                 androidx.compose.foundation.text.selection.SelectionContainer { Text(message.content) }
                                 if (message.role == AiRole.ASSISTANT && message.content.isNotBlank() && !message.isError && !streaming) {
@@ -218,7 +224,7 @@ fun AiReadingSheet(
 
     if (settingsOpen) AiSettingsScreen(onDismiss = { config = aiStore.loadConfig(); settingsOpen = false })
     if (skillOpen) AlertDialog(onDismissRequest = { skillOpen = false }, title = { Text(stringResource(R.string.ai_skill)) }, text = {
-        LazyColumn { items(aiStore.skills().skills) { skill -> TextButton(onClick = { skillId = skill.id; skillOpen = false }) { Column { Text(skill.title); Text(skill.summary, style = MaterialTheme.typography.bodySmall) } } } }
+        LazyColumn { items(aiStore.skills().skills) { skill -> TextButton(onClick = { skillId = skill.id; skillOpen = false }) { Column { Text(localizedSkillTitle(skill)); Text(localizedSkillSummary(skill), style = MaterialTheme.typography.bodySmall) } } } }
     }, confirmButton = { TextButton(onClick = { skillOpen = false }) { Text(stringResource(R.string.close)) } })
     if (sessionsOpen) AlertDialog(onDismissRequest = { sessionsOpen = false }, title = { Text(stringResource(R.string.ai_sessions)) }, text = {
         LazyColumn {
@@ -273,7 +279,7 @@ fun AiProviderConfigDialog(
                                 baseUrl = entry.defaultBaseUrl
                                 model = entry.defaultModel
                             },
-                            label = { Text(entry.displayName) },
+                            label = { Text(localizedAiProvider(entry)) },
                         )
                     }
                 }

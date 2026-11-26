@@ -1,6 +1,9 @@
 package com.aceinandroid.inkflow
 
 import android.app.Notification
+import android.content.res.Configuration
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
+import com.aceinandroid.inkflow.localization.NativeLocaleController
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -21,6 +24,28 @@ class NarrationPlaybackService : Service() {
     private var narrator: NativeNarrator? = null
     private var title = ""
     private var foreground = false
+    private val localeContext by lazy { NativeLocaleContext(this) }
+    private val languageChanged: () -> Unit = { refreshLanguage() }
+    private fun refreshChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
+                NotificationChannel(CHANNEL, localeContext.getString(R.string.narration_channel), NotificationManager.IMPORTANCE_LOW)
+            )
+        }
+    }
+    @android.annotation.SuppressLint("NotificationPermission") // Media-session notification only.
+    private fun refreshLanguage() {
+        refreshChannel()
+        val state = narrator?.state
+        if (foreground && state in setOf(NarrationState.PLAYING, NarrationState.PAUSED, NarrationState.PREPARING)) {
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .notify(NOTIFICATION_ID, notification(state!!))
+        }
+    }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        refreshLanguage()
+    }
     private val endPlayback = Runnable {
         if (narrator?.state !in setOf(NarrationState.PLAYING, NarrationState.PAUSED, NarrationState.PREPARING))
             stopSelf()
@@ -28,11 +53,8 @@ class NarrationPlaybackService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
-                NotificationChannel(CHANNEL, getString(R.string.narration_channel), NotificationManager.IMPORTANCE_LOW)
-            )
-        }
+        refreshChannel()
+        NativeLocaleController.addListener(languageChanged)
         mediaSession = MediaSession(this, "Inkflow narration").apply {
             setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
             setCallback(object : MediaSession.Callback() {
@@ -45,9 +67,7 @@ class NarrationPlaybackService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        title = intent?.getStringExtra(EXTRA_TITLE).orEmpty().ifBlank {
-            title.ifBlank { getString(R.string.read_aloud) }
-        }
+        intent?.getStringExtra(EXTRA_TITLE)?.let { title = it }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !foreground) {
             startForeground(NOTIFICATION_ID, notification(NarrationState.PREPARING))
             foreground = true
@@ -70,6 +90,7 @@ class NarrationPlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        NativeLocaleController.removeListener(languageChanged)
         handler.removeCallbacks(endPlayback)
         narrator?.onStateChanged = null
         if (narrator?.state in setOf(NarrationState.PLAYING, NarrationState.PAUSED, NarrationState.PREPARING))
@@ -132,8 +153,8 @@ class NarrationPlaybackService : Service() {
             Notification.Builder(this, CHANNEL) else Notification.Builder(this)
         val result = builder
             .setSmallIcon(android.R.drawable.ic_media_play)
-            .setContentTitle(title)
-            .setContentText(getString(when (state) {
+            .setContentTitle(title.ifBlank { localeContext.getString(R.string.read_aloud) })
+            .setContentText(localeContext.getString(when (state) {
                 NarrationState.PLAYING -> R.string.narration_playing
                 NarrationState.PAUSED -> R.string.narration_paused
                 else -> R.string.narration_preparing
@@ -143,9 +164,9 @@ class NarrationPlaybackService : Service() {
             .setOnlyAlertOnce(true)
             .setOngoing(playing)
         if (state != NarrationState.PREPARING)
-            result.addAction(Notification.Action.Builder(toggleIcon, getString(toggleLabel), action(toggle, 1)).build())
+            result.addAction(Notification.Action.Builder(toggleIcon, localeContext.getString(toggleLabel), action(toggle, 1)).build())
         result.addAction(Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel,
-            getString(R.string.stop), action(ACTION_STOP, 2)).build())
+            localeContext.getString(R.string.stop), action(ACTION_STOP, 2)).build())
         val style = Notification.MediaStyle().setMediaSession(mediaSession.sessionToken)
         if (state == NarrationState.PREPARING) style.setShowActionsInCompactView(0)
         else style.setShowActionsInCompactView(0, 1)

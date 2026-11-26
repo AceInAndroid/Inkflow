@@ -11,16 +11,19 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalContext
 import com.aceinandroid.inkflow.ReaderAppearance
 import kotlinx.coroutines.delay
-import java.text.DateFormat
 import java.util.Date
 
 @Composable
 internal fun ReaderRunningStatus(appearance: ReaderAppearance, progress: String = "") {
     val context = LocalContext.current
-    val status by produceState("", appearance.showTime, appearance.showBattery, progress) {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val status by produceState("", appearance.showTime, appearance.showBattery, progress, locale) {
         do {
             val parts = mutableListOf(progress)
-            if (appearance.showTime) parts += DateFormat.getTimeInstance(DateFormat.SHORT).format(Date())
+            if (appearance.showTime) parts += android.text.format.DateFormat.getBestDateTimePattern(locale,
+                if (android.text.format.DateFormat.is24HourFormat(context)) "Hm" else "hm").let {
+                    java.text.SimpleDateFormat(it, locale).format(Date())
+                }
             if (appearance.showBattery) {
                 val battery = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
                 val level = battery?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1

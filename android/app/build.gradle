@@ -30,6 +30,9 @@ android {
         }
     }
 
+    // All four UI languages must remain available for offline runtime selection.
+    bundle { language { enableSplit = false } }
+
     buildFeatures {
         compose true
         buildConfig true
@@ -81,7 +84,8 @@ tasks.register('prepareFullOfflineAssets', Sync) {
     into layout.buildDirectory.dir('generated/fullOfflineAssets')
 }
 tasks.configureEach { task ->
-    if (task.name.startsWith('mergeFullOcr') && task.name.endsWith('Assets')) {
+    if ((task.name.startsWith('mergeFullOcr') && task.name.endsWith('Assets')) ||
+        (task.name.toLowerCase().contains('fullocr') && task.name.toLowerCase().contains('lint'))) {
         task.dependsOn('prepareFullOfflineAssets')
     }
 }

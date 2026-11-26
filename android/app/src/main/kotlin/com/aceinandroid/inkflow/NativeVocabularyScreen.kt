@@ -206,7 +206,7 @@ internal fun NativeVocabularyScreen(store: NativeVocabularyStore, onBack: () -> 
                 if (source.isNotBlank()) Text(source, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(R.string.vocabulary_next_review,
-                    DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(entry.nextReviewAt))),
+                    DateFormat.getDateInstance(DateFormat.MEDIUM, androidx.compose.ui.platform.LocalConfiguration.current.locales[0]).format(Date(entry.nextReviewAt))),
                     style = MaterialTheme.typography.bodySmall)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     VocabularyAction(stringResource(R.string.vocabulary_hard)) {

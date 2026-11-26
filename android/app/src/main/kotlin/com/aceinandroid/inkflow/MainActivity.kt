@@ -1,5 +1,13 @@
 package com.aceinandroid.inkflow
 
+import android.content.res.Configuration
+import android.content.Context
+import android.content.res.Resources
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
+import com.aceinandroid.inkflow.localization.LocalizedApp
+import com.aceinandroid.inkflow.localization.NativeLocaleController
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.Saver
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -68,12 +76,30 @@ class MainActivity : ComponentActivity() {
     internal var readerKeyHandler: ((Int) -> Boolean)? = null
     private val consumedPageKeys = mutableSetOf<Int>()
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(NativeLocaleContext(newBase))
+    }
+
+    // Compose dialogs create their own resource locals from the Activity's View context.
+    // Read through the stable wrapper instead of ContextThemeWrapper's cached Resources.
+    override fun getResources(): Resources = baseContext?.resources ?: super.getResources()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         NativeBackupManager(applicationContext).recoverInterrupted()
         PDFBoxResourceLoader.init(applicationContext)
         incomingIntent = intent
-        setContent { NativeApp(incomingIntent) }
+        setContent { LocalizedApp { NativeApp(incomingIntent) } }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        NativeLocaleController.refresh()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        NativeLocaleController.refresh()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -145,10 +171,12 @@ private fun NativeApp(initialIntent: Intent?) {
 
     var eInkConfig by remember { mutableStateOf(controlsStore.eInkConfig()) }
     var books by remember { mutableStateOf(store.all()) }
-    var selected by remember { mutableStateOf<StoredBook?>(null) }
-    var selectedOffset by remember { mutableStateOf<Int?>(null) }
+    var selected by rememberSaveable(stateSaver = Saver<StoredBook?, Long>(
+        save = { it?.id ?: -1L }, restore = { id -> store.all().firstOrNull { it.id == id } },
+    )) { mutableStateOf<StoredBook?>(null) }
+    var selectedOffset by rememberSaveable { mutableStateOf<Int?>(null) }
     var foregroundRevision by remember { mutableIntStateOf(0) }
-    var activeTab by remember { mutableStateOf(HomeTab.LIBRARY) }
+    var activeTab by rememberSaveable { mutableStateOf(HomeTab.LIBRARY) }
     var libraryNotes by remember { mutableStateOf<List<LibraryNote>>(emptyList()) }
     var notesLoading by remember { mutableStateOf(false) }
     var readingSummary by remember { mutableStateOf(ReadingSummary(0, 0, 0, emptyList(), emptyList())) }
@@ -273,7 +301,7 @@ private fun NativeApp(initialIntent: Intent?) {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            snackbar.showSnackbar(failure.message ?: "Cannot load notes")
+            snackbar.showSnackbar(context.getString(R.string.language_error_load_notes))
         } finally {
             notesLoading = false
         }
@@ -287,7 +315,7 @@ private fun NativeApp(initialIntent: Intent?) {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            snackbar.showSnackbar(failure.message ?: "Cannot load reading statistics")
+            snackbar.showSnackbar(context.getString(R.string.language_error_statistics))
         } finally {
             statisticsLoading = false
         }
@@ -456,7 +484,7 @@ private fun NativeApp(initialIntent: Intent?) {
                                 withContext(Dispatchers.IO) { store.removeBook(book.id) }
                                 books = withContext(Dispatchers.IO) { store.all() }
                             } catch (failure: Exception) {
-                                snackbar.showSnackbar(failure.message ?: "Cannot remove book")
+                                snackbar.showSnackbar(context.getString(R.string.language_error_remove_book))
                             }
                         }
                     }) { Text(stringResource(R.string.remove_book)) }

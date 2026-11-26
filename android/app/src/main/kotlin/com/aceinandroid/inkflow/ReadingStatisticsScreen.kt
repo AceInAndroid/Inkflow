@@ -61,6 +61,7 @@ fun ReadingStatisticsScreen(
     var period by remember { mutableStateOf(ReadingPeriod.WEEK) }
     var offset by remember { mutableIntStateOf(0) }
     var selectedKey by remember { mutableStateOf<String?>(null) }
+    val uiLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val periodData = remember(summary, period, offset, selectedKey) {
         readingPeriodData(summary, period, offset, selectedKey)
     }
@@ -80,9 +81,9 @@ fun ReadingStatisticsScreen(
                 StatisticValue(stringResource(R.string.total_reading_time),
                     durationText(summary.totalSeconds), Modifier.weight(1.4f))
                 StatisticValue(stringResource(R.string.reading_days),
-                    summary.daysRead.toString(), Modifier.weight(1f))
+                    java.text.NumberFormat.getIntegerInstance(uiLocale).format(summary.daysRead), Modifier.weight(1f))
                 StatisticValue(stringResource(R.string.books_read),
-                    summary.booksRead.toString(), Modifier.weight(1f))
+                    java.text.NumberFormat.getIntegerInstance(uiLocale).format(summary.booksRead), Modifier.weight(1f))
             }
             HorizontalDivider()
             YearlyReadingHeatmap(summary)
@@ -108,7 +109,11 @@ fun ReadingStatisticsScreen(
                     offset--
                     selectedKey = null
                 }) { Icon(Icons.Default.ChevronLeft, stringResource(R.string.previous_period)) }
-                Text(periodData.title ?: stringResource(R.string.period_all),
+                Text(when (period) {
+                    ReadingPeriod.ALL -> stringResource(R.string.period_all)
+                    ReadingPeriod.WEEK -> "${localizedDateKey(periodData.buckets.first().key)} – ${localizedDateKey(periodData.buckets.last().key)}"
+                    else -> localizedDateKey(periodData.title.orEmpty())
+                },
                     modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold)
                 if (period != ReadingPeriod.ALL) IconButton(onClick = {
@@ -146,7 +151,7 @@ fun ReadingStatisticsScreen(
                             }.background(if (periodData.selectedKey == bucket.key)
                                 MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
                                 .padding(6.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                                Text(bucket.label, style = MaterialTheme.typography.bodySmall)
+                                Text(if (period == ReadingPeriod.WEEK) localizedDateKey(bucket.key, short = true) else bucket.label, style = MaterialTheme.typography.bodySmall)
                                 Box(Modifier.fillMaxWidth().height(4.dp)
                                     .background(MaterialTheme.colorScheme.surfaceVariant)) {
                                     if (bucket.seconds > 0) Box(Modifier
@@ -165,7 +170,7 @@ fun ReadingStatisticsScreen(
                     .padding(vertical = 8.dp, horizontal = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically) {
-                    Text(bucket.label, style = MaterialTheme.typography.bodySmall)
+                    Text(if (period == ReadingPeriod.WEEK) localizedDateKey(bucket.key, short = true) else bucket.label, style = MaterialTheme.typography.bodySmall)
                     Box(Modifier.weight(1f).height(8.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant)) {
                         if (bucket.seconds > 0) Box(Modifier.fillMaxWidth(bucket.seconds.toFloat() / maximum)
@@ -178,7 +183,7 @@ fun ReadingStatisticsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             HorizontalDivider()
             Text(if (periodData.selectedKey == null) stringResource(R.string.books_by_reading_time)
-                else stringResource(R.string.books_for_period, periodData.selectedKey),
+                else stringResource(R.string.books_for_period, localizedDateKey(periodData.selectedKey)),
                 style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             if (periodData.books.isEmpty()) Text(stringResource(R.string.no_reading_history),
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -246,7 +251,8 @@ private fun YearlyReadingHeatmap(summary: ReadingSummary) {
             }
         }
         val slots = List(data.leadingEmptySlots) { null } + data.days
-        val weekdays = remember { DateFormatSymbols(Locale.getDefault()).shortWeekdays }
+        val uiLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+        val weekdays = remember(uiLocale) { DateFormatSymbols(uiLocale).shortWeekdays }
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -266,7 +272,7 @@ private fun YearlyReadingHeatmap(summary: ReadingSummary) {
                                 day.seconds < 3600 -> 3
                                 else -> 4
                             }
-                            val label = "${day.date}: ${durationText(day.seconds)}"
+                            val label = "${localizedDateKey(day.date)}: ${durationText(day.seconds)}"
                             Box(Modifier.size(22.dp).background(if (day.future)
                                 MaterialTheme.colorScheme.surface else colors[level])
                                 .semantics { contentDescription = label }
@@ -278,10 +284,25 @@ private fun YearlyReadingHeatmap(summary: ReadingSummary) {
         }
         selectedDate?.let { date ->
             data.days.firstOrNull { it.date == date }?.let { day ->
-                Text("$date · ${durationText(day.seconds)}", style = MaterialTheme.typography.bodyMedium)
+                Text("${localizedDateKey(date)} · ${durationText(day.seconds)}", style = MaterialTheme.typography.bodyMedium)
             }
         }
         Text(stringResource(R.string.p2_heatmap_legend), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Presentation only: ISO keys remain unchanged for storage, grouping and synchronization. */
+@Composable
+private fun localizedDateKey(key: String, short: Boolean = false): String {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    return remember(key, locale, short) {
+        val sourcePattern = when (key.length) { 10 -> "yyyy-MM-dd"; 7 -> "yyyy-MM"; 4 -> "yyyy"; else -> null }
+        val skeleton = when (key.length) { 10 -> if (short) "MMMd" else "yMMMd"; 7 -> "yMMM"; else -> "y" }
+        if (sourcePattern == null) key else runCatching {
+            val date = java.text.SimpleDateFormat(sourcePattern, Locale.US).apply { isLenient = false }.parse(key)
+            val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, skeleton)
+            java.text.SimpleDateFormat(pattern, locale).format(requireNotNull(date))
+        }.getOrDefault(key)
     }
 }

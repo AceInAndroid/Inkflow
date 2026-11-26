@@ -63,10 +63,10 @@ fun ReaderNarrationDialog(
                         Icon(Icons.Default.Stop, stringResource(R.string.stop))
                     }
                 }
-                Text("${stringResource(R.string.speech_rate)}: ${"%.1f".format(rate)}")
+                Text(stringResource(R.string.localization_speech_rate, rate))
                 Slider(value = rate, onValueChange = { onRateChange((it * 10).roundToInt() / 10f) },
                     valueRange = 0.1f..4f, steps = 38)
-                Text("${stringResource(R.string.speech_pitch)}: ${"%.1f".format(pitch)}")
+                Text(stringResource(R.string.localization_speech_pitch, pitch))
                 Slider(value = pitch, onValueChange = { onPitchChange((it * 10).roundToInt() / 10f) },
                     valueRange = 0.5f..2f, steps = 14)
                 SpeechVoiceSelector(voices, selectedVoiceName, onVoiceChange)

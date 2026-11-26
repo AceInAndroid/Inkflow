@@ -22,6 +22,8 @@ import com.aceinandroid.inkflow.StoredBook
 import com.aceinandroid.inkflow.ai.*
 import com.aceinandroid.inkflow.core.ReadingContextSnapshot
 import com.aceinandroid.inkflow.core.ai.*
+import com.aceinandroid.inkflow.ui.localization.localizedUndoResult
+import com.aceinandroid.inkflow.ui.localization.taskStatusString
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -66,7 +68,6 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
     var activeJob by remember(book.id) { mutableStateOf<Job?>(null) }
     val errorMessage = stringResource(R.string.p1_error)
     val emptyMessage = stringResource(R.string.p1_generate_empty)
-    val undoFormat = stringResource(R.string.p1_undo_result)
 
     suspend fun refresh() {
         val data = withContext(Dispatchers.IO) {
@@ -153,7 +154,7 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
         items(taskRows, key = { "task:${it.id}" }) { task ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(stringResource(R.string.p1_task_status, task.state.status, (task.state.progress * 100).toInt()))
+                    Text(stringResource(R.string.p1_task_status, stringResource(taskStatusString(task.state.status)), (task.state.progress * 100).toInt()))
                     if (task.state.type in ReadingTaskStateMachine.supportedTypes) Text(stringResource(when (task.state.type) {
                         "native.book.atlas.v1" -> R.string.p1_generate_atlas
                         "native.book.notes.v1" -> R.string.p1_generate_notes
@@ -163,8 +164,8 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
                     if (task.state.type !in ReadingTaskStateMachine.supportedTypes) Text(stringResource(R.string.p1_task_unknown))
                     else {
                         if (task.state.status == "paused") Text(stringResource(R.string.p1_task_paused), style = MaterialTheme.typography.bodySmall)
-                        task.error?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (!task.error.isNullOrBlank()) Text(stringResource(R.string.p1_error), style = MaterialTheme.typography.bodySmall)
+                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (task.state.status in setOf("paused", "failed", "queued")) TextButton(enabled = !busy, onClick = { runTask(task) }) {
                                 Text(stringResource(if (task.state.status == "failed") R.string.p1_retry else R.string.p1_resume))
                             }
@@ -343,7 +344,7 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
                     scope.launch {
                         try {
                             val result = withContext(Dispatchers.IO) { actions.undo(action.id) }
-                            message = undoFormat.format(result.name)
+                            message = context.getString(R.string.p1_undo_result, context.localizedUndoResult(result))
                             refresh()
                         } catch (_: Exception) { message = errorMessage }
                     }
