@@ -14,6 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +25,7 @@ class ReadingNoteWorkspaceUiTest {
     @Test fun editorAndCreationWorkOnDevice() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
+        val localized = NativeLocaleContext(context)
         val store = BookStore(context)
         val db = store.writableDatabase
         val bookId = db.insertOrThrow("tb_books", null, ContentValues().apply {
@@ -69,75 +71,75 @@ class ReadingNoteWorkspaceUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
-            click(context.getString(R.string.reading_notes))
+            click(localized.getString(R.string.reading_notes))
             assertNotNull(waitFor("Workspace UI note"))
             val listLabels = mutableListOf<String>()
             collectLabels(instrumentation.uiAutomation.rootInActiveWindow, listLabels)
             assertEquals(1, listLabels.count { it == "Visible body" })
-            click(context.getString(R.string.note_edit))
-            assertNotNull(waitFor(context.getString(R.string.note_save_version)))
+            click(localized.getString(R.string.note_edit))
+            assertNotNull(waitFor(localized.getString(R.string.note_save_version)))
             assertNotNull(waitFor("Visible body"))
-            setField(context.getString(R.string.note_new_checklist_item), "Device checklist")
+            setField(localized.getString(R.string.note_new_checklist_item), "Device checklist")
             hideKeyboard(instrumentation, activity!!)
-            tap(context.getString(R.string.note_add_checklist))
+            tap(localized.getString(R.string.note_add_checklist))
             waitUntil { workspace.blocks(noteId).any {
                 it.type == "checklist" && it.content == "Device checklist"
             } }
-            click(context.getString(R.string.note_edit_checklist))
-            setField(context.getString(R.string.note_checklist_item), "Edited on device")
-            clickLast(context.getString(R.string.save))
+            click(localized.getString(R.string.note_edit_checklist))
+            setField(localized.getString(R.string.note_checklist_item), "Edited on device")
+            clickLast(localized.getString(R.string.save))
             waitUntil { workspace.blocks(noteId).any {
                 it.type == "checklist" && it.content == "Edited on device"
             } }
-            click(context.getString(R.string.note_delete_checklist))
-            clickDialogAction(context.getString(R.string.note_delete_checklist))
+            click(localized.getString(R.string.note_delete_checklist))
+            clickDialogAction(localized.getString(R.string.note_delete_checklist))
             waitUntil { workspace.blocks(noteId).none { it.type == "checklist" } }
             assertNotNull(waitFor("AI fixture summary"))
-            click(context.getString(R.string.note_copy_ai_to_body))
+            click(localized.getString(R.string.note_copy_ai_to_body))
             assertNotNull(waitFor("Visible body\n\nAI fixture summary"))
-            click(context.getString(R.string.cancel))
+            click(localized.getString(R.string.cancel))
             waitUntil {
                 find(instrumentation.uiAutomation.rootInActiveWindow,
-                    context.getString(R.string.note_save_version)) == null
+                    localized.getString(R.string.note_save_version)) == null
             }
             SystemClock.sleep(500)
             assertEquals(1, store.libraryNotes().count { it.workspaceId == noteId })
             assertNotNull(waitFor("Workspace UI note"))
-            assertNotNull(waitFor(context.getString(R.string.note_select, "Workspace UI note")))
-            click(context.getString(R.string.note_edit))
-            click(context.getString(R.string.note_history))
-            assertNotNull(waitFor(context.getString(R.string.note_version_number, 1)))
-            click(context.getString(R.string.note_version_number, 1))
+            assertNotNull(waitFor(localized.getString(R.string.note_select, "Workspace UI note")))
+            click(localized.getString(R.string.note_edit))
+            click(localized.getString(R.string.note_history))
+            assertNotNull(waitFor(localized.getString(R.string.note_version_number, 1)))
+            click(localized.getString(R.string.note_version_number, 1))
             assertNotNull(waitFor("Old body"))
-            clickLast(context.getString(R.string.note_restore_version))
+            clickLast(localized.getString(R.string.note_restore_version))
             waitUntil { store.libraryNotes().any { it.workspaceId == noteId && it.readerNote == "Old body" } }
             waitUntil { find(instrumentation.uiAutomation.rootInActiveWindow,
-                context.getString(R.string.note_restore_version)) == null }
+                localized.getString(R.string.note_restore_version)) == null }
             assertNotNull(waitFor("Old body"))
-            click(context.getString(R.string.cancel))
+            click(localized.getString(R.string.cancel))
             waitUntil { find(instrumentation.uiAutomation.rootInActiveWindow,
-                context.getString(R.string.note_save_version)) == null }
-            click(context.getString(R.string.note_new))
+                localized.getString(R.string.note_save_version)) == null }
+            click(localized.getString(R.string.note_new))
             SystemClock.sleep(300)
             clickLast("Workspace UI fixture")
-            assertNotNull(waitFor(context.getString(R.string.note_new)))
-            assertNotNull(waitFor(context.getString(R.string.note_title)))
-            setField(context.getString(R.string.note_title), "Created on device")
-            setField(context.getString(R.string.note_body), "Device body")
+            assertNotNull(waitFor(localized.getString(R.string.note_new)))
+            assertNotNull(waitFor(localized.getString(R.string.note_title)))
+            setField(localized.getString(R.string.note_title), "Created on device")
+            setField(localized.getString(R.string.note_body), "Device body")
             assertNotNull(waitFor("Created on device"))
             assertNotNull(waitFor("Device body"))
             SystemClock.sleep(300)
-            click(context.getString(R.string.save))
+            click(localized.getString(R.string.save))
             waitUntil { find(instrumentation.uiAutomation.rootInActiveWindow,
-                context.getString(R.string.note_title)) == null }
+                localized.getString(R.string.note_title)) == null }
             assertNotNull(waitFor("Created on device"))
             val created = store.libraryNotes().single { it.book.id == bookId && it.title == "Created on device" }
             createdNoteId = created.workspaceId
             assertEquals("Device body", created.readerNote)
             hideKeyboard(instrumentation, activity!!)
-            tap(context.getString(R.string.note_select, "Created on device"))
-            assertNotNull(waitFor(context.getString(R.string.note_selected, 1)))
-            click(context.getString(R.string.note_archive))
+            tap(localized.getString(R.string.note_select, "Created on device"))
+            assertNotNull(waitFor(localized.getString(R.string.note_selected, 1)))
+            click(localized.getString(R.string.note_archive))
             waitUntil {
                 store.libraryNotes().any { it.workspaceId == createdNoteId && it.status == "archived" }
             }
@@ -239,9 +241,7 @@ class ReadingNoteWorkspaceUiTest {
             }
             SystemClock.sleep(100)
         }
-        val visible = mutableListOf<String>()
-        collectLabels(InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow, visible)
-        throw AssertionError("Missing $label; visible: ${visible.joinToString()}")
+        throw AssertionError("Missing expected label: $label")
     }
 
     private fun collectLabels(node: AccessibilityNodeInfo?, labels: MutableList<String>) {

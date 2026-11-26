@@ -3,13 +3,18 @@ package com.aceinandroid.inkflow
 import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
+import android.os.Bundle
 import android.os.SystemClock
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -42,10 +47,10 @@ class ReaderVolumeKeysTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
-            click(title)
+            openLibraryBook(requireNotNull(activity), title)
             waitUntil { findOnScreen("1 / 2") != null &&
                 findOnScreen("Line 1 has enough words to fill the reader page.") != null }
-            click(context.getString(R.string.next))
+            click(NativeLocaleContext(context).getString(R.string.next))
             waitUntil { findOnScreen("2 / 2") != null && findOnScreen("Last chapter.") != null }
             dispatchPageKey(activity as MainActivity, KeyEvent.KEYCODE_VOLUME_UP)
             try {
@@ -85,7 +90,7 @@ class ReaderVolumeKeysTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
-            click(title)
+            openLibraryBook(requireNotNull(activity), title)
             waitUntil { findOnScreen("1 / 2") != null && findOnScreen("First.") != null }
             dispatchPageKey(activity as MainActivity, KeyEvent.KEYCODE_VOLUME_DOWN)
             waitUntil { findOnScreen("2 / 2") != null &&
@@ -136,9 +141,81 @@ class ReaderVolumeKeysTest {
         }
     }
 
-    private fun click(label: String) {
+    private fun openLibraryBook(activity: android.app.Activity, title: String) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.waitForIdleSync()
+        waitUntil("library search ready after splash") {
+            findNode { it.isVisibleToUser && it.isEditable } != null &&
+                findOnScreen("A modern reader, elevated by AI.") == null
+        }
+        dismissLibraryKeyboard(activity)
+        val search = requireNotNull(findNode { it.isVisibleToUser && it.isEditable })
+        assertTrue("Cannot filter imported fixture", search.performAction(
+            AccessibilityNodeInfo.ACTION_SET_TEXT,
+            Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, title) },
+        ))
+        // ACTION_SET_TEXT can reopen the IME. Settle it before locating the result or measuring pages.
+        dismissLibraryKeyboard(activity)
+        var nextScrollAt = 0L
+        waitUntil("filtered fixture visible after scrolling") {
+            if (findOnScreen(title, nonEditable = true) != null) {
+                true
+            } else {
+                val now = SystemClock.uptimeMillis()
+                if (now >= nextScrollAt) {
+                    // Select the vertical results grid/list, never the horizontal group chips.
+                    findNode { node -> node.isVisibleToUser && node.isScrollable && node.actionList.any {
+                        it.id == AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                    } }?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                    nextScrollAt = now + 300
+                }
+                false
+            }
+        }
+        click(title, nonEditable = true)
+    }
+
+    private fun dismissLibraryKeyboard(activity: android.app.Activity) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.waitForIdleSync()
+        val settings = NativeLocaleContext(instrumentation.targetContext).getString(R.string.settings)
+        var backSent = false
+        var hiddenSince: Long? = null
+        waitUntil("library keyboard stably hidden with Settings visible") {
+            var imeVisible: Boolean? = null
+            var windowFocused = false
+            instrumentation.runOnMainSync {
+                val decor = activity.window.decorView
+                imeVisible = ViewCompat.getRootWindowInsets(decor)?.isVisible(WindowInsetsCompat.Type.ime())
+                windowFocused = decor.hasWindowFocus()
+            }
+            if (imeVisible != false || !windowFocused) {
+                hiddenSince = null
+                if (imeVisible == true && windowFocused) {
+                    if (!backSent) {
+                        // Send Back once, only with a visibly open IME; never navigate from a hidden IME.
+                        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+                        backSent = true
+                    } else {
+                        instrumentation.runOnMainSync {
+                            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                                .hide(WindowInsetsCompat.Type.ime())
+                        }
+                    }
+                }
+                false
+            } else {
+                val now = SystemClock.uptimeMillis()
+                if (hiddenSince == null) hiddenSince = now
+                now - requireNotNull(hiddenSince) >= 500 && findNode { it.isVisibleToUser &&
+                    (it.text?.toString() == settings || it.contentDescription?.toString() == settings) } != null
+            }
+        }
+    }
+
+    private fun click(label: String, nonEditable: Boolean = false) {
         var found: AccessibilityNodeInfo? = null
-        waitUntil { findOnScreen(label)?.also { found = it } != null }
+        waitUntil { findOnScreen(label, nonEditable)?.also { found = it } != null }
         var clickable = found
         while (clickable != null && !clickable.isClickable) clickable = clickable.parent
         if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) return
@@ -174,23 +251,27 @@ class ReaderVolumeKeysTest {
         }
     }
 
-    private fun findOnScreen(label: String): AccessibilityNodeInfo? {
+    private fun findOnScreen(label: String, nonEditable: Boolean = false): AccessibilityNodeInfo? = findNode {
+        (!nonEditable || (it.isVisibleToUser && !it.isEditable)) &&
+            (it.text?.toString()?.contains(label) == true || it.contentDescription?.toString() == label)
+    }
+
+    private fun findNode(predicate: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
         val root = InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow
         fun find(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
             if (node == null) return null
-            if (node.text?.toString()?.contains(label) == true || node.contentDescription?.toString() == label)
-                return node
+            if (predicate(node)) return node
             for (index in 0 until node.childCount) find(node.getChild(index))?.let { return it }
             return null
         }
         return find(root)
     }
 
-    private fun waitUntil(condition: () -> Boolean) {
+    private fun waitUntil(description: String = "reader state", condition: () -> Boolean) {
         repeat(100) {
             if (condition()) return
             SystemClock.sleep(100)
         }
-        throw AssertionError("Timed out waiting for reader state")
+        throw AssertionError("Timed out waiting for $description")
     }
 }

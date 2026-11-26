@@ -9,6 +9,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,6 +23,7 @@ class NativeVocabularyUiTest {
     @Test fun longWordLeavesRoomForPronunciationButton() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
+        val localized = NativeLocaleContext(context)
         val store = BookStore(context)
         val vocabulary = NativeVocabularyStore(store)
         val word = "Long" + "word".repeat(14) + UUID.randomUUID().toString().take(6)
@@ -34,9 +36,9 @@ class NativeVocabularyUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
-            click(context.getString(R.string.vocabulary_title))
+            click(localized.getString(R.string.vocabulary_title))
             click(word)
-            val icon = waitFor(context.getString(R.string.vocabulary_pronunciation))
+            val icon = waitFor(localized.getString(R.string.vocabulary_pronunciation))
                 ?: error("Missing pronunciation control")
             val title = waitFor(word) ?: error("Missing word title")
             val iconBounds = Rect()
@@ -55,6 +57,7 @@ class NativeVocabularyUiTest {
     @Test fun savesSelectedTxtWordWithNativeChapterOffset() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
+        val localized = NativeLocaleContext(context)
         val word = "Native9${UUID.randomUUID().toString().take(7)}"
         val source = File(context.cacheDir, "Vocabulary ${UUID.randomUUID()}.txt")
         source.writeText("The $word appears in this sentence.")
@@ -76,9 +79,9 @@ class NativeVocabularyUiTest {
             }
             assertTrue("Cannot select TXT word", text.performAction(
                 AccessibilityNodeInfo.ACTION_SET_SELECTION, args))
-            click(context.getString(R.string.selection_actions))
-            click(context.getString(R.string.vocabulary_add))
-            click(context.getString(R.string.save))
+            click(localized.getString(R.string.selection_actions))
+            click(localized.getString(R.string.vocabulary_add))
+            click(localized.getString(R.string.save))
             waitUntil { vocabulary.all().any { it.word == word } }
             val saved = vocabulary.all().single { it.word == word }
             assertTrue(saved.position == "native:chapter:0:$offset")
@@ -87,9 +90,9 @@ class NativeVocabularyUiTest {
             instrumentation.runOnMainSync {
                 (activity as ComponentActivity).onBackPressedDispatcher.onBackPressed()
             }
-            click(context.getString(R.string.vocabulary_title))
+            click(localized.getString(R.string.vocabulary_title))
             click(word)
-            click(context.getString(R.string.vocabulary_open_source))
+            click(localized.getString(R.string.vocabulary_open_source))
             waitForContainingText(word)
         } finally {
             vocabulary.all().firstOrNull { it.word == word }?.let { vocabulary.remove(it.id) }
@@ -103,6 +106,7 @@ class NativeVocabularyUiTest {
     @Test fun savesSelectedEpubWordWithBookContext() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
+        val localized = NativeLocaleContext(context)
         val source = File(context.cacheDir, "${UUID.randomUUID()}.epub")
         val title = "Vocabulary capture ${UUID.randomUUID()}"
         val word = "Target9${UUID.randomUUID().toString().take(5)}"
@@ -139,9 +143,9 @@ class NativeVocabularyUiTest {
             }
             assertTrue("Cannot select EPUB word", text.performAction(
                 AccessibilityNodeInfo.ACTION_SET_SELECTION, args))
-            click(context.getString(R.string.selection_actions))
-            click(context.getString(R.string.vocabulary_add))
-            click(context.getString(R.string.save))
+            click(localized.getString(R.string.selection_actions))
+            click(localized.getString(R.string.vocabulary_add))
+            click(localized.getString(R.string.save))
             waitUntil { vocabulary.all().any { it.word == word } }
             val saved = vocabulary.all().single { it.word == word }
             assertTrue(saved.sourceSentence.contains(word))
@@ -150,9 +154,9 @@ class NativeVocabularyUiTest {
             instrumentation.runOnMainSync {
                 (activity as ComponentActivity).onBackPressedDispatcher.onBackPressed()
             }
-            click(context.getString(R.string.vocabulary_title))
+            click(localized.getString(R.string.vocabulary_title))
             click(word)
-            click(context.getString(R.string.vocabulary_open_source))
+            click(localized.getString(R.string.vocabulary_open_source))
             waitForContainingText(word)
         } finally {
             vocabulary.all().firstOrNull { it.word == word }?.let { vocabulary.remove(it.id) }
@@ -167,6 +171,7 @@ class NativeVocabularyUiTest {
     @Test fun opensSavedWordAndReviewsIt() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
+        val localized = NativeLocaleContext(context)
         val store = BookStore(context)
         val vocabulary = NativeVocabularyStore(store)
         val word = "Review${UUID.randomUUID().toString().take(8)}"
@@ -179,10 +184,10 @@ class NativeVocabularyUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
-            click(context.getString(R.string.vocabulary_title))
+            click(localized.getString(R.string.vocabulary_title))
             click(word)
-            click(context.getString(R.string.vocabulary_pronunciation))
-            click(context.getString(R.string.vocabulary_hard))
+            click(localized.getString(R.string.vocabulary_pronunciation))
+            click(localized.getString(R.string.vocabulary_hard))
             waitUntil { vocabulary.all().any { it.id == id && it.familiarity == "hard" } }
             assertTrue(waitFor(word) != null)
         } finally {
@@ -193,10 +198,19 @@ class NativeVocabularyUiTest {
     }
 
     private fun click(label: String) {
-        val node = waitFor(label) ?: error("Missing $label")
-        var clickable: AccessibilityNodeInfo? = node
-        while (clickable != null && !clickable.isClickable) clickable = clickable.parent
-        assertTrue("Cannot click $label", clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true)
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val deadline = SystemClock.uptimeMillis() + 10_000
+        while (SystemClock.uptimeMillis() < deadline) {
+            // A selection popup can publish its label before its clickable ancestor is
+            // ready. Refresh the tree after a rejected action; never resend an accepted click.
+            val node = find(automation.rootInActiveWindow, label)
+                ?: automation.windows.firstNotNullOfOrNull { find(it.root, label) }
+            var clickable: AccessibilityNodeInfo? = node
+            while (clickable != null && !clickable.isClickable) clickable = clickable.parent
+            if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) return
+            SystemClock.sleep(100)
+        }
+        error("Cannot click expected test label: $label")
     }
 
     private fun waitFor(label: String): AccessibilityNodeInfo? {
@@ -214,15 +228,7 @@ class NativeVocabularyUiTest {
                 value)?.let { return it }
             SystemClock.sleep(100)
         }
-        val labels = mutableListOf<String>()
-        fun collect(node: AccessibilityNodeInfo?) {
-            if (node == null || labels.size >= 80) return
-            node.text?.toString()?.let { labels.add("${node.className}: $it") }
-            node.contentDescription?.toString()?.let { labels.add("${node.className}: $it") }
-            for (index in 0 until node.childCount) collect(node.getChild(index))
-        }
-        collect(InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow)
-        error("Missing reader text: $value; visible: ${labels.joinToString(" | ")}")
+        error("Missing expected reader fixture text")
     }
 
     private fun waitUntil(condition: () -> Boolean) {

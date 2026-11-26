@@ -1,6 +1,6 @@
 # Native Android migration
 
-后续生成任务、向前跨章修复及持续阅读验证见 [CONTINUED_TEST_2026-11-26.md](CONTINUED_TEST_2026-11-26.md)。
+后续生成任务、上一章末页定位与 EPUB 排版修复、30 分钟阅读及最终全量回归见 [CONTINUED_TEST_2026-11-26.md](CONTINUED_TEST_2026-11-26.md)。
 
 Inkflow is an independent project on `main`. The Android package is `com.aceinandroid.inkflow`; it installs alongside the Flutter application. The native build uses Kotlin and Compose with minSdk 24, compileSdk 36, and targetSdk 35.
 

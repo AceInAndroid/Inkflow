@@ -22,6 +22,7 @@ import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import org.junit.Assert.assertEquals
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -76,7 +77,7 @@ class PdfSearchTest {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                     })
                 click(book.title)
-                click(context.getString(R.string.pdf_text_mode))
+                click(NativeLocaleContext(context).getString(R.string.pdf_text_mode))
                 val textNode = waitFor("TARGET") ?: error("OCR text is not visible in PDF text mode")
                 val offset = textNode.text.toString().indexOf("TARGET")
                 assertTrue(offset >= 0)

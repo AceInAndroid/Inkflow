@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -22,6 +23,7 @@ class BookshelfGroupsUiTest {
             flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
         }
         val context = instrumentation.targetContext
+        val localized = NativeLocaleContext(context)
         val store = BookStore(context)
         val original = "Folder ${UUID.randomUUID()}"
         val renamed = "Renamed ${UUID.randomUUID()}"
@@ -31,26 +33,26 @@ class BookshelfGroupsUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
-            click(context.getString(R.string.group_create))
+            click(localized.getString(R.string.group_create))
             setDialogText(original)
-            click(context.getString(R.string.save))
+            click(localized.getString(R.string.save))
             waitUntil { store.groups().any { it.name == original } }
             assertTrue(waitFor(original) != null)
 
-            click(context.getString(R.string.group_options))
-            click(context.getString(R.string.group_rename))
+            click(localized.getString(R.string.group_options))
+            click(localized.getString(R.string.group_rename))
             setDialogText(renamed)
-            click(context.getString(R.string.save))
+            click(localized.getString(R.string.save))
             waitUntil { store.groups().any { it.name == renamed } }
             assertTrue(waitFor(renamed) != null)
 
-            click(context.getString(R.string.group_create))
+            click(localized.getString(R.string.group_create))
             setDialogText(child)
-            click(context.getString(R.string.save))
+            click(localized.getString(R.string.save))
             waitUntil { store.groups().any { it.name == child } }
-            click(context.getString(R.string.group_options))
-            click(context.getString(R.string.group_move_folder))
-            click(context.getString(R.string.group_top_level))
+            click(localized.getString(R.string.group_options))
+            click(localized.getString(R.string.group_move_folder))
+            click(localized.getString(R.string.group_top_level))
             waitUntil { store.groups().single { it.name == child }.parentId == 0L }
         } finally {
             store.groups().filter { it.name == child || it.name == original || it.name == renamed }
@@ -61,9 +63,9 @@ class BookshelfGroupsUiTest {
     }
 
     private fun setDialogText(value: String) {
-        assertTrue("Folder dialog missing", waitFor(
-            InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.group_name)) != null)
         val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val localized = NativeLocaleContext(instrumentation.targetContext)
+        assertTrue("Folder dialog missing", waitFor(localized.getString(R.string.group_name)) != null)
         instrumentation.waitForIdleSync()
         val node = waitForClass("android.widget.EditText")
         if (!node.isFocused) {

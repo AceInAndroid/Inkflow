@@ -12,6 +12,7 @@ import android.view.MotionEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.aceinandroid.inkflow.localization.NativeLocaleContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -31,6 +32,7 @@ class NativeProgressOfferUiTest {
             flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
         }
         val context = instrumentation.targetContext
+        val localized = NativeLocaleContext(context)
         val source = File(context.cacheDir, "${UUID.randomUUID()}.epub")
         val title = "Progress offer ${UUID.randomUUID()}"
         ZipOutputStream(source.outputStream()).use { zip ->
@@ -72,16 +74,18 @@ class NativeProgressOfferUiTest {
             click(title)
             assertNotNull("Remote position disappeared after opening; local=${bookPosition(store, book.id)}",
                 store.farthestOtherPosition(book.id))
-            assertNotNull(waitFor(context.getString(R.string.remote_progress_title)))
+            assertNotNull(waitFor(localized.getString(R.string.remote_progress_title)))
+            assertNotNull(waitFor(localized.getString(R.string.remote_progress_message, 80)))
+            assertNotNull(waitFor(localized.getString(R.string.remote_progress_chapter, "Second chapter")))
             val localBefore = bookPosition(store, book.id)
-            click(context.getString(R.string.continue_here))
+            click(localized.getString(R.string.continue_here))
             assertEquals(localBefore, bookPosition(store, book.id))
-            waitUntil { findOnScreen(context.getString(R.string.remote_progress_title)) == null }
+            waitUntil { findOnScreen(localized.getString(R.string.remote_progress_title)) == null }
             instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
-            assertNotNull(waitFor(context.getString(R.string.search_books)))
+            assertNotNull(waitFor(localized.getString(R.string.search_books)))
             click(title)
-            assertNotNull(waitFor(context.getString(R.string.remote_progress_title)))
-            click(context.getString(R.string.jump_to_remote))
+            assertNotNull(waitFor(localized.getString(R.string.remote_progress_title)))
+            click(localized.getString(R.string.jump_to_remote))
             waitUntil { bookPosition(store, book.id).contains("/6/4!") }
         } finally {
             activity?.finish()
@@ -130,11 +134,8 @@ class NativeProgressOfferUiTest {
             if (result != null) return result
             SystemClock.sleep(100)
         }
-        val labels = mutableListOf<String>()
-        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
-        collectLabels(automation.rootInActiveWindow, labels)
-        automation.windows.forEach { collectLabels(it.root, labels) }
-        throw AssertionError("Missing $label; visible: ${labels.joinToString()}")
+        // Only report the expected resource/fixture label; other windows can contain private data.
+        throw AssertionError("Missing expected test label: $label")
     }
 
     private fun findOnScreen(label: String): AccessibilityNodeInfo? {
@@ -142,13 +143,6 @@ class NativeProgressOfferUiTest {
         find(automation.rootInActiveWindow, label)?.let { return it }
         for (window in automation.windows) find(window.root, label)?.let { return it }
         return null
-    }
-
-    private fun collectLabels(node: AccessibilityNodeInfo?, labels: MutableList<String>) {
-        if (node == null) return
-        node.text?.toString()?.takeIf(String::isNotBlank)?.let(labels::add)
-        node.contentDescription?.toString()?.takeIf(String::isNotBlank)?.let(labels::add)
-        for (index in 0 until node.childCount) collectLabels(node.getChild(index), labels)
     }
 
     private fun find(node: AccessibilityNodeInfo?, label: String): AccessibilityNodeInfo? {
