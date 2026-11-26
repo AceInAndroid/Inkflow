@@ -27,9 +27,8 @@ class NativeAiClient(
     override suspend fun stream(config: AiProviderConfig, request: PreparedAiRequest, onDelta: suspend (String) -> Unit): AiTokenUsage? = withContext(Dispatchers.IO) {
         require(config.isConfigured)
         val url = java.net.URI(config.chatCompletionsUrl())
-        require(url.scheme == "https" || (config.providerType == AiProviderType.OLLAMA && url.scheme == "http" &&
-            (url.host == "localhost" || url.host == "127.0.0.1" || url.host == "::1" || url.host?.startsWith("192.168.") == true || url.host?.startsWith("10.") == true))) {
-            "Use HTTPS, or a local Ollama address"
+        require(NativeAiUrlPolicy.isAllowed(url)) {
+            "Use HTTPS, or a local server address"
         }
         val root = JSONObject().put("model", config.model).put("stream", true).put("temperature", config.temperature.toDouble())
         val messages = JSONArray()

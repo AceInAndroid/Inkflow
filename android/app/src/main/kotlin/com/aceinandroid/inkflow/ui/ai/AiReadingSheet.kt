@@ -57,8 +57,10 @@ fun AiReadingSheet(
     var config by remember { mutableStateOf(aiStore.loadConfig()) }
     var sessionList by remember(bookId) { mutableStateOf(sessions?.list(bookId).orEmpty()) }
     var activeId by remember(bookId) { mutableStateOf(aiStore.activeSession(bookId)?.takeIf { id -> sessionList.any { it.id == id } } ?: sessionList.firstOrNull()?.id) }
-    var messages by remember(bookId, activeId) { mutableStateOf(activeId?.let { sessions?.loadMessages(bookId, it) } ?: aiStore.loadMessages(bookId)) }
-    var skillId by remember(activeId) { mutableStateOf(sessionList.firstOrNull { it.id == activeId }?.skillId ?: "reading.general") }
+    // Session creation must keep the same state object captured by the streaming callback.
+    // Existing session changes load messages explicitly in the session picker below.
+    var messages by remember(bookId) { mutableStateOf(activeId?.let { sessions?.loadMessages(bookId, it) } ?: aiStore.loadMessages(bookId)) }
+    var skillId by remember(bookId) { mutableStateOf(sessionList.firstOrNull { it.id == activeId }?.skillId ?: "reading.general") }
     var draft by remember(bookId) { mutableStateOf("") }
     var streaming by remember { mutableStateOf(false) }
     var activeJob by remember { mutableStateOf<Job?>(null) }
@@ -66,6 +68,7 @@ fun AiReadingSheet(
     var sessionsOpen by remember { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }
     var renameTitle by remember { mutableStateOf("") }
+    var renameSessionId by remember(bookId) { mutableStateOf<String?>(null) }
     var skillOpen by remember { mutableStateOf(false) }
     var bookTab by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
@@ -235,10 +238,10 @@ fun AiReadingSheet(
                         activeId = session.id; aiStore.setActiveSession(bookId, session.id); messages = sessions?.loadMessages(bookId, session.id).orEmpty()
                         skillId = session.skillId; sessionsOpen = false
                     }) { Text(session.title.ifBlank { session.id.take(8) }, maxLines = 2) }
-                    IconButton(onClick = { activeId = session.id; renameTitle = session.title; renameOpen = true }) { Icon(Icons.Default.Edit, stringResource(R.string.ai_rename_session)) }
+                    IconButton(onClick = { renameSessionId = session.id; renameTitle = session.title; renameOpen = true }) { Icon(Icons.Default.Edit, stringResource(R.string.ai_rename_session)) }
                     IconButton(onClick = {
                         sessions?.delete(bookId, session.id); sessionList = sessions?.list(bookId).orEmpty()
-                        if (activeId == session.id) { activeId = null; messages = emptyList() }
+                        if (activeId == session.id) { activeId = null; messages = emptyList(); skillId = "reading.general" }
                     }) { Icon(Icons.Default.Delete, stringResource(R.string.ai_delete_item)) }
                 }
             }
@@ -247,7 +250,7 @@ fun AiReadingSheet(
     if (renameOpen) AlertDialog(onDismissRequest = { renameOpen = false }, title = { Text(stringResource(R.string.ai_rename_session)) }, text = {
         OutlinedTextField(renameTitle, { renameTitle = it }, singleLine = true)
     }, confirmButton = { TextButton(enabled = renameTitle.isNotBlank(), onClick = {
-        activeId?.let { sessions?.rename(bookId, it, renameTitle) }; sessionList = sessions?.list(bookId).orEmpty(); renameOpen = false
+        renameSessionId?.let { sessions?.rename(bookId, it, renameTitle) }; sessionList = sessions?.list(bookId).orEmpty(); renameOpen = false
     }) { Text(stringResource(R.string.save)) } }, dismissButton = { TextButton(onClick = { renameOpen = false }) { Text(stringResource(R.string.cancel)) } })
 }
 @Composable

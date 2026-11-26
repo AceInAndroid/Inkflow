@@ -4,6 +4,8 @@ Branch: `codex/native-android`. The new package is `com.aceinandroid.inkflow`; i
 
 ## Native v0.2 migration (2026-11-26)
 
+Additional real-device WiFi EPUB transfer, reading restoration, and OpenAI/Anthropic LAN model acceptance, including fixes and updated APKs: [LIVE_TEST_2026-11-26.md](LIVE_TEST_2026-11-26.md).
+
 The current P0–P3 implementation and acceptance scope are recorded in
 [NATIVE_MIGRATION_PLAN.md](NATIVE_MIGRATION_PLAN.md). Native AI follows the
 [shared architecture contract](../docs/architecture/native-ai-contract.md).

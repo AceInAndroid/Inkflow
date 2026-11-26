@@ -232,6 +232,8 @@ adb -s "$ANDROID_SERIAL" shell am instrument -w -r \
 
 ### Deliverables
 
+The hashes below identify the earlier localization acceptance build. Subsequent LAN model and streaming-session fixes, current APK hashes, and live book validation are recorded in [LIVE_TEST_2026-11-26.md](LIVE_TEST_2026-11-26.md).
+
 | APK | Size | SHA-256 |
 | --- | --- | --- |
 | `app/build/outputs/apk/standard/debug/app-standard-debug.apk` | 33,364,084 bytes / 31.82 MiB | `a607bcf7660218376bc7bc01ac46d0bb07c6e674d73141c57ca932da506d41de` |

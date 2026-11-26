@@ -28,7 +28,12 @@ data class AiProviderConfig(
     fun chatCompletionsUrl(): String {
         val trimmed = baseUrl.trim().trimEnd('/')
         return when (providerType) {
-            AiProviderType.ANTHROPIC -> if (trimmed.endsWith("/messages")) trimmed else "$trimmed/messages"
+            AiProviderType.ANTHROPIC -> when {
+                trimmed.endsWith("/messages") -> trimmed
+                // Anthropic SDK-style base URLs may name only the server origin.
+                Regex("^https?://[^/?#]+$").matches(trimmed) -> "$trimmed/v1/messages"
+                else -> "$trimmed/messages"
+            }
             else -> if (trimmed.endsWith("/chat/completions")) trimmed else "$trimmed/chat/completions"
         }
     }
