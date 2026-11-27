@@ -1,11 +1,24 @@
 package com.aceinandroid.inkflow.core.ai
 
-data class ReadingSkill(val id: String, val title: String, val summary: String, val instructions: String)
+/** Portable method data. Metadata never grants tool, provider or mutation authority. */
+data class ReadingSkill(
+    val id: String,
+    val title: String,
+    val summary: String,
+    val instructions: String,
+    val schemaVersion: Int = SkillCodec.SCHEMA_VERSION,
+    val category: String = "general",
+    val recommendedAgent: String? = null,
+    val quickPrompts: List<String> = emptyList(),
+    val outputFormat: String = "markdown",
+)
 
 class ReadingSkillRegistry(custom: List<ReadingSkill> = emptyList()) {
     val skills: List<ReadingSkill> = builtIns + custom.filter { it.id.startsWith("custom.") }
     init {
-        require(custom.all { it.id.startsWith("custom.") && it.id.length <= 100 && it.title.isNotBlank() && it.instructions.length <= 16000 })
+        require(custom.all { it.id.startsWith("custom.") })
+        custom.forEach(SkillCodec::validate)
+        require(custom.size <= SkillCodec.MAX_SKILLS)
         require(skills.map { it.id }.distinct().size == skills.size)
     }
     fun find(id: String?): ReadingSkill? = skills.firstOrNull { it.id == id }
@@ -24,6 +37,22 @@ class ReadingSkillRegistry(custom: List<ReadingSkill> = emptyList()) {
             ReadingSkill("reading.concepts", "概念梳理", "解释概念及其相互联系。", "给出简明定义、原文用法与一个有帮助的例子，明确标记自拟例子。"),
             ReadingSkill("reading.critical", "批判阅读", "检视文本的假设与局限。", "公平复述作者观点，再检视假设、证据局限与替代解释。"),
             ReadingSkill("reading.reflect", "阅读反思", "将阅读转化为个人理解。", "围绕已读内容提出一个反思方向，不替读者编造经历或学习成果。"),
-        )
+        ).map { skill ->
+            val agent = when (skill.id) {
+                "reading.argument", "reading.concepts", "reading.critical" -> "agent.argument"
+                "reading.history" -> "agent.background"
+                "reading.characters" -> "agent.story"
+                "reading.language" -> "agent.language"
+                "reading.recap", "reading.reflect" -> ReadingAgentRegistry.DEFAULT_ID
+                else -> ReadingAgentRegistry.DEFAULT_ID
+            }
+            skill.copy(category = when (agent) {
+                "agent.argument" -> "study"
+                "agent.background" -> "history"
+                "agent.story" -> "fiction"
+                "agent.language" -> "language"
+                else -> "general"
+            }, recommendedAgent = agent, quickPrompts = listOf(skill.summary))
+        }
     }
 }

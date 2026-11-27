@@ -53,6 +53,7 @@ data class AiChatMessage(
     val readOffset: Int = -1,
     val sourceChapterTitle: String = "",
     val sourceProgress: Double = visibleFromProgress / 100.0,
+    val citations: List<com.aceinandroid.inkflow.core.ai.AiCitation> = emptyList(),
 )
 
 enum class AiQuickAction(val id: String) {

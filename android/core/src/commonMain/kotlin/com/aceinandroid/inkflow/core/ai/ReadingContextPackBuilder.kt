@@ -15,11 +15,12 @@ class ReadingContextPackBuilder(private val projector: BookWikiProjector = BookW
             for (item in ranked) {
                 if (remaining <= 0) break
                 val source = item.sources.first()
-                val text = "[${item.id}; ${item.epistemicStatus}; ${source.chapterTitle}; ${source.progress}] ${item.title}\n${item.summary}\n${item.body}".take(remaining)
+                val citations = item.sources.mapIndexed { index, evidence -> AiCitation("${item.id}:$index", bookId, evidence) }
+                val text = "[source:${citations.first().id}; ${item.epistemicStatus}; ${source.chapterTitle}; ${source.progress}] ${item.title}\n${item.summary}\n${item.body}".take(remaining)
                 if (text.isBlank()) continue
                 remaining -= text.length
                 add(BookContextNode(text, (item.visibleFromProgress * 100).toInt(),
-                    when { item.kind.startsWith("fiction.") -> "atlas"; item.kind.startsWith("note.") -> "note"; else -> "wiki" }, item.visibleFromProgress))
+                    when { item.kind.startsWith("fiction.") -> "atlas"; item.kind.startsWith("note.") -> "note"; else -> "wiki" }, item.visibleFromProgress, citations))
             }
         }
     }
