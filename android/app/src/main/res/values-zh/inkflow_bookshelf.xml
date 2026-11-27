@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bookshelf_select">选择书籍</string>
+    <string name="bookshelf_selected_count">已选 %1$d 本</string>
+    <string name="bookshelf_select_all">全选或取消当前可见书籍</string>
+    <string name="bookshelf_delete_selected">删除所选书籍</string>
+    <string name="bookshelf_selected">已选择</string>
+    <string name="bookshelf_not_selected">未选择</string>
+    <string name="bookshelf_delete_title">删除 %1$d 本书籍？</string>
+    <string name="bookshelf_delete_message">将删除所选书籍及其本地文件，此操作无法撤销。</string>
+    <string name="bookshelf_batch_result">已完成 %1$d 本 · 失败 %2$d 本</string>
+    <string name="bookshelf_listen">听书</string>
+    <string name="bookshelf_listen_in_reader">进入阅读器后，在工具栏中选择听书。</string>
+    <string name="bookshelf_local_file">本地文件：%1$s</string>
+</resources>

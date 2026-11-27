@@ -71,6 +71,8 @@ class NativeProgressOfferUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
+            click(localized.getString(R.string.library))
+            assertNotNull(waitFor(localized.getString(R.string.search_books)))
             click(title)
             assertNotNull("Remote position disappeared after opening; local=${bookPosition(store, book.id)}",
                 store.farthestOtherPosition(book.id))

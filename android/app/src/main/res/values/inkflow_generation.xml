@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="inkflow_scope_read">Read chapters</string>
+  <string name="inkflow_scope_selected">Select chapters</string>
+  <string name="inkflow_scope_whole">Whole book</string>
+  <string name="inkflow_generation_size">Estimated source: %1$d characters</string>
+  <string name="inkflow_scope_warning">This task may read unread chapters. Permission applies only to this task and does not change your reading progress.</string>
+  <string name="inkflow_view_all">View all results</string>
+  <string name="inkflow_view_all_warning">All results may contain spoilers. This permission applies only to this book and this view.</string>
+  <string name="inkflow_all_content_active">All content · spoilers enabled</string>
+  <string name="inkflow_return_safe_view">Return to read content</string>
+  <string name="inkflow_generation_schema_error">Invalid structured output after one correction. Completed checkpoints are retained.</string>
+  <string name="inkflow_generation_evidence_error">Source evidence could not be verified. Completed checkpoints are retained.</string>
+  <string name="inkflow_generation_auth_error">Check the selected provider’s API key and permissions.</string>
+  <string name="inkflow_generation_transport_error">Provider connection failed. Check the address and connection, then resume.</string>
+  <string name="inkflow_generation_source_error">The book file changed. Cancel this task and create a new one.</string>
+  <string name="inkflow_generation_boundary_error">The reading boundary changed. Return to the original position before resuming.</string>
+  <string name="inkflow_generation_limit_error">The response exceeded the output limit. Completed checkpoints are retained.</string>
+    <string name="inkflow_generation_reconfirm_legacy">This older task has no verifiable original source manifest. Cancel it and confirm a new generation task. Existing results and checkpoints are preserved.</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_transfer_timeout">上传超时。请检查 Wi-Fi 连接后重新发送文件。</string>
+    <string name="inkflow_transfer_session_failed">传书会话已失效。请重新开始传书并打开新地址。</string>
+    <string name="inkflow_transfer_file_failed">无法导入此文件。请检查格式和大小后重试。</string>
+    <string name="inkflow_skill_transfer_failed">无法更新此待确认 Skill。请重新打开预览后重试。</string>
+    <string name="inkflow_skill_transfer_changed">Skill 或本地定义已变化。请重新打开预览，审核后再确认。</string>
+    <string name="inkflow_skill_transfer_uncertain">上次确认被中断。请检查已安装的 Skill，再丢弃此上传；应用不会自动重复导入。</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_edge_selection">停留边缘扩选</string>
+    <string name="inkflow_edge_selection_summary">将选区手柄停留在页边，继续扩选本章内容。默认关闭，最多扩展四页。</string>
+    <string name="inkflow_edge_selection_eink">墨水屏禁用边缘扩选，请使用范围调整按钮。</string>
+</resources>

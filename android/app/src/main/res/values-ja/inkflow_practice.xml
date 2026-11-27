@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_practice_title">読書の練習</string>
+    <string name="inkflow_practice_local">目標を設定し、この本に保存したカードを復習します。</string>
+    <string name="inkflow_practice_goal">読書目標</string>
+    <string name="inkflow_practice_no_goal">進行中の目標はありません。</string>
+    <string name="inkflow_practice_goal_new">目標を作成</string>
+    <string name="inkflow_practice_goal_edit">目標を編集</string>
+    <string name="inkflow_practice_goal_replace">新しい目標を保存すると、現在の目標は中止になります。この変更は元に戻せます。</string>
+    <string name="inkflow_practice_goal_title">目標のタイトル</string>
+    <string name="inkflow_practice_minutes">時間（分・任意）</string>
+    <string name="inkflow_practice_minutes_value">%1$d 分</string>
+    <string name="inkflow_practice_goal_hint">タイトルは1〜500文字。時間は空欄にするか、正の整数で入力してください。</string>
+    <string name="inkflow_practice_save">目標を保存</string>
+    <string name="inkflow_practice_cancel">キャンセル</string>
+    <string name="inkflow_practice_cards">カードの復習</string>
+    <string name="inkflow_practice_due">復習日が到来</string>
+    <string name="inkflow_practice_all">すべてのカード</string>
+    <string name="inkflow_practice_refresh">更新</string>
+    <string name="inkflow_practice_loading">練習を読み込み中…</string>
+    <string name="inkflow_practice_load_failed">練習を読み込めませんでした。再試行してください。</string>
+    <string name="inkflow_practice_retry">再試行</string>
+    <string name="inkflow_practice_no_cards">読了範囲内に、出典を確認できるカードがありません。</string>
+    <string name="inkflow_practice_none_due">復習日が来たカードはありません。すべてのカードを表示できます。</string>
+    <string name="inkflow_practice_next_review">次回の復習：%1$s</string>
+    <string name="inkflow_practice_show_answer">答えを表示</string>
+    <string name="inkflow_practice_hard">難しい</string>
+    <string name="inkflow_practice_remembered">覚えている</string>
+    <string name="inkflow_practice_mastered">習得した</string>
+    <string name="inkflow_practice_open_source">原文を読む：%1$s</string>
+    <string name="inkflow_practice_goal_saved">目標を保存しました。</string>
+    <string name="inkflow_practice_rating_saved">復習結果を保存しました。</string>
+    <string name="inkflow_practice_undo">元に戻す</string>
+    <string name="inkflow_practice_write_failed">変更を完了できませんでした。データを更新しました。項目を開き直して再試行してください。</string>
+</resources>

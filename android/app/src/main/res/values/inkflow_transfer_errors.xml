@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_transfer_timeout">The upload timed out. Check the Wi-Fi connection and send the file again.</string>
+    <string name="inkflow_transfer_session_failed">This transfer session is no longer valid. Start transfer again and open the new address.</string>
+    <string name="inkflow_transfer_file_failed">Could not import this file. Check its format and size, then try again.</string>
+    <string name="inkflow_skill_transfer_failed">Could not update this pending Skill. Reopen its preview and try again.</string>
+    <string name="inkflow_skill_transfer_changed">The Skill or local definitions changed. Review the updated preview before confirming again.</string>
+    <string name="inkflow_skill_transfer_uncertain">The previous confirmation was interrupted. Check installed Skills, then discard this upload. It will not be imported again automatically.</string>
+</resources>

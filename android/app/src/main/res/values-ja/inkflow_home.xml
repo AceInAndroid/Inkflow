@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_tab">ホーム</string>
+    <string name="home_me">マイページ</string>
+    <string name="home_style">ホームのスタイル</string>
+    <string name="home_classic">クラシック</string>
+    <string name="home_immersive">壁紙</string>
+    <string name="home_minimal">ミニマル</string>
+    <string name="home_eink">EINK</string>
+    <string name="home_hardware_eink">電子ペーパーモードでは配色、壁紙、装飾を制限します。選択したスタイルは保持されます。</string>
+    <string name="home_greeting">読書の時間を。</string>
+    <string name="home_motto_default">一頁ずつ、世界が広がる。</string>
+    <string name="home_edit_motto">座右の銘を編集</string>
+    <string name="home_motto_hint">座右の銘（240文字まで）</string>
+    <string name="home_continue">続きを読む</string>
+    <string name="home_recent">最近読んだ本</string>
+    <string name="home_no_recent">本を開いて読書を始めましょう。</string>
+    <string name="home_browse">本棚を見る</string>
+    <string name="home_all_books">すべての本</string>
+    <string name="home_progress">%1$s 読了</string>
+    <string name="home_total_minutes">%1$s 分</string>
+    <string name="home_statistics">読書の記録</string>
+    <string name="home_wallpaper_choose">壁紙を選ぶ</string>
+    <string name="home_wallpaper_remove">壁紙を削除</string>
+    <string name="home_wallpaper_hint">ホームのスタイルで壁紙を選べます。</string>
+    <string name="home_wallpaper_error">この画像は使えません。20 MB未満の有効な画像を選んでください。</string>
+    <string name="home_wallpaper_loading">壁紙を保存中…</string>
+    <string name="home_appearance">アプリの外観</string>
+    <string name="home_appearance_summary">アプリ画面に適用します。読書画面の紙と文字色は別に設定できます。</string>
+    <string name="home_theme_system">システムに従う</string>
+    <string name="home_theme_light">ライト</string>
+    <string name="home_theme_dark">ダーク</string>
+    <string name="home_me_summary">ノート、単語、読書設定を管理。</string>
+</resources>

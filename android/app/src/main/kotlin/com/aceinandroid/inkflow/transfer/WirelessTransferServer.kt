@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.aceinandroid.inkflow.BookStore
 import com.aceinandroid.inkflow.NativeSyncIntegration
+import com.aceinandroid.inkflow.core.ai.SkillCodec
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
@@ -24,13 +25,15 @@ internal class WirelessTransferServer private constructor(
     private val cacheDirectory: File,
     private val importer: (File) -> Unit,
     private val onEvent: (Event) -> Unit,
+    private val skillReceiver: (File) -> Unit,
 ) : AutoCloseable {
     constructor(context: Context, store: BookStore, onEvent: (Event) -> Unit = {}) : this(
         File(context.applicationContext.cacheDir, "wireless-transfer"),
-        { file -> NativeSyncIntegration.localMutation { store.import(Uri.fromFile(file)); Unit } }, onEvent)
+        { file -> NativeSyncIntegration.localMutation { store.import(Uri.fromFile(file)); Unit } }, onEvent,
+        { file -> SkillTransferInbox(context).receive(file.name, file.readBytes()); Unit })
 
     data class Event(val name: String = "", val imported: Boolean = false, val error: String? = null,
-        val stopped: Boolean = false)
+        val stopped: Boolean = false, val skillPending: Boolean = false, val errorStatus: Int? = null)
 
     private class Session(val server: ServerSocket, val token: String, val host: String) {
         @Volatile var active = true
@@ -78,8 +81,10 @@ internal class WirelessTransferServer private constructor(
                     try { handle(current, it) }
                     catch (failure: Exception) {
                         runCatching { respond(it, (failure as? TransferFailure)?.status ?: 400,
-                            "text/plain; charset=utf-8", (failure.message ?: "Transfer failed").toByteArray(Charsets.UTF_8)) }
-                        if (current.active) notify(Event(error = failure.message ?: "Transfer failed"))
+                            "text/plain; charset=utf-8", (failure.message ?: "Transfer failed").toByteArray(Charsets.UTF_8))
+                            finishRejectedResponse(it)
+                        }
+                        if (current.active) notify(Event(error = failure.message ?: "Transfer failed", errorStatus = (failure as? TransferFailure)?.status))
                     }
                 }
                 current.client = null
@@ -94,6 +99,27 @@ internal class WirelessTransferServer private constructor(
         }
     }
 
+    /** Send the complete HTTP rejection before closing a socket with an unread request body.
+     * A bare close can turn a useful 403/413 into a TCP reset for the uploading browser.
+     * Bound both bytes and time; a rejected upload must never occupy the listener indefinitely.
+     */
+    private fun finishRejectedResponse(socket: Socket) {
+        socket.shutdownOutput()
+        val deadline = System.nanoTime() + 250_000_000L
+        var remaining = 64 * 1024
+        val buffer = ByteArray(8192)
+        try {
+            while (remaining > 0) {
+                val millis = (deadline - System.nanoTime()) / 1_000_000
+                if (millis <= 0) return
+                socket.soTimeout = millis.toInt().coerceAtLeast(1)
+                val count = socket.getInputStream().read(buffer, 0, minOf(remaining, buffer.size))
+                if (count < 0) return
+                remaining -= count
+            }
+        } catch (_: IOException) { /* The peer may finish, time out or disconnect after receiving the status. */ }
+    }
+
     private fun handle(current: Session, socket: Socket) {
         val input = BufferedInputStream(socket.getInputStream(), 64 * 1024)
         val request = TransferRequest.read(input)
@@ -104,14 +130,17 @@ internal class WirelessTransferServer private constructor(
             respond(socket, 200, "text/html; charset=utf-8", page(current.token).toByteArray(Charsets.UTF_8))
             return
         }
-        if (request.method != "POST" || !request.target.startsWith("/${current.token}/upload?name="))
+        val skillUpload = request.target.startsWith("/${current.token}/skills?name=")
+        if (request.method != "POST" || (!skillUpload && !request.target.startsWith("/${current.token}/upload?name=")))
             throw TransferFailure(404, "Not found")
         if (request.headers["x-transfer-token"] != current.token) throw TransferFailure(403, "Invalid session")
         if (request.headers["content-type"] != "application/octet-stream")
-            throw TransferFailure(415, "Use a binary book upload")
-        val name = TransferRequest.fileName(request.target.substringAfter("?name="))
+            throw TransferFailure(415, "Use a binary upload")
+        val name = TransferRequest.fileName(request.target.substringAfter("?name="), skillUpload)
         val length = request.contentLength
-        if (length <= 0 || length > MAX_FILE_BYTES) throw TransferFailure(413, "Book exceeds 128 MiB or is empty")
+        val limit = if (skillUpload) SkillCodec.MAX_FILE_BYTES.toLong() else MAX_FILE_BYTES
+        if (length <= 0 || length > limit) throw TransferFailure(413, if (skillUpload)
+            "Skill exceeds 64 KiB or is empty" else "Book exceeds 128 MiB or is empty")
         if (current.files >= MAX_FILES || length > MAX_SESSION_BYTES - current.bytes)
             throw TransferFailure(413, "Session limit reached; stop and start a new session")
         current.files++
@@ -134,19 +163,20 @@ internal class WirelessTransferServer private constructor(
                 }
             }
             if (!current.active) throw IOException("Transfer stopped")
-            try { importer(file) }
+            try { if (skillUpload) skillReceiver(file) else importer(file) }
             catch (failure: Exception) {
-                throw TransferFailure(422, "Book import failed: ${failure.message ?: "invalid book"}")
+                throw TransferFailure(422, "${if (skillUpload) "Skill staging" else "Book import"} failed: ${failure.message ?: "invalid file"}")
             }
-            notify(Event(name = name, imported = true))
-            respond(socket, 201, "text/plain; charset=utf-8", "Imported: $name".toByteArray(Charsets.UTF_8))
+            notify(Event(name = name, imported = !skillUpload, skillPending = skillUpload))
+            val result = if (skillUpload) "Pending phone confirmation: $name" else "Imported: $name"
+            respond(socket, if (skillUpload) 202 else 201, "text/plain; charset=utf-8", result.toByteArray(Charsets.UTF_8))
         } finally { directory.deleteRecursively() }
     }
 
     private fun notify(event: Event) { runCatching { onEvent(event) } }
 
     private fun respond(socket: Socket, status: Int, type: String, bytes: ByteArray) {
-        val label = when (status) { 200 -> "OK"; 201 -> "Created"; else -> "Request rejected" }
+        val label = when (status) { 200 -> "OK"; 201 -> "Created"; 202 -> "Accepted"; else -> "Request rejected" }
         val header = "HTTP/1.1 $status $label\r\nContent-Type: $type\r\nContent-Length: ${bytes.size}\r\n" +
             "Connection: close\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n" +
             "Referrer-Policy: no-referrer\r\nContent-Security-Policy: default-src 'none'; script-src 'nonce-transfer'; " +
@@ -159,24 +189,30 @@ internal class WirelessTransferServer private constructor(
         <style>body{font:18px system-ui;max-width:42em;margin:3em auto;padding:0 1em}button,input{font:inherit;margin:1em 0}li{margin:.6em 0}</style>
         <h1>Wireless book transfer</h1><p>Keep the reader app open on the same Wi-Fi network.</p>
         <p>EPUB, FB2, TXT, Markdown, PDF, MOBI, AZW3. Up to 20 files, 128 MiB per file, 512 MiB per session.</p>
+        <label>Upload category <select id="category"><option value="upload">Books</option><option value="skills">Reading Skills — confirm on phone</option></select></label>
+        <p>Reading Skills: .skill.md, .md or .json, up to 64 KiB each. Receiving a Skill does not install or execute it.</p>
         <input id="files" type="file" multiple accept=".epub,.fb2,.txt,.md,.markdown,.pdf,.mobi,.azw3">
         <br><button id="send">Import books</button><p id="status" role="status"></p><ul id="results"></ul>
         <script nonce="transfer">const button=document.getElementById('send'), picker=document.getElementById('files');
-        button.onclick=async()=>{const files=Array.from(picker.files), status=document.getElementById('status');
-        if(!files.length||files.length>20||files.some(f=>!f.size||f.size>134217728)||files.reduce((n,f)=>n+f.size,0)>536870912){status.textContent='Choose 1–20 nonempty books within the size limits.';return;}
-        button.disabled=true;picker.disabled=true;document.getElementById('results').textContent='';
+        const category=document.getElementById('category');
+        category.onchange=()=>{picker.value='';picker.accept=category.value==='skills'?'.skill.md,.md,.markdown,.json':'.epub,.fb2,.txt,.md,.markdown,.pdf,.mobi,.azw3';button.textContent=category.value==='skills'?'Send Skills for review':'Import books';};
+        button.onclick=async()=>{const skills=category.value==='skills', limit=skills?65536:134217728;const files=Array.from(picker.files), status=document.getElementById('status');
+        if(!files.length||files.length>20||files.some(f=>!f.size||f.size>limit)||files.reduce((n,f)=>n+f.size,0)>536870912){status.textContent='Choose 1–20 nonempty files within the category size limits.';return;}
+        button.disabled=true;picker.disabled=true;category.disabled=true;document.getElementById('results').textContent='';
         try{for(let i=0;i<files.length;i++){const file=files[i];status.textContent='Importing '+(i+1)+' / '+files.length;
         const item=document.createElement('li');document.getElementById('results').append(item);
-        try{const response=await fetch('/$token/upload?name='+encodeURIComponent(file.name),{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Transfer-Token':'$token'},body:file});
+        try{const response=await fetch('/$token/'+(skills?'skills':'upload')+'?name='+encodeURIComponent(file.name),{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Transfer-Token':'$token'},body:file});
         item.textContent=file.name+': '+await response.text();}catch(e){item.textContent=file.name+': connection lost';}}
-        status.textContent='Batch finished. Check each result below.';}finally{button.disabled=false;picker.disabled=false;}};</script></html>""".trimIndent()
+        status.textContent='Batch finished. Check each result below.';}finally{button.disabled=false;picker.disabled=false;category.disabled=false;}};</script></html>""".trimIndent()
 
     companion object {
         const val MAX_FILE_BYTES = 128L * 1024 * 1024
         const val MAX_SESSION_BYTES = 512L * 1024 * 1024
         const val MAX_FILES = 20
 
-        internal fun forTests(cache: File, importer: (File) -> Unit) = WirelessTransferServer(cache, importer, {})
+        internal fun forTests(cache: File, importer: (File) -> Unit,
+            skillReceiver: (File) -> Unit = { throw IOException("Skill receiver unavailable") }) =
+            WirelessTransferServer(cache, importer, {}, skillReceiver)
 
         private fun wifiAddresses(): List<InetAddress> = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
             .filter { it.isUp && !it.isLoopback && !it.isVirtual &&
@@ -230,14 +266,14 @@ internal data class TransferRequest(val method: String, val target: String, val 
             return TransferRequest(parts[0], parts[1], headers)
         }
 
-        fun fileName(encoded: String): String {
+        fun fileName(encoded: String, skill: Boolean = false): String {
             val name = try { URLDecoder.decode(encoded.replace("+", "%2B"), "UTF-8") }
                 catch (_: IllegalArgumentException) { throw TransferFailure(400, "Invalid filename encoding") }
             if (name.isBlank() || name.toByteArray(Charsets.UTF_8).size > 240 || name.startsWith('.') ||
                 name.any { it == '/' || it == '\\' || it == ':' || it.code < 32 || it.code == 127 } ||
                 '\uFFFD' in name || name.substringAfterLast('.', "").lowercase(Locale.ROOT) !in
-                setOf("epub", "fb2", "txt", "md", "markdown", "pdf", "mobi", "azw3"))
-                throw TransferFailure(400, "Invalid filename or unsupported book format")
+                (if (skill) setOf("json", "md", "markdown") else setOf("epub", "fb2", "txt", "md", "markdown", "pdf", "mobi", "azw3")))
+                throw TransferFailure(400, "Invalid filename or unsupported format")
             return name
         }
     }

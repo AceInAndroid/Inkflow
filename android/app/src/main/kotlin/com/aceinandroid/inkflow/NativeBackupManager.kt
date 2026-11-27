@@ -39,7 +39,10 @@ class NativeBackupManager(context: Context) {
                     zip.addFile(path, file)
                 }
             }
-            if (flutterPreferences.isFile) zip.addFile("anx_shared_prefs.json", flutterPreferences)
+            if (flutterPreferences.isFile) {
+                val legacy = NativeLegacyPreferenceFilter.portable(JSONObject(flutterPreferences.readText(Charsets.UTF_8)))
+                zip.addBytes("anx_shared_prefs.json", legacy.toString().toByteArray(Charsets.UTF_8))
+            }
             zip.addBytes(NativeSettingsBackup.ENTRY, nativeSettings.toString().toByteArray(Charsets.UTF_8))
             zip.putNextEntry(ZipEntry("native/fonts/"))
             zip.closeEntry()
@@ -238,7 +241,9 @@ class NativeBackupManager(context: Context) {
         val file = File(stage, "anx_shared_prefs.json")
         if (!file.exists()) return null
         return try {
-            JSONObject(file.readText(Charsets.UTF_8))
+            NativeLegacyPreferenceFilter.portable(JSONObject(file.readText(Charsets.UTF_8))).also {
+                writeSynced(file, it.toString())
+            }
         } catch (failure: Exception) {
             throw IOException("Invalid backup preferences", failure)
         }

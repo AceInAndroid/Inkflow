@@ -114,6 +114,8 @@ data class ReaderAppearance(
     val showFooter: Boolean = true,
     val showTime: Boolean = false,
     val showBattery: Boolean = false,
+    val cjkFont: ReaderScriptFont? = null,
+    val latinFont: ReaderScriptFont? = null,
 ) {
     val textAlign: TextAlign? get() = alignment.textAlign
     val background: Color get() = if (palette == ReaderPalette.CUSTOM)
@@ -151,7 +153,7 @@ class ReaderAppearanceStore(context: Context) {
     private val preferences = appContext.getSharedPreferences("native_reader_appearance", Context.MODE_PRIVATE)
     private val fontDir = File(appContext.filesDir, "fonts")
     private val imageDir = File(appContext.filesDir, "bgimg")
-    private val fontIdPattern = Regex("[0-9a-f-]{36}\\.(ttf|otf|ttc)")
+    private val fontIdPattern = importedReaderFontIdPattern
 
     fun load(): ReaderAppearance {
         val background = preferences.getString("custom_background", null)
@@ -178,6 +180,8 @@ class ReaderAppearanceStore(context: Context) {
             font = enumValueOrDefault(preferences.getString("font", null), ReaderFont.SYSTEM),
             customFontId = preferences.getString("custom_font_id", null)
                 ?.takeIf { fontIdPattern.matches(it) && File(fontDir, it).isFile },
+            cjkFont = loadScriptFont("cjk"),
+            latinFont = loadScriptFont("latin"),
             customBackground = background,
             customForeground = foreground,
             backgroundImage = runCatching {
@@ -209,6 +213,10 @@ class ReaderAppearanceStore(context: Context) {
             .putString("custom_font_id", value.customFontId?.takeIf {
                 fontIdPattern.matches(it) && File(fontDir, it).isFile
             })
+            .putString("cjk_font", value.cjkFont?.font?.name)
+            .putString("cjk_custom_font_id", existingFontId(value.cjkFont?.customFontId))
+            .putString("latin_font", value.latinFont?.font?.name)
+            .putString("latin_custom_font_id", existingFontId(value.latinFont?.customFontId))
             .putString("background_image", value.backgroundImage?.takeIf {
                 imageExists(it)
             }?.toPreference())
@@ -324,6 +332,31 @@ class ReaderAppearanceStore(context: Context) {
         return if (file.isFile) FontFamily(Font(file)) else appearance.font.family
     }
 
+    private fun existingFontId(id: String?): String? = id?.takeIf {
+        fontIdPattern.matches(it) && File(fontDir, it).isFile
+    }
+
+    private fun loadScriptFont(script: String): ReaderScriptFont? {
+        val builtin = preferences.getString("${script}_font", null)
+        val custom = preferences.getString("${script}_custom_font_id", null)
+        if (builtin == null && custom == null) return null
+        return ReaderScriptFont(enumValueOrDefault(builtin, ReaderFont.SYSTEM), existingFontId(custom))
+    }
+
+    fun scriptFontFamilies(appearance: ReaderAppearance): ReaderScriptFontFamilies {
+        fun resolve(choice: ReaderScriptFont?): FontFamily? {
+            if (choice == null) return null
+            val file = existingFontId(choice.customFontId)?.let { File(fontDir, it) }
+            return if (file != null && validFontFile(file))
+                runCatching { FontFamily(Font(file)) }.getOrElse { choice.font.family }
+            else choice.font.family
+        }
+        return ReaderScriptFontFamilies(resolve(appearance.cjkFont), resolve(appearance.latinFont))
+    }
+
+    suspend fun scriptFontCacheIdentity(appearance: ReaderAppearance): String =
+        readerScriptFontCacheIdentity(appearance, fontDir)
+
     fun fonts(): List<ImportedFont> = buildList {
         val entries = fontEntries()
         val keys = entries.keys()
@@ -381,7 +414,9 @@ class ReaderAppearanceStore(context: Context) {
         if (file.exists() && !file.delete()) throw IOException("Cannot remove font")
         val entries = fontEntries().apply { remove(id) }
         val editor = preferences.edit().putString("custom_fonts", entries.toString())
-        if (preferences.getString("custom_font_id", null) == id) editor.remove("custom_font_id")
+        listOf("custom_font_id", "cjk_custom_font_id", "latin_custom_font_id").forEach { key ->
+            if (preferences.getString(key, null) == id) editor.remove(key)
+        }
         editor.apply()
     }
 

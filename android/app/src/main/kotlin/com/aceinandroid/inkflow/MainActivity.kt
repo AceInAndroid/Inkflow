@@ -20,6 +20,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,6 +29,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.filled.School
@@ -65,6 +68,10 @@ import com.aceinandroid.inkflow.ui.bookshelf.BookshelfScreen
 import com.aceinandroid.inkflow.ui.reader.ReaderScreen
 import com.aceinandroid.inkflow.ui.splash.InkflowSplashOverlay
 import com.aceinandroid.inkflow.ui.theme.InkflowTheme
+import com.aceinandroid.inkflow.ui.theme.AppAppearanceStore
+import com.aceinandroid.inkflow.ui.theme.AppSystemBars
+import com.aceinandroid.inkflow.ui.home.HomeScreen
+import com.aceinandroid.inkflow.ui.home.MeScreen
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -137,11 +144,14 @@ private val backwardPageKeys = setOf(
 )
 
 private enum class HomeTab(val labelRes: Int, val icon: ImageVector) {
+    HOME(R.string.home_tab, Icons.Default.Home),
     LIBRARY(R.string.library, Icons.AutoMirrored.Filled.MenuBook),
+    ME(R.string.home_me, Icons.Default.Person),
     NOTES(R.string.reading_notes, Icons.Default.NoteAlt),
     VOCABULARY(R.string.vocabulary_title, Icons.Default.School),
     STATISTICS(R.string.reading_statistics, Icons.Default.BarChart),
     SETTINGS(R.string.settings, Icons.Default.Settings),
+    TRANSFER(R.string.p2_wireless_transfer, Icons.AutoMirrored.Filled.MenuBook),
 }
 
 @Suppress("DEPRECATION")
@@ -168,6 +178,8 @@ private fun NativeApp(initialIntent: Intent?) {
     val vocabulary = remember(store) { NativeVocabularyStore(store) }
     val progressSync = remember(context) { NativeProgressSync(context) }
     val controlsStore = remember(context) { ReaderControlsStore(context) }
+    val appAppearanceStore = remember(context) { AppAppearanceStore(context) }
+    var appAppearance by remember { mutableStateOf(appAppearanceStore.load()) }
 
     var eInkConfig by remember { mutableStateOf(controlsStore.eInkConfig()) }
     var books by remember { mutableStateOf(store.all()) }
@@ -175,8 +187,13 @@ private fun NativeApp(initialIntent: Intent?) {
         save = { it?.id ?: -1L }, restore = { id -> store.all().firstOrNull { it.id == id } },
     )) { mutableStateOf<StoredBook?>(null) }
     var selectedOffset by rememberSaveable { mutableStateOf<Int?>(null) }
+    var listenBookId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var importOptions by rememberSaveable { mutableStateOf(false) }
     var foregroundRevision by remember { mutableIntStateOf(0) }
-    var activeTab by rememberSaveable { mutableStateOf(HomeTab.LIBRARY) }
+    var activeTab by rememberSaveable { mutableStateOf(HomeTab.HOME) }
+    var featureParent by rememberSaveable { mutableStateOf(HomeTab.ME) }
+    val primaryTabs = listOf(HomeTab.HOME, HomeTab.LIBRARY, HomeTab.ME)
+    val selectedTab = if (activeTab in primaryTabs) activeTab else featureParent
     var libraryNotes by remember { mutableStateOf<List<LibraryNote>>(emptyList()) }
     var notesLoading by remember { mutableStateOf(false) }
     var readingSummary by remember { mutableStateOf(ReadingSummary(0, 0, 0, emptyList(), emptyList())) }
@@ -196,7 +213,9 @@ private fun NativeApp(initialIntent: Intent?) {
         selected = null
         selectedOffset = null
     }
-    BackHandler(selected == null && activeTab != HomeTab.LIBRARY) { activeTab = HomeTab.LIBRARY }
+    BackHandler(selected == null && activeTab != HomeTab.HOME) {
+        activeTab = if (activeTab in primaryTabs) HomeTab.HOME else featureParent
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -218,6 +237,7 @@ private fun NativeApp(initialIntent: Intent?) {
         }
         try {
             withContext(Dispatchers.IO) { NativeIncrementalSync(context).synchronizeAutomatically(store) }
+            books = withContext(Dispatchers.IO) { store.all() }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
@@ -289,8 +309,13 @@ private fun NativeApp(initialIntent: Intent?) {
         }
     }
 
+    val incomingKey = initialIntent?.let { incomingBookUris(it).joinToString("\n") }
+    var handledIncomingKey by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(initialIntent) {
-        if (initialIntent != null) importUris(incomingBookUris(initialIntent))
+        if (!incomingKey.isNullOrEmpty() && incomingKey != handledIncomingKey) {
+            handledIncomingKey = incomingKey
+            importUris(incomingBookUris(initialIntent!!))
+        }
     }
 
     LaunchedEffect(activeTab, selected) {
@@ -307,8 +332,8 @@ private fun NativeApp(initialIntent: Intent?) {
         }
     }
 
-    LaunchedEffect(activeTab, selected) {
-        if (activeTab != HomeTab.STATISTICS || selected != null) return@LaunchedEffect
+    LaunchedEffect(activeTab, selected, books, foregroundRevision) {
+        if (activeTab !in listOf(HomeTab.HOME, HomeTab.ME, HomeTab.STATISTICS) || selected != null) return@LaunchedEffect
         statisticsLoading = true
         try {
             readingSummary = withContext(Dispatchers.IO) { store.readingSummary() }
@@ -321,31 +346,56 @@ private fun NativeApp(initialIntent: Intent?) {
         }
     }
 
-    InkflowTheme(eInkConfig = eInkConfig) {
+    InkflowTheme(eInkConfig = eInkConfig, appearance = appAppearance) {
         if (selected != null) {
             ReaderScreen(
                 book = selected!!,
                 store = store,
                 snackbar = snackbar,
                 initialOffset = selectedOffset,
+                openNarrationInitially = listenBookId == selected!!.id,
                 onBack = {
                     books = store.all()
                     selected = null
                     selectedOffset = null
+                    listenBookId = null
                 },
             )
         } else {
+            AppSystemBars()
             val activeContent: @Composable (Modifier) -> Unit = { contentModifier ->
                 Box(contentModifier.fillMaxSize()) {
                     when (activeTab) {
+                        HomeTab.HOME -> HomeScreen(
+                            books = books, summary = readingSummary, loading = statisticsLoading,
+                            snackbar = snackbar, importing = importing,
+                            onOpen = { book ->
+                                if (book.file.isFile) {
+                                    selectedOffset = null
+                                    selected = book
+                                } else scope.launch { snackbar.showSnackbar(context.getString(R.string.book_file_missing)) }
+                            },
+                            onLibrary = { activeTab = HomeTab.LIBRARY },
+                            onImport = { if (!importing) picker.launch(arrayOf("*/*")) },
+                            onStatistics = { featureParent = HomeTab.HOME; activeTab = HomeTab.STATISTICS },
+                            onWifiTransfer = { featureParent = HomeTab.HOME; activeTab = HomeTab.TRANSFER },
+                        )
+                        HomeTab.ME -> MeScreen(
+                            summary = readingSummary,
+                            onNotes = { featureParent = HomeTab.ME; activeTab = HomeTab.NOTES },
+                            onVocabulary = { featureParent = HomeTab.ME; activeTab = HomeTab.VOCABULARY },
+                            onStatistics = { featureParent = HomeTab.ME; activeTab = HomeTab.STATISTICS },
+                            onSettings = { featureParent = HomeTab.ME; activeTab = HomeTab.SETTINGS },
+                        )
                         HomeTab.LIBRARY -> BookshelfScreen(
                             books = books,
                             store = store,
                             importing = importing,
                             snackbar = snackbar,
                             onLibraryChanged = { books = store.all() },
-                            onImport = { picker.launch(arrayOf("*/*")) },
-                            onOpen = { selected = it },
+                            onImport = { importOptions = true },
+                            onOpen = { selectedOffset = null; listenBookId = null; selected = it },
+                            onListen = { selectedOffset = null; listenBookId = it.id; selected = it },
                             onRemove = { removing = it },
                         )
                         HomeTab.NOTES -> LibraryNotesScreen(
@@ -362,7 +412,7 @@ private fun NativeApp(initialIntent: Intent?) {
                                     }
                                 }
                             },
-                            onBack = { activeTab = HomeTab.LIBRARY },
+                            onBack = { activeTab = featureParent },
                             onOpen = { note ->
                                 when {
                                     !note.book.file.exists() -> scope.launch {
@@ -382,7 +432,7 @@ private fun NativeApp(initialIntent: Intent?) {
                         )
                         HomeTab.VOCABULARY -> NativeVocabularyScreen(
                             store = vocabulary,
-                            onBack = { activeTab = HomeTab.LIBRARY },
+                            onBack = { activeTab = featureParent },
                             onOpen = { entry ->
                                 val source = books.firstOrNull { it.id.toString() == entry.bookId && it.file.exists() }
                                 val location = entry.position.orEmpty()
@@ -412,12 +462,17 @@ private fun NativeApp(initialIntent: Intent?) {
                             summary = readingSummary,
                             loading = statisticsLoading,
                             snackbar = snackbar,
-                            onBack = { activeTab = HomeTab.LIBRARY },
+                            onBack = { activeTab = featureParent },
+                        )
+                        HomeTab.TRANSFER -> com.aceinandroid.inkflow.ui.settings.WirelessTransferScreen(
+                            store = store,
+                            onBack = { activeTab = featureParent },
+                            onImported = { books = store.all() },
                         )
                         HomeTab.SETTINGS -> SettingsScreen(
                             store = store,
                             onSynced = { books = store.all() },
-                            onBack = { activeTab = HomeTab.LIBRARY },
+                            onBack = { activeTab = featureParent },
                             restoring = restoring,
                             exportingBackup = exportingBackup,
                             onRestore = { restorePicker.launch(arrayOf("*/*")) },
@@ -427,20 +482,25 @@ private fun NativeApp(initialIntent: Intent?) {
                                 books = store.all()
                             },
                             onEInkChanged = { enabled -> eInkConfig = eInkConfig.copy(enabled = enabled) },
+                            appAppearance = appAppearance,
+                            onAppAppearanceChanged = { mode ->
+                                appAppearanceStore.save(mode)
+                                appAppearance = mode
+                            },
                         )
                     }
                 }
             }
 
             BoxWithConstraints(Modifier.fillMaxSize()) {
-                val useRail = maxWidth >= 720.dp
+                val useRail = maxWidth >= 600.dp
                 if (useRail) {
                     Row(Modifier.fillMaxSize()) {
                         NavigationRail(Modifier.fillMaxHeight()) {
-                            HomeTab.entries.forEach { tab ->
+                            primaryTabs.forEach { tab ->
                                 val label = stringResource(tab.labelRes)
                                 NavigationRailItem(
-                                    selected = activeTab == tab,
+                                    selected = selectedTab == tab,
                                     onClick = { activeTab = tab },
                                     icon = { Icon(tab.icon, contentDescription = label) },
                                     label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -453,10 +513,10 @@ private fun NativeApp(initialIntent: Intent?) {
                     Scaffold(
                         bottomBar = {
                             NavigationBar {
-                                HomeTab.entries.forEach { tab ->
+                                primaryTabs.forEach { tab ->
                                     val label = stringResource(tab.labelRes)
                                     NavigationBarItem(
-                                        selected = activeTab == tab,
+                                        selected = selectedTab == tab,
                                         onClick = { activeTab = tab },
                                         icon = { Icon(tab.icon, contentDescription = label) },
                                         label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -536,6 +596,19 @@ private fun NativeApp(initialIntent: Intent?) {
                 },
             )
         }
+        if (importOptions) AlertDialog(
+            onDismissRequest = { importOptions = false },
+            title = { Text(stringResource(R.string.import_book)) },
+            text = { Column {
+                TextButton(onClick = { importOptions = false; picker.launch(arrayOf("*/*")) }) {
+                    Text(stringResource(R.string.import_book))
+                }
+                TextButton(onClick = {
+                    importOptions = false; featureParent = HomeTab.LIBRARY; activeTab = HomeTab.TRANSFER
+                }) { Text(stringResource(R.string.p2_wireless_transfer)) }
+            } },
+            confirmButton = { TextButton(onClick = { importOptions = false }) { Text(stringResource(R.string.cancel)) } },
+        )
         InkflowSplashOverlay(
             skip = eInkConfig.enabled || initialIntent?.let(::incomingBookUris)?.isNotEmpty() == true,
         )

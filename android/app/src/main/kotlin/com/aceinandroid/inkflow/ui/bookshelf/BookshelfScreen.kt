@@ -2,12 +2,15 @@ package com.aceinandroid.inkflow.ui.bookshelf
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -37,8 +40,10 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
@@ -78,6 +83,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,7 +92,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -96,13 +107,14 @@ import com.aceinandroid.inkflow.BookshelfSortStore
 import com.aceinandroid.inkflow.R
 import com.aceinandroid.inkflow.ReaderControlsStore
 import com.aceinandroid.inkflow.StoredBook
-import com.aceinandroid.inkflow.ui.theme.LocalEInkConfig
 import com.aceinandroid.inkflow.core.BookshelfViewMode
+import com.aceinandroid.inkflow.ui.theme.LocalEInkConfig
+import java.io.File
+import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,24 +128,33 @@ fun BookshelfScreen(
     onOpen: (StoredBook) -> Unit,
     onRemove: (StoredBook) -> Unit,
     modifier: Modifier = Modifier,
+    onListen: ((StoredBook) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val eInk = LocalEInkConfig.current
     val sortStore = remember(context) { BookshelfSortStore(context) }
     val controlsStore = remember(context) { ReaderControlsStore(context) }
-    var query by remember { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
     var sorting by remember { mutableStateOf(sortStore.load()) }
     var viewMode by remember { mutableStateOf(controlsStore.bookshelfViewMode()) }
     var sortMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var groups by remember(store) { mutableStateOf(store.groups()) }
-    var selectedGroupId by remember { mutableStateOf<Long?>(null) }
+    var selectedGroupId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editingGroup by remember { mutableStateOf<BookGroup?>(null) }
     var creatingGroup by remember { mutableStateOf(false) }
     var deletingGroup by remember { mutableStateOf<BookGroup?>(null) }
     var movingGroup by remember { mutableStateOf<BookGroup?>(null) }
     var movingBook by remember { mutableStateOf<StoredBook?>(null) }
     var detailBook by remember { mutableStateOf<StoredBook?>(null) }
+    var selectionMode by rememberSaveable { mutableStateOf(false) }
+    var selectedIds by rememberSaveable(stateSaver = Saver<Set<Long>, LongArray>(
+        save = { it.toLongArray() }, restore = { it.toSet() },
+    )) { mutableStateOf(emptySet()) }
+    var confirmBatchRemoval by remember { mutableStateOf<List<StoredBook>?>(null) }
+    var movingSelection by remember { mutableStateOf(false) }
+    var batchBusy by remember { mutableStateOf(false) }
+    var batchResult by remember { mutableStateOf<BookshelfBatchResult?>(null) }
 
     val filtered = remember(books, query, sorting, selectedGroupId) {
         sorting.apply(books.filter {
@@ -141,6 +162,38 @@ fun BookshelfScreen(
                 (it.title.contains(query, ignoreCase = true) ||
                     it.author.contains(query, ignoreCase = true))
         })
+    }
+
+    val selectedBooks = filtered.filter { it.id in selectedIds }
+    LaunchedEffect(filtered.map { it.id }) {
+        selectedIds = selectedIds.intersect(filtered.map { it.id }.toSet())
+    }
+    BackHandler(enabled = selectionMode) {
+        if (!batchBusy) { selectionMode = false; selectedIds = emptySet() }
+    }
+
+    fun toggleSelection(book: StoredBook) {
+        if (!batchBusy) {
+            selectionMode = true
+            selectedIds = toggleBookshelfSelection(selectedIds, book.id)
+        }
+    }
+
+    fun runBatch(batch: List<StoredBook>, action: (StoredBook) -> Unit) {
+        if (batchBusy || batch.isEmpty()) return
+        batchBusy = true
+        scope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) { applyBookshelfBatch(batch, action) }
+                selectedIds = selectedIds - result.succeeded
+                selectionMode = result.failed.isNotEmpty()
+                if (result.failed.isNotEmpty()) batchResult = result
+            } finally {
+                batchBusy = false
+                // A confirmed batch may finish while this screen is leaving composition.
+                onLibraryChanged()
+            }
+        }
     }
 
     fun changeGroups(action: () -> Unit, after: () -> Unit = {}) {
@@ -165,8 +218,16 @@ fun BookshelfScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
+                navigationIcon = {
+                    if (selectionMode) IconButton(enabled = !batchBusy, onClick = {
+                        selectionMode = false; selectedIds = emptySet()
+                    }) { Icon(Icons.Default.Close, stringResource(R.string.cancel)) }
+                },
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (selectionMode) {
+                        Text(stringResource(R.string.bookshelf_selected_count, selectedBooks.size),
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.library), fontWeight = FontWeight.Bold)
                         if (books.isNotEmpty()) {
                             Surface(
@@ -184,24 +245,40 @@ fun BookshelfScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        val next = if (viewMode == BookshelfViewMode.GRID) BookshelfViewMode.LIST else BookshelfViewMode.GRID
-                        viewMode = next
-                        controlsStore.setBookshelfViewMode(next)
-                    }) {
-                        Icon(
-                            if (viewMode == BookshelfViewMode.GRID) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                            contentDescription = stringResource(if (viewMode == BookshelfViewMode.GRID) R.string.view_list else R.string.view_grid),
-                        )
-                    }
-                    IconButton(onClick = onImport, enabled = !importing) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.import_book))
+                    if (selectionMode) {
+                        IconButton(enabled = !batchBusy && filtered.isNotEmpty(), onClick = {
+                            selectedIds = if (selectedBooks.size == filtered.size) emptySet()
+                                else filtered.map { it.id }.toSet()
+                        }) { Icon(Icons.Default.DoneAll, stringResource(R.string.bookshelf_select_all)) }
+                        IconButton(enabled = !batchBusy && selectedBooks.isNotEmpty(), onClick = { movingSelection = true }) {
+                            Icon(Icons.Default.Folder, stringResource(R.string.group_move_book))
+                        }
+                        IconButton(enabled = !batchBusy && selectedBooks.isNotEmpty(), onClick = {
+                            confirmBatchRemoval = selectedBooks.toList()
+                        }) { Icon(Icons.Default.Delete, stringResource(R.string.bookshelf_delete_selected)) }
+                    } else {
+                        IconButton(onClick = { selectionMode = true }) {
+                            Icon(Icons.Default.Check, stringResource(R.string.bookshelf_select))
+                        }
+                        IconButton(onClick = {
+                            val next = if (viewMode == BookshelfViewMode.GRID) BookshelfViewMode.LIST else BookshelfViewMode.GRID
+                            viewMode = next
+                            controlsStore.setBookshelfViewMode(next)
+                        }) {
+                            Icon(
+                                if (viewMode == BookshelfViewMode.GRID) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                contentDescription = stringResource(if (viewMode == BookshelfViewMode.GRID) R.string.view_list else R.string.view_grid),
+                            )
+                        }
+                        IconButton(onClick = onImport, enabled = !importing) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.import_book))
+                        }
                     }
                 },
             )
         },
         floatingActionButton = {
-            if (books.isNotEmpty() && !importing) {
+            if (books.isNotEmpty() && !importing && !selectionMode) {
                 FloatingActionButton(
                     onClick = onImport,
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -354,7 +431,7 @@ fun BookshelfScreen(
             }
 
             Spacer(Modifier.height(8.dp))
-            if (importing) {
+            if (importing || batchBusy) {
                 LinearProgressIndicator(Modifier.fillMaxWidth().padding(bottom = 8.dp))
             }
 
@@ -394,21 +471,33 @@ fun BookshelfScreen(
                     }
                 }
                 viewMode == BookshelfViewMode.GRID -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 112.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp),
-                        contentPadding = PaddingValues(top = 4.dp, bottom = 88.dp),
-                    ) {
-                        items(filtered, key = { it.id }) { book ->
-                            BookGridItem(
-                                book = book,
-                                eInk = eInk.enabled,
-                                onOpen = { onOpen(book) },
-                                onDetails = { detailBook = book },
-                                onMove = { movingBook = book },
-                                onRemove = { onRemove(book) },
-                            )
+                    val fontScale = LocalDensity.current.fontScale
+                    BoxWithConstraints(Modifier.fillMaxSize()) {
+                        val columns = bookshelfColumnCount(maxWidth.value, fontScale)
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(columns),
+                            modifier = Modifier.testTag("bookshelf.grid.$columns"),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            contentPadding = PaddingValues(top = 4.dp, bottom = 88.dp),
+                        ) {
+                            items(filtered, key = { it.id }) { book ->
+                                BookGridItem(
+                                    book = book,
+                                    eInk = eInk.enabled,
+                                    selected = book.id in selectedIds,
+                                    selectionMode = selectionMode,
+                                    enabled = !batchBusy,
+                                    onSelect = { toggleSelection(book) },
+                                    onOpen = { if (selectionMode) toggleSelection(book) else onOpen(book) },
+                                    onDetails = { detailBook = book },
+                                    onMove = { movingBook = book },
+                                    onRemove = { onRemove(book) },
+                                )
+                            }
+                            item(key = "import") {
+                                BookshelfImportCard(enabled = !importing && !selectionMode, onImport = onImport)
+                            }
                         }
                     }
                 }
@@ -421,7 +510,11 @@ fun BookshelfScreen(
                             BookListItem(
                                 book = book,
                                 eInk = eInk.enabled,
-                                onOpen = { onOpen(book) },
+                                selected = book.id in selectedIds,
+                                selectionMode = selectionMode,
+                                enabled = !batchBusy,
+                                onSelect = { toggleSelection(book) },
+                                onOpen = { if (selectionMode) toggleSelection(book) else onOpen(book) },
                                 onDetails = { detailBook = book },
                                 onMove = { movingBook = book },
                                 onRemove = { onRemove(book) },
@@ -433,11 +526,69 @@ fun BookshelfScreen(
         }
     }
 
+    confirmBatchRemoval?.let { batch ->
+        AlertDialog(
+            onDismissRequest = { confirmBatchRemoval = null },
+            title = { Text(stringResource(R.string.bookshelf_delete_title, batch.size)) },
+            text = {
+                Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+                    Text(stringResource(R.string.bookshelf_delete_message))
+                    batch.forEach { Text(it.title, Modifier.padding(top = 8.dp)) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmBatchRemoval = null
+                    runBatch(batch) { store.removeBook(it.id) }
+                }) { Text(stringResource(R.string.remove_book)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmBatchRemoval = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+    if (movingSelection) {
+        AlertDialog(
+            onDismissRequest = { movingSelection = false },
+            title = { Text(stringResource(R.string.group_move_book)) },
+            text = {
+                Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
+                    (listOf(BookGroup(0, stringResource(R.string.group_unfiled), 0)) + groups).forEach { group ->
+                        TextButton(onClick = {
+                            movingSelection = false
+                            runBatch(selectedBooks.toList()) { store.moveBookToGroup(it.id, group.id) }
+                        }) { Text(if (group.id == 0L) group.name else groupPath(group, groups)) }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { movingSelection = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+    batchResult?.let { result ->
+        AlertDialog(
+            onDismissRequest = { batchResult = null },
+            title = { Text(stringResource(R.string.bookshelf_batch_result, result.succeeded.size, result.failed.size)) },
+            text = {
+                Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
+                    result.failed.forEach { failure ->
+                        Text(failure.book.title, style = MaterialTheme.typography.titleSmall)
+                        Text(failure.message ?: stringResource(R.string.group_action_failed), Modifier.padding(bottom = 12.dp))
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { batchResult = null }) { Text(stringResource(R.string.close)) } },
+        )
+    }
+
     detailBook?.let { selected ->
         BookDetailScreen(selected, store,
             onDismiss = { detailBook = null },
             onSaved = { detailBook = null; onLibraryChanged() },
-            onRead = { detailBook = null; onOpen(selected) })
+            onRead = { detailBook = null; onOpen(selected) },
+            onListen = onListen?.let { listen -> { detailBook = null; listen(selected) } })
     }
 
     if (creatingGroup || editingGroup != null) {
@@ -555,6 +706,10 @@ fun BookshelfScreen(
 private fun BookGridItem(
     book: StoredBook,
     eInk: Boolean,
+    selected: Boolean,
+    selectionMode: Boolean,
+    enabled: Boolean,
+    onSelect: () -> Unit,
     onOpen: () -> Unit,
     onDetails: () -> Unit,
     onMove: () -> Unit,
@@ -564,17 +719,24 @@ private fun BookGridItem(
     val percent = (book.progress.coerceIn(0.0, 1.0) * 100).roundToInt()
 
     Card(
-        onClick = onOpen,
+        modifier = Modifier.testTag("bookshelf.book.${book.id}")
+            .semantics { this.selected = selected }
+            .combinedClickable(enabled = enabled, onClick = onOpen, onLongClick = onSelect,
+                onLongClickLabel = stringResource(R.string.bookshelf_select)),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = if (eInk) 0.dp else 1.5.dp),
-        border = if (eInk) BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
+        border = when {
+            selected -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            eInk -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            else -> null
+        },
     ) {
         Column(Modifier.fillMaxWidth()) {
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .aspectRatio(0.72f)
+                    .aspectRatio(BOOKSHELF_COVER_RATIO)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             ) {
                 BookCoverGraphic(book, Modifier.fillMaxSize())
@@ -591,8 +753,12 @@ private fun BookGridItem(
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                     )
                 }
-                Box(Modifier.align(Alignment.TopEnd)) {
-                    IconButton(onClick = { menu = true }, modifier = Modifier.size(32.dp)) {
+                if (selectionMode) {
+                    Icon(if (selected) Icons.Default.Check else Icons.Default.Add,
+                        stringResource(if (selected) R.string.bookshelf_selected else R.string.bookshelf_not_selected),
+                        Modifier.align(Alignment.TopEnd).padding(8.dp).size(24.dp))
+                } else Box(Modifier.align(Alignment.TopEnd)) {
+                    IconButton(onClick = { menu = true }, modifier = Modifier.size(48.dp)) {
                         Icon(
                             Icons.Default.MoreVert,
                             contentDescription = stringResource(R.string.book_options),
@@ -632,6 +798,10 @@ private fun BookGridItem(
 private fun BookListItem(
     book: StoredBook,
     eInk: Boolean,
+    selected: Boolean,
+    selectionMode: Boolean,
+    enabled: Boolean,
+    onSelect: () -> Unit,
     onOpen: () -> Unit,
     onDetails: () -> Unit,
     onMove: () -> Unit,
@@ -641,11 +811,18 @@ private fun BookListItem(
     val percent = (book.progress.coerceIn(0.0, 1.0) * 100).roundToInt()
 
     Card(
-        onClick = onOpen,
+        modifier = Modifier.testTag("bookshelf.book.${book.id}")
+            .semantics { this.selected = selected }
+            .combinedClickable(enabled = enabled, onClick = onOpen, onLongClick = onSelect,
+                onLongClickLabel = stringResource(R.string.bookshelf_select)),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = if (eInk) 0.dp else 1.dp),
-        border = if (eInk) BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
+        border = when {
+            selected -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            eInk -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            else -> null
+        },
     ) {
         Row(
             Modifier.fillMaxWidth().padding(12.dp),
@@ -654,7 +831,7 @@ private fun BookListItem(
             BookCoverGraphic(
                 book = book,
                 modifier = Modifier
-                    .size(54.dp, 76.dp)
+                    .width(54.dp).aspectRatio(BOOKSHELF_COVER_RATIO)
                     .clip(RoundedCornerShape(6.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             )
@@ -689,7 +866,10 @@ private fun BookListItem(
                     )
                 }
             }
-            Box {
+            if (selectionMode) {
+                Icon(if (selected) Icons.Default.Check else Icons.Default.Add,
+                    stringResource(if (selected) R.string.bookshelf_selected else R.string.bookshelf_not_selected))
+            } else Box {
                 IconButton(onClick = { menu = true }) {
                     Icon(Icons.Default.MoreVert, stringResource(R.string.book_options))
                 }
@@ -784,4 +964,53 @@ private fun canBeGroupParent(groupId: Long, parentId: Long, groups: List<BookGro
         current = byId[current]?.parentId ?: return false
     }
     return true
+}
+
+internal const val BOOKSHELF_COVER_RATIO = 1f / 1.44f
+
+/** Width is the grid's actual space after the screen's horizontal padding. */
+internal fun bookshelfColumnCount(widthDp: Float, fontScale: Float): Int {
+    if (widthDp < 600f) return if (widthDp < 320f || fontScale >= 1.3f) 2 else 3
+    val preferredWidth = if (fontScale >= 1.3f) 160f * fontScale else 152f
+    return ((widthDp + 12f) / (preferredWidth + 12f)).toInt().coerceAtLeast(2)
+}
+
+internal fun toggleBookshelfSelection(ids: Set<Long>, bookId: Long): Set<Long> =
+    if (bookId in ids) ids - bookId else ids + bookId
+
+internal data class BookshelfBatchFailure(val book: StoredBook, val message: String?)
+internal data class BookshelfBatchResult(val succeeded: Set<Long>, val failed: List<BookshelfBatchFailure>)
+
+/** Each store mutation retains its existing transaction and cleanup semantics. */
+internal fun applyBookshelfBatch(books: List<StoredBook>, action: (StoredBook) -> Unit): BookshelfBatchResult {
+    val succeeded = mutableSetOf<Long>()
+    val failed = mutableListOf<BookshelfBatchFailure>()
+    books.distinctBy { it.id }.forEach { book ->
+        try {
+            action(book)
+            succeeded += book.id
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            failed += BookshelfBatchFailure(book, failure.message)
+        }
+    }
+    return BookshelfBatchResult(succeeded, failed)
+}
+
+@Composable
+private fun BookshelfImportCard(enabled: Boolean, onImport: () -> Unit) {
+    Card(
+        onClick = onImport, enabled = enabled,
+        modifier = Modifier.fillMaxWidth().aspectRatio(BOOKSHELF_COVER_RATIO).testTag("bookshelf.import"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center) {
+            Icon(Icons.Default.Add, null, Modifier.size(32.dp))
+            Text(stringResource(R.string.import_book), style = MaterialTheme.typography.labelLarge)
+        }
+    }
 }

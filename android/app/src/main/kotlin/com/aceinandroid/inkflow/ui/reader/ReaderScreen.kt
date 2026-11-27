@@ -57,6 +57,7 @@ import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -79,6 +80,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -163,6 +165,9 @@ import com.aceinandroid.inkflow.core.ReaderEngineMode
 import com.aceinandroid.inkflow.core.ReadingContextSnapshot
 import com.aceinandroid.inkflow.core.SentenceBoundaryResolver
 import com.aceinandroid.inkflow.core.SelectionRangeController
+import com.aceinandroid.inkflow.core.ReaderHighlightKind
+import com.aceinandroid.inkflow.core.ReaderTransientHighlight
+import com.aceinandroid.inkflow.core.ReaderTransientHighlights
 import com.aceinandroid.inkflow.core.TextSelectionRange
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -200,11 +205,14 @@ fun ReaderScreen(
     snackbar: SnackbarHostState,
     initialOffset: Int?,
     onBack: () -> Unit,
+    openNarrationInitially: Boolean = false,
 ) {
     val context = LocalContext.current
     val appearanceStore = remember(context) { ReaderAppearanceStore(context) }
     var appearance by remember { mutableStateOf(appearanceStore.load()) }
     ReaderSystemBars(appearance)
+    ReaderWindowBrightness()
+    val appColorScheme = MaterialTheme.colorScheme
     MaterialTheme(colorScheme = appearance.colors) {
         ReaderContent(
             book = book,
@@ -212,7 +220,9 @@ fun ReaderScreen(
             snackbar = snackbar,
             onBack = onBack,
             appearance = appearance,
+            appColorScheme = appColorScheme,
             initialOffset = initialOffset,
+            openNarrationInitially = openNarrationInitially,
             onAppearanceChange = { updated ->
                 appearance = updated
                 appearanceStore.save(updated)
@@ -255,14 +265,21 @@ private fun ReaderContent(
     snackbar: SnackbarHostState,
     onBack: () -> Unit,
     appearance: ReaderAppearance,
+    appColorScheme: androidx.compose.material3.ColorScheme,
     initialOffset: Int?,
+    openNarrationInitially: Boolean,
     onAppearanceChange: (ReaderAppearance) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val eInk = LocalEInkConfig.current
     val controlsStore = remember(context) { ReaderControlsStore(context) }
+    var actualSpread by remember(book.id) { mutableStateOf(false) }
+    var followsNarration by remember(book.id) { mutableStateOf(true) }
+    var narrationNavigationTarget by remember(book.id) { mutableStateOf<Int?>(null) }
+    var spreadEnabled by remember { mutableStateOf(controlsStore.twoPageLayout()) }
     var swipeToTurnPage by remember { mutableStateOf(controlsStore.swipeToTurnPage()) }
+    var edgeSelectionEnabled by remember { mutableStateOf(controlsStore.edgeSelectionEnabled()) }
     var fullScreenImage by remember(book.id) { mutableStateOf<Bitmap?>(null) }
     val readerFontFamily = remember(context, appearance.font, appearance.customFontId) {
         ReaderAppearanceStore(context).fontFamily(appearance)
@@ -272,6 +289,10 @@ private fun ReaderContent(
     var pendingPositionWrite by remember(book.id) { mutableStateOf<Job?>(null) }
     val readingSession = remember(book.id) { ReadingSessionTracker(book.id, store) }
     val narrator = remember(book.id) { NarrationPlayback.obtain(context, book.id) }
+    val narrationPrefix = "book:${book.id}:chapter:"
+    fun narrationSourceChapter(id: String?): Int? = id?.takeIf { it.startsWith(narrationPrefix) }
+        ?.removePrefix(narrationPrefix)?.toIntOrNull()
+    var narrationChapter by remember(book.id) { mutableIntStateOf(narrationSourceChapter(narrator.sourceId) ?: book.position) }
     val noReadableText = stringResource(R.string.no_readable_text)
 
     DisposableEffect(narrator) { onDispose { NarrationPlayback.releaseIfIdle(book.id) } }
@@ -327,9 +348,13 @@ private fun ReaderContent(
     var directlySelectedEnd by remember(book.id, position) { mutableIntStateOf(0) }
 
     // Selection, AI, Lookup, Annotations, Bookmarks, Dialogs
+    val transientHighlights = remember(book.id) { ReaderTransientHighlights(book.id) }
+    var transientHighlight by remember(book.id) { mutableStateOf<ReaderTransientHighlight?>(null) }
+    var pendingHighlight by remember(book.id) { mutableStateOf<ReaderTransientHighlight?>(null) }
     var selection by remember(book.id) { mutableStateOf<TextSelectionRange?>(null) }
     var webViewSelectedText by remember(book.id) { mutableStateOf<String?>(null) }
     var selectionMenu by remember(book.id) { mutableStateOf(false) }
+    var aiPanelWidth by rememberSaveable(book.id) { mutableStateOf(400f) }
     var aiSheetOpen by remember(book.id) { mutableStateOf(false) }
     var aiQuickAction by remember(book.id) { mutableStateOf<AiQuickAction?>(null) }
     var aiTranslation by remember(book.id) { mutableStateOf<com.aceinandroid.inkflow.core.translate.TranslationRequest?>(null) }
@@ -340,6 +365,9 @@ private fun ReaderContent(
     var annotations by remember(book.id) { mutableStateOf<List<StoredAnnotation>>(emptyList()) }
     var vocabularyDraft by remember(book.id) { mutableStateOf<VocabularyDraft?>(null) }
     var vocabularySaving by remember(book.id) { mutableStateOf(false) }
+    var selectionStyleOpen by remember(book.id) { mutableStateOf(false) }
+    var previewAnnotation by remember(book.id) { mutableStateOf<StoredAnnotation?>(null) }
+    val renderedAnnotations = previewAnnotation?.let { preview -> annotations.filterNot { it.cfi == preview.cfi } + preview } ?: annotations
     var annotationDialog by remember(book.id) { mutableStateOf(false) }
     var annotationsDialog by remember(book.id) { mutableStateOf(false) }
     var editingAnnotation by remember(book.id) { mutableStateOf<StoredAnnotation?>(null) }
@@ -358,7 +386,8 @@ private fun ReaderContent(
     var searchResults by remember(book.id) { mutableStateOf<List<BookSearchHit>>(emptyList()) }
     var searching by remember(book.id) { mutableStateOf(false) }
     var appearanceDialog by remember(book.id) { mutableStateOf(false) }
-    var narrationDialog by remember(book.id) { mutableStateOf(false) }
+    var brightnessDialog by rememberSaveable(book.id) { mutableStateOf(false) }
+    var narrationDialog by rememberSaveable(book.id) { mutableStateOf(openNarrationInitially) }
     var preparingSpeech by remember(book.id) { mutableStateOf(false) }
     var speechRequest by remember(book.id) { mutableIntStateOf(0) }
     var autoNarrateTarget by remember(book.id) { mutableStateOf<Int?>(null) }
@@ -369,6 +398,22 @@ private fun ReaderContent(
     val total = if (book.format == "pdf") pageCount else document?.chapters?.size ?: 0
 
     val activeSourceText: String = readable?.text ?: text
+    LaunchedEffect(position, loadedChapter, activeSourceText, pendingHighlight) {
+        val pending = pendingHighlight
+        if (loadedChapter == position && pending?.chapterIndex == position) {
+            if (pending.range.start >= 0 && pending.range.end <= activeSourceText.length && !pending.range.isEmpty) {
+                transientHighlights.put(pending.copy(expiresAtMillis = if (eInk.enabled) null else android.os.SystemClock.elapsedRealtime() + 3000), activeSourceText.length)
+            }
+            pendingHighlight = null
+        }
+        transientHighlight = transientHighlights.visible(position, android.os.SystemClock.elapsedRealtime())
+    }
+    LaunchedEffect(transientHighlight) {
+        transientHighlight?.expiresAtMillis?.let { expiry ->
+            delay((expiry - android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0))
+            transientHighlight = transientHighlights.visible(position, android.os.SystemClock.elapsedRealtime())
+        }
+    }
     val selectionController = remember(book.id, position, activeSourceText) { SelectionRangeController(activeSourceText) }
     LaunchedEffect(selection, selectionController) {
         if (selection == null) selectionController.clear()
@@ -413,20 +458,21 @@ private fun ReaderContent(
     }
 
     val onChapterFinished: () -> Unit = {
-        val next = position + 1
+        val next = narrationChapter + 1
         if (narrator.continuous && book.format != "pdf" && next < (document?.chapters?.size ?: 0)) {
             autoNarrateTarget = next
-            position = next
         }
     }
 
-    // Stop narration on chapter change
+    // Reading and playback have independent positions. Browsing pauses following, never audio.
     LaunchedEffect(book.id, position) {
-        if (autoNarrateTarget != null && autoNarrateTarget != position) autoNarrateTarget = null
+        if (narrationNavigationTarget != position && narrator.state in setOf(NarrationState.PLAYING, NarrationState.PAUSED, NarrationState.PREPARING)) {
+            followsNarration = false
+            speechRequest++
+            preparingSpeech = false
+        }
+        narrationNavigationTarget = null
         loadedChapter = -1
-        speechRequest++
-        preparingSpeech = false
-        narrator.stop()
     }
 
     // Inspect book metadata & chapters
@@ -580,18 +626,51 @@ private fun ReaderContent(
         }
     }
 
-    // Continuous narration
-    LaunchedEffect(autoNarrateTarget, loadedChapter) {
+    // Playback loads its own next chapter; reader navigation does not interrupt it.
+    LaunchedEffect(autoNarrateTarget) {
         val target = autoNarrateTarget ?: return@LaunchedEffect
-        if (target != position || loadedChapter != target) return@LaunchedEffect
-        autoNarrateTarget = null
-        if (activeSourceText.replace('\uFFFC', ' ').isBlank()) onChapterFinished()
-        else {
-            narrator.play(activeSourceText, onFinished = onChapterFinished)
-            if (narrator.state in setOf(NarrationState.PLAYING, NarrationState.PREPARING)) {
-                NarrationPlaybackService.start(context, book.title)
+        val chapter = document?.chapters?.getOrNull(target) ?: return@LaunchedEffect
+        preparingSpeech = true
+        try {
+            val body = withContext(Dispatchers.IO) { BookParser.readChapter(book.file, chapter) }
+            narrationChapter = target
+            if (followsNarration) {
+                narrationNavigationTarget = target
+                if (position == target) resumeOffset = 0 else { pendingOffset = 0; position = target }
+            }
+            if (body.replace('\uFFFC', ' ').isBlank()) onChapterFinished()
+            else {
+                narrator.updateMediaMetadata(book.title, chapter.title)
+                narrator.playSource(body, narrationPrefix + target, onFinished = onChapterFinished)
+                if (narrator.state in setOf(NarrationState.PLAYING, NarrationState.PREPARING))
+                    NarrationPlaybackService.start(context, book.title)
+            }
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { snackbar.showSnackbar(noReadableText) }
+        finally { preparingSpeech = false; if (autoNarrateTarget == target) autoNarrateTarget = null }
+    }
+
+    LaunchedEffect(narrator.position, narrator.state, loadedChapter, followsNarration) {
+        val spoken = narrator.position
+        val speakingChapter = narrationSourceChapter(spoken?.sourceId)
+        val range = spoken?.sentence ?: spoken?.paragraph
+        if (spoken == null || speakingChapter == null || range == null || range.start >= range.end ||
+            narrator.state !in setOf(NarrationState.PLAYING, NarrationState.PAUSED)) {
+            transientHighlights.clear(ReaderHighlightKind.NARRATION)
+        } else {
+            transientHighlights.put(ReaderTransientHighlight(book.id, speakingChapter,
+                TextSelectionRange(range.start, range.end), ReaderHighlightKind.NARRATION), spoken.sourceLength)
+            if (followsNarration && narrator.state == NarrationState.PLAYING && selection == null && !aiSheetOpen) {
+                if (speakingChapter != position) {
+                    narrationNavigationTarget = speakingChapter
+                    pendingOffset = spoken.offset
+                    position = speakingChapter
+                } else if (loadedChapter == position && pagination?.pageIndexForOffset(spoken.offset) != currentPage) {
+                    resumeOffset = spoken.offset
+                }
             }
         }
+        transientHighlight = transientHighlights.visible(position, android.os.SystemClock.elapsedRealtime())
     }
 
     // Book search
@@ -624,7 +703,7 @@ private fun ReaderContent(
     val turnPage: (Int) -> Boolean = { keyCode ->
         if (total == 0 || (book.format != "pdf" && loadedChapter != position) ||
             error != null || remoteOffer != null || annotationDialog || annotationsDialog ||
-            bookmarkDialog || tocDialog || searchDialog || appearanceDialog ||
+            bookmarkDialog || tocDialog || searchDialog || appearanceDialog || brightnessDialog ||
             narrationDialog || moreMenu || aiSheetOpen || lookupQuery != null
         ) false
         else if (selection != null || webViewSelectedText != null) {
@@ -632,17 +711,21 @@ private fun ReaderContent(
             webViewSelectedText = null
             true
         } else {
+            followsNarration = false
             val forward = keyCode in forwardPageKeys
             val summary = pagination
+            // Pagination counts viewports; a spread already contains two leaves.
+            val pageStep = 1
+            val visiblePage = currentPage
             if (book.format != "pdf" && engineMode == ReaderEngineMode.NATIVE_PAGED && summary != null) {
                 when {
-                    forward && currentPage + 1 < summary.pageCount -> {
-                        val nextPage = currentPage + 1
+                    forward && visiblePage + pageStep < summary.pageCount -> {
+                        val nextPage = visiblePage + pageStep
                         currentPage = nextPage
                         summary.pages.getOrNull(nextPage)?.startOffset?.let(::persistCurrentOffset)
                     }
-                    !forward && currentPage > 0 -> {
-                        val prevPage = currentPage - 1
+                    !forward && visiblePage > 0 -> {
+                        val prevPage = (visiblePage - pageStep).coerceAtLeast(0)
                         currentPage = prevPage
                         summary.pages.getOrNull(prevPage)?.startOffset?.let(::persistCurrentOffset)
                     }
@@ -701,7 +784,11 @@ private fun ReaderContent(
                     snackbar.showSnackbar(noReadableText)
                     return@launch
                 }
-                narrator.play(body, if (book.format == "pdf") 0 else currentOffset, onChapterFinished)
+                narrationChapter = requestedPosition
+                followsNarration = true
+                narrator.updateMediaMetadata(book.title, document?.chapters?.getOrNull(requestedPosition)?.title.orEmpty())
+                narrator.playSource(body, narrationPrefix + requestedPosition,
+                    if (book.format == "pdf") 0 else currentOffset, onChapterFinished)
                 if (narrator.state in setOf(NarrationState.PLAYING, NarrationState.PREPARING)) {
                     NarrationPlaybackService.start(context, book.title)
                 }
@@ -783,6 +870,47 @@ private fun ReaderContent(
         vocabularyDraft = VocabularyDraft(selectedStr, sentence, location, chapterTitle, initialDef)
     }
 
+    fun saveSelectionMark(type: String = draftType, color: String = draftColor) {
+        if (annotationSaving) return
+        val range = selection?.normalized() ?: return
+        val body = readable ?: return
+        val chapter = document?.chapters?.getOrNull(position) ?: return
+        val base = chapter.baseCfi ?: return
+        val location = body.rangeCfiAt(base, range.start, range.end) ?: return
+        val content = body.text.substring(range.start.coerceIn(0, body.text.length), range.end.coerceIn(0, body.text.length))
+        val previous = annotations.firstOrNull { it.cfi == location }
+        val oldType = draftType; val oldColor = draftColor
+        draftType = type; draftColor = color
+        previewAnnotation = StoredAnnotation(previous?.id ?: -1, content, location, chapter.title, type, color, previous?.readerNote.orEmpty())
+        annotationSaving = true
+        scope.launch {
+            try {
+                val mutation = withContext(Dispatchers.IO) {
+                    store.saveAnnotation(book.id, content, location, chapter.title, type, color, previous?.readerNote.orEmpty(), previous)
+                }
+                annotations = withContext(Dispatchers.IO) { store.annotations(book.id) }
+                previewAnnotation = null; annotationSaving = false
+                if (snackbar.showSnackbar(context.getString(R.string.annotation_saved), context.getString(R.string.undo)) == SnackbarResult.ActionPerformed) {
+                    val result = withContext(Dispatchers.IO) { store.undoAnnotation(mutation.actionId) }
+                    annotations = withContext(Dispatchers.IO) { store.annotations(book.id) }
+                    if (result != AnnotationUndoResult.UNDONE) snackbar.showSnackbar(context.getString(R.string.annotation_undo_failed))
+                }
+            } catch (cancel: CancellationException) { throw cancel }
+            catch (_: Exception) {
+                previewAnnotation = null; draftType = oldType; draftColor = oldColor
+                snackbar.showSnackbar(context.getString(R.string.note_operation_failed))
+            } finally { annotationSaving = false }
+        }
+    }
+
+    fun editAnnotation(annotation: StoredAnnotation) {
+        if (annotationSaving || annotation.id <= 0) return
+        editingAnnotation = annotation
+        draftCfi = annotation.cfi; draftContent = annotation.content; draftChapter = annotation.chapter
+        draftType = annotation.type; draftColor = annotation.color; draftNote = annotation.readerNote
+        annotationsDialog = false; annotationDialog = true
+    }
+
     fun openAnnotationDraft() {
         val sel = selection?.normalized() ?: return
         val body = readable ?: return
@@ -791,14 +919,18 @@ private fun ReaderContent(
         draftCfi = body.rangeCfiAt(base, sel.start, sel.end) ?: return
         draftContent = body.text.substring(sel.start.coerceIn(0, body.text.length), sel.end.coerceIn(0, body.text.length))
         draftChapter = chapter.title
-        editingAnnotation = null
-        draftType = "highlight"
-        draftColor = "66CCFF"
-        draftNote = ""
+        editingAnnotation = annotations.firstOrNull { it.cfi == draftCfi }
+        draftType = editingAnnotation?.type ?: draftType
+        draftColor = editingAnnotation?.color ?: draftColor
+        draftNote = editingAnnotation?.readerNote.orEmpty()
         annotationDialog = true
     }
 
-    ReadingWorkspaceHost(aiSheetOpen) { workspaceDocked, readerModifier ->
+    ReadingWorkspaceHost(aiSheetOpen, aiPanelWidth) { workspaceDocked, readerModifier, workspaceWidth ->
+        val showSpread = spreadEnabled && workspaceWidth >= 840.dp && !aiSheetOpen && engineMode == ReaderEngineMode.NATIVE_PAGED
+        SideEffect {
+            if (actualSpread != showSpread) { resumeOffset = currentOffset; actualSpread = showSpread }
+        }
     Scaffold(
         modifier = readerModifier,
         containerColor = appearance.background,
@@ -860,6 +992,11 @@ private fun ReaderContent(
                                         onClick = { moreMenu = false; tocDialog = true },
                                     )
                                 }
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.inkflow_reader_brightness_title)) },
+                                    leadingIcon = { Icon(Icons.Default.Tune, null) },
+                                    onClick = { moreMenu = false; brightnessDialog = true },
+                                )
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.read_aloud)) },
                                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.VolumeUp, null) },
@@ -932,16 +1069,29 @@ private fun ReaderContent(
         bottomBar = {
             Column(Modifier.fillMaxWidth().background(appearance.background.copy(alpha = 0.96f))) {
                 referenceReturn?.let { point ->
+                    Row {
                     TextButton(onClick = {
                         if (point.first == position) resumeOffset = point.second
                         else { pendingOffset = point.second; position = point.first }
                         referenceReturn = null
+                        transientHighlights.clear(ReaderHighlightKind.AI_SOURCE)
+                        transientHighlight = transientHighlights.visible(position, android.os.SystemClock.elapsedRealtime())
                     }) { Text(stringResource(R.string.ai_source_return)) }
+                    TextButton(onClick = { aiSheetOpen = true }) { Text(stringResource(R.string.inkflow_ai_return)) }
+                    }
                 }
                 // Edge selection action bar (low-distraction, E-INK friendly)
                 if (!activeSelectedString.isNullOrBlank()) {
+                    if (selectionStyleOpen && book.format == "epub" && selection != null) SelectionStyleCapsule(
+                        draftType, draftColor, !annotationSaving, eInk.enabled,
+                        onStyle = { saveSelectionMark(type = it) }, onColor = { saveSelectionMark(color = it) })
+                    val capsuleColors = AssistChipDefaults.assistChipColors(
+                        labelColor = if (eInk.enabled) appearance.foreground else Color.White,
+                        leadingIconContentColor = if (eInk.enabled) appearance.foreground else Color.White)
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(if (eInk.enabled) 0.dp else 24.dp),
+                        contentColor = if (eInk.enabled) appearance.foreground else Color.White,
+                        color = if (eInk.enabled) appearance.background else Color(0xFF172033),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -953,17 +1103,20 @@ private fun ReaderContent(
                             ) {
                                 if (book.format == "epub" && selection != null) {
                                     AssistChip(
-                                        onClick = { openAnnotationDraft() },
+                                        colors = capsuleColors,
+                                        onClick = { selectionStyleOpen = !selectionStyleOpen; if (selectionStyleOpen) saveSelectionMark() },
                                         label = { Text(stringResource(R.string.highlight)) },
                                         leadingIcon = { Icon(Icons.Default.Edit, null, Modifier.size(16.dp)) },
                                     )
                                 }
                                 AssistChip(
+                                        colors = capsuleColors,
                                     onClick = { lookupQuery = activeSelectedString },
                                     label = { Text(stringResource(R.string.lookup_word)) },
                                     leadingIcon = { Icon(Icons.Default.Search, null, Modifier.size(16.dp)) },
                                 )
                                 AssistChip(
+                                        colors = capsuleColors,
                                     onClick = {
                                         aiQuickAction = AiQuickAction.EXPLAIN_SELECTION
                                         aiSheetOpen = true
@@ -972,11 +1125,13 @@ private fun ReaderContent(
                                     leadingIcon = { Icon(Icons.Default.AutoAwesome, null, Modifier.size(16.dp)) },
                                 )
                                 AssistChip(
+                                        colors = capsuleColors,
                                     onClick = { openVocabularyDraft() },
                                     label = { Text(stringResource(R.string.vocabulary_add)) },
                                     leadingIcon = { Icon(Icons.Default.School, null, Modifier.size(16.dp)) },
                                 )
                                 AssistChip(
+                                        colors = capsuleColors,
                                     onClick = {
                                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                         cm.setPrimaryClip(ClipData.newPlainText("Inkflow", activeSelectedString))
@@ -985,8 +1140,12 @@ private fun ReaderContent(
                                     label = { Text(stringResource(R.string.copy_text)) },
                                     leadingIcon = { Icon(Icons.Default.ContentCopy, null, Modifier.size(16.dp)) },
                                 )
+                                if (book.format == "epub" && selection != null) {
+                                    AssistChip(onClick = { openAnnotationDraft() }, label = { Text(stringResource(R.string.annotation_note)) })
+                                }
                                 if (selection != null) {
                                     AssistChip(
+                                        colors = capsuleColors,
                                         onClick = {
                                             SentenceBoundaryResolver.paragraphRangeAt(activeSourceText, selection!!.start)
                                                 ?.let { selection = it }
@@ -994,7 +1153,7 @@ private fun ReaderContent(
                                         label = { Text(stringResource(R.string.select_paragraph)) },
                                     )
                                 }
-                                IconButton(onClick = { selection = null; webViewSelectedText = null }) {
+                                IconButton(onClick = { selectionStyleOpen = false; selection = null; webViewSelectedText = null }) {
                                     Icon(Icons.Default.Close, stringResource(R.string.close))
                                 }
                             }
@@ -1166,7 +1325,7 @@ private fun ReaderContent(
             engineMode == ReaderEngineMode.NATIVE_PAGED -> {
                 val chapter = document!!.chapters[position.coerceIn(document!!.chapters.indices)]
                 val chapterAnnotations = if (book.format == "epub") {
-                    annotations.filter { EpubCfi.chapterIndex(it.cfi, document!!.chapters) == position }
+                    renderedAnnotations.filter { EpubCfi.chapterIndex(it.cfi, document!!.chapters) == position }
                 } else emptyList()
                 ReaderTextBackground(appearance, Modifier.fillMaxSize().padding(insets)) {
                     NativePagedReaderCanvas(
@@ -1179,9 +1338,21 @@ private fun ReaderContent(
                         rawText = text,
                         epubText = readable,
                         annotations = chapterAnnotations,
+                        onAnnotationClick = ::editAnnotation,
                         appearance = appearance,
                         fontFamily = readerFontFamily,
                         currentPage = currentPage,
+                        anchorOffset = currentOffset,
+                        spreadEnabled = showSpread,
+                        selectionController = selectionController,
+                        edgeSelectionEnabled = edgeSelectionEnabled && !eInk.enabled,
+                        transientHighlight = transientHighlight,
+                        onManualNavigation = { followsNarration = false },
+                        onLayoutReflow = { page, offset ->
+                            // Reflow/restoration changes geometry, not reading progress.
+                            currentPage = page
+                            currentOffset = offset
+                        },
                         selection = selection,
                         onPaginationReady = { pagination = it },
                         onPageChange = { newPage ->
@@ -1203,7 +1374,7 @@ private fun ReaderContent(
             else -> {
                 val chapter = document!!.chapters[position.coerceIn(document!!.chapters.indices)]
                 val chapterAnnotations = if (book.format == "epub") {
-                    annotations.filter { EpubCfi.chapterIndex(it.cfi, document!!.chapters) == position }
+                    renderedAnnotations.filter { EpubCfi.chapterIndex(it.cfi, document!!.chapters) == position }
                 } else emptyList()
                 ReaderTextBackground(appearance, Modifier.fillMaxSize().padding(insets)) {
                     VirtualizedScrollReader(
@@ -1214,9 +1385,12 @@ private fun ReaderContent(
                         rawText = text,
                         epubText = readable,
                         annotations = chapterAnnotations,
+                        onAnnotationClick = ::editAnnotation,
                         appearance = appearance,
                         fontFamily = readerFontFamily,
                         initialOffset = resumeOffset,
+                        transientHighlight = transientHighlight,
+                        onManualNavigation = { followsNarration = false },
                         onOffsetSettled = { offset -> persistCurrentOffset(offset) },
                         onSelectionChange = { selection = it; directlySelectedEnd = it?.normalized()?.end ?: 0 },
                     )
@@ -1227,12 +1401,16 @@ private fun ReaderContent(
 
     // --- Sheets & Dialogs ---
 
-    if (aiSheetOpen) {
+    // AI/settings chrome follows the App theme independently of the book's paper skin.
+    MaterialTheme(colorScheme = appColorScheme) {
         AiReadingSheet(
+            visible = aiSheetOpen,
             bookId = book.id,
             book = book,
             store = store,
             docked = workspaceDocked,
+            panelWidth = aiPanelWidth,
+            onPanelWidthChange = { aiPanelWidth = it.coerceIn(380f, 440f) },
             snapshot = buildContextSnapshot(),
             initialQuickAction = aiQuickAction,
             initialTranslation = aiTranslation,
@@ -1241,10 +1419,12 @@ private fun ReaderContent(
                 val target = source.chapterIndex.takeIf { it in chapters.indices }
                     ?: chapters.indexOfFirst { it.path == source.chapterHref }.takeIf { it >= 0 }
                 if (target != null) {
+                    if (!workspaceDocked) aiSheetOpen = false
                     if (referenceReturn == null) referenceReturn = position to currentOffset
-                    val offset = if (target == position) activeSourceText.indexOf(source.text).takeIf { it >= 0 }
-                        ?: (source.endOffset - source.text.length).coerceAtLeast(0)
-                        else (source.endOffset - source.text.length).coerceAtLeast(0)
+                    val offset = (source.endOffset - source.text.length).coerceAtLeast(0)
+                    followsNarration = false
+                    pendingHighlight = ReaderTransientHighlight(book.id, target,
+                        TextSelectionRange(offset, source.endOffset), ReaderHighlightKind.AI_SOURCE)
                     if (target == position) resumeOffset = offset else { pendingOffset = offset; position = target }
                     selection = null
                     scope.launch {
@@ -1362,19 +1542,52 @@ private fun ReaderContent(
             onVoiceChange = { narrator.updateVoice(it) },
             onContinuousChange = narrator::updateContinuous,
             onDismiss = { narrationDialog = false },
+            title = book.title,
+            chapterTitle = document?.chapters?.getOrNull(narrationChapter)?.title.orEmpty(),
+            cover = book.cover,
+            position = narrator.position,
+            sourceText = narrator.narrationText,
+            onlineVoice = narrator.onlineEnabled,
+            sleepTimerRemainingMillis = narrator.sleepTimerRemainingMillis,
+            onSleepTimerChange = narrator::setSleepTimer,
+            onListenFromReader = { speakCurrent() },
+            onPreviousChapter = if (narrationChapter > 0 && book.format != "pdf") ({ autoNarrateTarget = narrationChapter - 1 }) else null,
+            onNextChapter = if (narrationChapter + 1 < total && book.format != "pdf") ({ autoNarrateTarget = narrationChapter + 1 }) else null,
+            onShowOriginal = narrator.originalSource?.let { original -> ({
+                narrationSourceChapter(original.sourceId)?.let { chapter ->
+                    followsNarration = false
+                    if (chapter == position) resumeOffset = original.startOffset
+                    else { pendingOffset = original.startOffset; position = chapter }
+                    narrationDialog = false
+                }
+            }) },
+            onShowCurrent = { offset ->
+                followsNarration = true
+                narrationNavigationTarget = narrationChapter
+                if (narrationChapter == position) resumeOffset = offset
+                else { pendingOffset = offset; position = narrationChapter }
+                narrationDialog = false
+            },
         )
     }
 
     fullScreenImage?.let { image -> ImageViewerDialog(image, onDismiss = { fullScreenImage = null }) }
 
+    if (brightnessDialog) ReaderBrightnessDialog(onDismiss = { brightnessDialog = false })
+
     if (appearanceDialog) {
         ReaderAppearanceDialog(
             appearance = appearance,
             swipeToTurnPage = swipeToTurnPage,
+            spreadEnabled = spreadEnabled,
+            edgeSelectionEnabled = edgeSelectionEnabled,
+            onEdgeSelectionChange = { edgeSelectionEnabled = it; controlsStore.setEdgeSelectionEnabled(it) },
+            onSpreadChange = { resumeOffset = currentOffset; spreadEnabled = it; controlsStore.setTwoPageLayout(it) },
             onSwipeToTurnPageChange = { swipeToTurnPage = it; controlsStore.setSwipeToTurnPage(it) },
             onChange = { updated ->
                 if (updated.fontSize != appearance.fontSize || updated.lineSpacing != appearance.lineSpacing ||
                     updated.font != appearance.font || updated.customFontId != appearance.customFontId ||
+                    updated.cjkFont != appearance.cjkFont || updated.latinFont != appearance.latinFont ||
                     updated.pageMargin != appearance.pageMargin || updated.paragraphSpacing != appearance.paragraphSpacing ||
                     updated.firstLineIndent != appearance.firstLineIndent || updated.alignment != appearance.alignment ||
                     updated.showHeader != appearance.showHeader || updated.showFooter != appearance.showFooter
@@ -1406,6 +1619,9 @@ private fun ReaderContent(
     if (searchDialog) {
         ReaderSearchDialog(searchQuery, { searchQuery = it }, searching, searchResults, onDismiss = { searchDialog = false }) { hit ->
             searchDialog = false
+            followsNarration = false
+            if (searchQuery.isNotBlank()) pendingHighlight = ReaderTransientHighlight(book.id, hit.chapterIndex,
+                TextSelectionRange(hit.offset, hit.offset + searchQuery.length), ReaderHighlightKind.SEARCH)
             if (book.format == "pdf") {
                 resumeOffset = hit.offset
                 if (!pdfTextMode || hit.chapterIndex != position) pdfTextLoading = true
@@ -1539,6 +1755,8 @@ private fun ReaderContent(
                             label = { Text(stringResource(R.string.highlight)) })
                         FilterChip(selected = draftType == "underline", onClick = { draftType = "underline" },
                             label = { Text(stringResource(R.string.underline)) })
+                        FilterChip(selected = draftType == "wavy", onClick = { draftType = "wavy" },
+                            label = { Text(stringResource(R.string.inkflow_mark_wavy)) })
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AnnotationColors.forEach { hex ->

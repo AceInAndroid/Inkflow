@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skill_transfer_title">確認待ちの読書 Skill</string>
+    <string name="skill_transfer_received">%1$s を受信しました。この端末で確認してインポートしてください。</string>
+    <string name="skill_transfer_notice">Skill の受信とプレビューでは実行もモデル呼び出しも行いません。定義のみをインポートし、端末の既定設定と書籍への割り当ては同期しません。</string>
+    <string name="skill_transfer_empty">確認待ちの Skill はありません</string>
+    <string name="skill_transfer_review">%1$s を確認</string>
+    <string name="skill_transfer_reject">破棄</string>
+    <string name="skill_transfer_preview">Skill 定義を確認</string>
+    <string name="skill_transfer_copy_policy">ID が重複する場合はコピーを作成します。インポートしても Skill は選択・実行されません。</string>
+    <string name="skill_transfer_metadata">分類：%1$s · 推奨エージェント：%2$s · 出力：%3$s</string>
+    <string name="skill_transfer_confirm">コピーとしてインポートを確認</string>
+    <string name="skill_transfer_back">戻る</string>
+</resources>

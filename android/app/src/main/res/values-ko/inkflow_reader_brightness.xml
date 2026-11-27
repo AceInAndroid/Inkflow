@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_reader_brightness_title">독서 화면 밝기</string>
+    <string name="inkflow_reader_brightness_summary">독서 창에만 적용하며 이 기기에만 저장합니다.</string>
+    <string name="inkflow_reader_brightness_follow_system">시스템 설정 따르기</string>
+    <string name="inkflow_reader_brightness_level">밝기: %1$d%%</string>
+    <string name="inkflow_reader_brightness_done">완료</string>
+</resources>

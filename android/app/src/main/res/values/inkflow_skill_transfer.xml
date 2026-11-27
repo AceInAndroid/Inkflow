@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skill_transfer_title">Reading Skills awaiting confirmation</string>
+    <string name="skill_transfer_received">Received %1$s. Review and confirm on this device to import.</string>
+    <string name="skill_transfer_notice">Receiving and previewing a Skill never executes it or calls a model. Only its definition is imported; device defaults and book bindings stay on this device.</string>
+    <string name="skill_transfer_empty">No Skills awaiting confirmation</string>
+    <string name="skill_transfer_review">Review %1$s</string>
+    <string name="skill_transfer_reject">Discard</string>
+    <string name="skill_transfer_preview">Review Skill definitions</string>
+    <string name="skill_transfer_copy_policy">Conflicting IDs are imported as new copies. Importing does not select or execute a Skill.</string>
+    <string name="skill_transfer_metadata">Category: %1$s · Recommended Agent: %2$s · Output: %3$s</string>
+    <string name="skill_transfer_confirm">Confirm import as copies</string>
+    <string name="skill_transfer_back">Back</string>
+</resources>

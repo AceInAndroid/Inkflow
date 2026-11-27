@@ -37,7 +37,7 @@ class TxtChapterRuleStoreTest {
                 rules.ruleForBook(imported.id)).chapters.size)
             assertEquals(1, BookParser.inspect(imported.file, imported.title).chapters.size)
             val backup = NativeSettingsBackup.capture(context)
-            assertEquals(4, backup.getInt("version"))
+            assertEquals(5, backup.getInt("version"))
             context.getSharedPreferences("native_txt_rules", Context.MODE_PRIVATE).edit().clear().commit()
             NativeSettingsBackup.apply(context, backup)
             assertEquals(2, BookParser.inspect(imported.file, imported.title,

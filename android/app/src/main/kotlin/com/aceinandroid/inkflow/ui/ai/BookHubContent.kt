@@ -12,6 +12,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -34,7 +37,11 @@ import kotlinx.coroutines.withContext
 /** Local reads on open/search/filter. Only the generation confirmation starts the gateway. */
 @Composable
 fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextSnapshot,
-                   onOpenSource: ((BookMaterialSource) -> Unit)? = null) {
+                   onOpenSource: ((BookMaterialSource) -> Unit)? = null,
+                   viewAuthorization: BookViewAuthorization? = null,
+                   onViewAuthorizationChange: (BookViewAuthorization?) -> Unit = {},
+                   taskScope: kotlinx.coroutines.CoroutineScope? = null,
+                   taskJobState: MutableState<Job?>? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repository = remember(store) { BookWikiRepository(store) }
@@ -44,6 +51,7 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
     val noteRepository = remember(store) { NativeNoteOrganizationRepository(store) }
     val noteService = remember(store, context) { NativeNoteOrganizationService(context, store) }
     val outcomeRepository = remember(store) { NativeReadingOutcomeRepository(store) }
+    var practiceOpen by rememberSaveable(book.id) { mutableStateOf(false) }
     var outcomes by remember(book.id) { mutableStateOf(emptyList<ReadingOutcome>()) }
     var closureId by remember(book.id) { mutableStateOf("fiction.immersion") }
     var timelineView by remember(book.id) { mutableStateOf(StoryTimelineView.STORY) }
@@ -60,12 +68,19 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
     var boundary by remember(book.id) { mutableStateOf(0.0) }
     var category by remember(book.id) { mutableStateOf(BookHubCategory.CHAPTERS) }
     var query by remember(book.id) { mutableStateOf("") }
+    var generationScope by remember(book.id) { mutableStateOf(GenerationScope.READ_BOUNDARY) }
+    var selectionDialog by remember(book.id) { mutableStateOf<NativeBookGenerationKind?>(null) }
+    var selectedHrefs by remember(book.id) { mutableStateOf(emptySet<String>()) }
+    var selectableChapters by remember(book.id) { mutableStateOf(emptyList<Pair<String, String>>()) }
+    var allViewConfirm by remember(book.id) { mutableStateOf(false) }
+    val fullView = viewAuthorization?.let { it.bookId == book.id && it.userConfirmed } == true
+    val viewSnapshot = if (fullView) snapshot.copy(progressPercent = 100, readingProgress = 1.0, chapterIndex = -1, readOffset = -1) else snapshot
     var plan by remember(book.id) { mutableStateOf<NativeBookGenerationPlan?>(null) }
     var sourceMaterial by remember(book.id) { mutableStateOf<BookMaterial?>(null) }
     var correction by remember(book.id) { mutableStateOf<BookMaterial?>(null) }
     var correctionText by remember(book.id) { mutableStateOf("") }
     var message by remember(book.id) { mutableStateOf<String?>(null) }
-    var activeJob by remember(book.id) { mutableStateOf<Job?>(null) }
+    var activeJob by (taskJobState ?: remember(book.id) { mutableStateOf<Job?>(null) })
     val errorMessage = stringResource(R.string.p1_error)
     val emptyMessage = stringResource(R.string.p1_generate_empty)
 
@@ -73,7 +88,7 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
         val data = withContext(Dispatchers.IO) {
             val fresh = store.all().firstOrNull { it.id == book.id }
             val safe = minOf(fresh?.progress ?: 0.0, snapshot.readingProgress).coerceIn(0.0, 1.0)
-            Triple(safe, repository.materials(book.id, safe, snapshot), tasks.list(book.id)) to actions.history(book.id)
+            Triple(if (fullView) 1.0 else safe, repository.materials(book.id, safe, snapshot, viewAuthorization), tasks.list(book.id)) to actions.history(book.id)
         }
         val noteData = withContext(Dispatchers.IO) { noteRepository.notes(book.id) to noteRepository.reviews(book.id) }
         outcomes = withContext(Dispatchers.IO) { outcomeRepository.load(book.id, snapshot) }
@@ -90,25 +105,35 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
     }
     fun runTask(task: StoredReadingTask) {
         if (activeJob?.isActive == true) return
-        activeJob = scope.launch {
+        activeJob = (taskScope ?: scope).launch {
             try { service.run(book.id, task.id, true) { updated ->
                 taskRows = listOf(updated) + taskRows.filterNot { it.id == updated.id }
             } }
             catch (cancel: CancellationException) { throw cancel }
+            catch (_: GenerationReconfirmationRequiredException) {
+                message = context.getString(R.string.inkflow_generation_reconfirm_legacy)
+            }
             catch (_: Exception) { message = errorMessage }
             finally { if (kotlinx.coroutines.currentCoroutineContext().isActive) refresh() }
         }
     }
     LaunchedEffect(book.id) {
-        withContext(Dispatchers.IO) { tasks.restorePaused(book.id) }
+        if (activeJob?.isActive != true) withContext(Dispatchers.IO) { tasks.restorePaused(book.id) }
         refresh()
     }
-    LaunchedEffect(snapshot.readingProgress, snapshot.chapterIndex, snapshot.readOffset) { refresh() }
+    LaunchedEffect(activeJob) {
+        while (activeJob?.isActive == true) {
+            refresh()
+            kotlinx.coroutines.delay(500)
+        }
+        refresh()
+    }
+    LaunchedEffect(snapshot.readingProgress, snapshot.chapterIndex, snapshot.readOffset, fullView) { refresh() }
 
     val grouped = materials.groupBy { BookWikiProjector.categories.getValue(it.kind) }
     val matching = materials.filter { query.isBlank() || "${it.title}\n${it.summary}\n${it.body}".contains(query, ignoreCase = true) }
     val timeline = StoryAtlasProjector().timeline(book.id, boundary, matching, timelineView, timelineDensity,
-        timelineParticipant, collapsedChapters = collapsedChapters, chapterIndex = snapshot.chapterIndex, readOffset = snapshot.readOffset)
+        timelineParticipant, collapsedChapters = collapsedChapters, chapterIndex = viewSnapshot.chapterIndex, readOffset = viewSnapshot.readOffset)
     val visible = if (category == BookHubCategory.TIMELINE) timeline.filterNot { it.collapsed }.flatMap { it.events }
         else grouped[category].orEmpty().filter { it in matching }
     val policy = ClosurePolicyRegistry().find(closureId)!!
@@ -120,7 +145,21 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(book.title, style = MaterialTheme.typography.titleLarge)
-                Text(stringResource(R.string.p1_hub_boundary), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(if (fullView) R.string.inkflow_all_content_active else R.string.p1_hub_boundary), style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { if (fullView) onViewAuthorizationChange(null) else allViewConfirm = true }) {
+                    Text(stringResource(if (fullView) R.string.inkflow_return_safe_view else R.string.inkflow_view_all))
+                }
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    GenerationScope.entries.forEach { scopeOption ->
+                        FilterChip(generationScope == scopeOption, { generationScope = scopeOption }, label = {
+                            Text(stringResource(when (scopeOption) {
+                                GenerationScope.READ_BOUNDARY -> R.string.inkflow_scope_read
+                                GenerationScope.SELECTED_CHAPTERS -> R.string.inkflow_scope_selected
+                                GenerationScope.WHOLE_BOOK -> R.string.inkflow_scope_whole
+                            }))
+                        })
+                    }
+                }
                 OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(),
                     label = { Text(stringResource(R.string.p1_hub_search)) }, singleLine = true)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -137,8 +176,14 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
                         OutlinedButton(enabled = !busy, onClick = {
                             scope.launch {
                                 try {
-                                    val next = withContext(Dispatchers.IO) { service.plan(book, snapshot, kind) }
-                                    if (next.chapterHrefs.isEmpty()) message = emptyMessage else plan = next
+                                    if (generationScope == GenerationScope.SELECTED_CHAPTERS) {
+                                        selectableChapters = withContext(Dispatchers.IO) { service.selectableChapters(book) }
+                                        selectedHrefs = emptySet()
+                                        selectionDialog = kind
+                                    } else {
+                                        val next = withContext(Dispatchers.IO) { service.plan(book, snapshot, kind, generationScope) }
+                                        if (next.chapterHrefs.isEmpty()) message = emptyMessage else plan = next
+                                    }
                                 } catch (_: Exception) { message = errorMessage }
                             }
                         }) { Text(stringResource(when (kind) {
@@ -164,7 +209,16 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
                     if (task.state.type !in ReadingTaskStateMachine.supportedTypes) Text(stringResource(R.string.p1_task_unknown))
                     else {
                         if (task.state.status == "paused") Text(stringResource(R.string.p1_task_paused), style = MaterialTheme.typography.bodySmall)
-                        if (!task.error.isNullOrBlank()) Text(stringResource(R.string.p1_error), style = MaterialTheme.typography.bodySmall)
+                        if (!task.error.isNullOrBlank()) Text(stringResource(when (task.error) {
+                            "schema_invalid" -> R.string.inkflow_generation_schema_error
+                            "evidence_invalid" -> R.string.inkflow_generation_evidence_error
+                            "provider_auth" -> R.string.inkflow_generation_auth_error
+                            "provider_transport" -> R.string.inkflow_generation_transport_error
+                            "source_changed" -> R.string.inkflow_generation_source_error
+                            "boundary_changed" -> R.string.inkflow_generation_boundary_error
+                            "output_limit" -> R.string.inkflow_generation_limit_error
+                            else -> R.string.p1_error
+                        }), style = MaterialTheme.typography.bodySmall)
                         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (task.state.status in setOf("paused", "failed", "queued")) TextButton(enabled = !busy, onClick = { runTask(task) }) {
                                 Text(stringResource(if (task.state.status == "failed") R.string.p1_retry else R.string.p1_resume))
@@ -186,6 +240,7 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.p1_reading_outcomes), style = MaterialTheme.typography.titleMedium)
+                    TextButton(onClick = { practiceOpen = true }) { Text(stringResource(R.string.inkflow_practice_title)) }
                     Row(Modifier.horizontalScroll(rememberScrollState())) {
                         ClosurePolicyRegistry().policies.forEach { choice ->
                             FilterChip(closureId == choice.id, onClick = { closureId = choice.id }, label = {
@@ -274,7 +329,7 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
             }
         }
         if (category == BookHubCategory.CHARACTERS) {
-            val graph = ReadingRelationshipGraph().project(book.id, boundary, visible, snapshot.chapterIndex, snapshot.readOffset)
+            val graph = ReadingRelationshipGraph().project(book.id, boundary, visible, viewSnapshot.chapterIndex, viewSnapshot.readOffset)
             if (graph.edges.isNotEmpty()) item { SourcedCharacterGraph(graph) { sourceMaterial = it } }
         }
         if (category == BookHubCategory.TIMELINE) {
@@ -367,14 +422,51 @@ fun BookHubContent(book: StoredBook, store: BookStore, snapshot: ReadingContextS
             }) { Text(stringResource(R.string.p1_generate_start)) } },
             dismissButton = { TextButton(onClick = { organizationSelection = null }) { Text(stringResource(R.string.p1_cancel)) } })
     }
+    if (practiceOpen) Dialog(onDismissRequest = { practiceOpen = false },
+        properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+                TextButton(onClick = { practiceOpen = false }) { Text(stringResource(R.string.close)) }
+                Box(Modifier.weight(1f)) {
+                    ReadingPracticeContent(book.id, store, snapshot, onOpenSource?.let { open ->
+                        { source -> practiceOpen = false; open(source) }
+                    })
+                }
+            }
+        }
+    }
+    if (allViewConfirm) AlertDialog(onDismissRequest = { allViewConfirm = false },
+        title = { Text(stringResource(R.string.inkflow_view_all)) },
+        text = { Text(stringResource(R.string.inkflow_view_all_warning)) },
+        confirmButton = { TextButton(onClick = { allViewConfirm = false; onViewAuthorizationChange(BookViewAuthorization(book.id, true)) }) { Text(stringResource(R.string.inkflow_view_all)) } },
+        dismissButton = { TextButton(onClick = { allViewConfirm = false }) { Text(stringResource(R.string.p1_cancel)) } })
+    selectionDialog?.let { kind ->
+        AlertDialog(onDismissRequest = { selectionDialog = null }, title = { Text(stringResource(R.string.inkflow_scope_selected)) },
+            text = { LazyColumn { items(selectableChapters, key = { it.first }) { (href, title) ->
+                Row(Modifier.fillMaxWidth().clickable { selectedHrefs = if (href in selectedHrefs) selectedHrefs - href else selectedHrefs + href }) {
+                    Checkbox(href in selectedHrefs, null); Text(title, Modifier.padding(vertical = 12.dp))
+                }
+            } } }, confirmButton = { TextButton(enabled = selectedHrefs.isNotEmpty(), onClick = {
+                selectionDialog = null
+                scope.launch {
+                    try { plan = withContext(Dispatchers.IO) { service.plan(book, snapshot, kind, GenerationScope.SELECTED_CHAPTERS, selectedHrefs.toList()) } }
+                    catch (_: Exception) { message = errorMessage }
+                }
+            }) { Text(stringResource(R.string.p1_generate_confirm)) } },
+            dismissButton = { TextButton(onClick = { selectionDialog = null }) { Text(stringResource(R.string.p1_cancel)) } })
+    }
     plan?.let { prepared ->
         AlertDialog(onDismissRequest = { plan = null }, title = { Text(stringResource(R.string.p1_generate_confirm)) },
-            text = { Text(stringResource(R.string.p1_generate_scope, prepared.chapterHrefs.size, (prepared.boundary * 100).toInt())) },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.p1_generate_scope, prepared.chapterHrefs.size, (prepared.boundary * 100).toInt()))
+                Text(stringResource(R.string.inkflow_generation_size, prepared.estimatedCharacters))
+                if (prepared.scope != GenerationScope.READ_BOUNDARY) Text(stringResource(R.string.inkflow_scope_warning))
+            } },
             confirmButton = { TextButton(onClick = {
                 plan = null
                 scope.launch {
                     try {
-                        val task = withContext(Dispatchers.IO) { service.create(prepared, true) }
+                        val task = withContext(Dispatchers.IO) { service.create(prepared, true, scopeAuthorized = prepared.scope != GenerationScope.READ_BOUNDARY) }
                         refresh(); runTask(task)
                     } catch (_: Exception) { message = errorMessage }
                 }

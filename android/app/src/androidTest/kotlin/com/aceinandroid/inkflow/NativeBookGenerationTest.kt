@@ -291,15 +291,17 @@ class NativeBookGenerationTest {
     }
 
     @Test fun malformedOrForgedEvidenceCannotAdvancePastLastSafePoint() = runBlocking {
-        for (kind in NativeBookGenerationKind.entries) for (invalid in listOf("malformed", "forged", "foreignChapter")) fixture { f ->
+        for (kind in NativeBookGenerationKind.entries) for (invalid in listOf("malformed", "forged", "foreignChapter", "mixed")) fixture { f ->
             val chunks = f.chunks()
             var calls = 0
             var safePoint: StoredReadingTask? = null
-            val service = NativeBookGenerationService(f.store, NativeBookRequestExecutor { _, delta ->
-                val chunk = chunks[calls++]
+            val service = NativeBookGenerationService(f.store, NativeBookRequestExecutor { request, delta ->
+                val chunk = chunks.first { request.id.removeSuffix(":repair").endsWith(":${it.id}") }
+                calls++
                 val output = if (calls == 1) response(chunk, kind) else when (invalid) {
                     "malformed" -> "[{\"kind\":"
                     "forged" -> response(chunk, kind, "An invented quotation that never appeared in this book.")
+                    "mixed" -> JSONArray(response(chunk, kind)).put(JSONObject().put("kind", "future.unknown")).toString()
                     else -> response(chunk, kind, "Bob later opened the eastern gate and waited for Alice.")
                 }
                 delta(output); result
@@ -313,7 +315,7 @@ class NativeBookGenerationTest {
             if (invalid == "malformed") assertTrue(failure is org.json.JSONException)
             else assertTrue(failure is IllegalArgumentException)
             val failed = ReadingTaskRepository(f.store).get(f.bookId, task.id)!!
-            assertEquals(2, calls)
+            assertEquals(3, calls)
             assertEquals("failed", failed.state.status)
             assertNotNull(failed.error)
             assertEquals(safePoint!!.checkpoint, failed.checkpoint)
@@ -329,4 +331,184 @@ class NativeBookGenerationTest {
             assertEquals(if (kind == NativeBookGenerationKind.NOTES) 1 else 0, f.count("tb_reading_note_ai_suggestions"))
         }
     }
+    @Test fun wholeBookNeedsSeparateConsentAndNeverChangesReadingProgress() = runBlocking { fixture { f ->
+        val chunks = f.document.chapters.drop(1).flatMap {
+            ReadingChunker().chunk(it.path, BookParser.readChapter(f.book.file, it))
+        }
+        val requests = mutableListOf<AiRequest>()
+        val service = NativeBookGenerationService(f.store, NativeBookRequestExecutor { request, delta ->
+            requests += request
+            val chunk = chunks.single { request.id.endsWith(":${it.id}") }
+            assertEquals(.6, request.snapshot.readingProgress, 0.0)
+            assertEquals(GenerationScope.WHOLE_BOOK, request.generationAuthorization!!.scope)
+            assertTrue(request.generationAuthorization!!.userConfirmed)
+            request.generationAuthorization!!.validate(request)
+            delta(response(chunk, NativeBookGenerationKind.WIKI)); result
+        })
+        val plan = service.plan(f.book, f.snapshot(), NativeBookGenerationKind.WIKI, GenerationScope.WHOLE_BOOK)
+        assertEquals(f.document.chapters.drop(1).map { it.path }, plan.chapterHrefs)
+        assertTrue(plan.estimatedCharacters > 0)
+        assertTrue(rejected { service.create(plan, true) } is IllegalArgumentException)
+        assertTrue(ReadingTaskRepository(f.store).list(f.bookId).isEmpty())
+        val task = service.create(plan, true, scopeAuthorized = true)
+        service.run(f.bookId, task.id, true)
+        assertTrue(requests.any { it.prompt.contains("UNREAD_CHAPTER_SECRET") })
+        assertTrue(requests.none { it.prompt.contains("FRONT_MATTER_SECRET") })
+        assertEquals(.6, f.book.progress, 0.0)
+        assertEquals(3, f.book.position)
+        val repository = BookWikiRepository(f.store)
+        val safe = repository.materials(f.bookId, .6, f.snapshot())
+        assertTrue(safe.none { it.sources.any { source -> source.progress > .6 } })
+        val all = repository.materials(f.bookId, .6, f.snapshot(), BookViewAuthorization(f.bookId, true))
+        assertTrue(all.size > safe.size)
+        assertTrue(all.any { it.sources.any { source -> source.text.contains("UNREAD_CHAPTER_SECRET") } })
+        assertEquals(safe, repository.materials(f.bookId, .6, f.snapshot()))
+        val wiki = f.store.readableDatabase.rawQuery("SELECT safe_knowledge_boundary FROM tb_book_wikis WHERE book_id = ?", arrayOf(f.bookId.toString()))
+            .use { it.moveToFirst(); it.getDouble(0) }
+        assertEquals(.6, wiki, 0.0)
+    } }
+
+    @Test fun selectedChaptersUseOnlyFrozenNarrativeSources() = runBlocking { fixture { f ->
+        val chapter = f.document.chapters[4]
+        val chunks = ReadingChunker().chunk(chapter.path, BookParser.readChapter(f.book.file, chapter))
+        val service = NativeBookGenerationService(f.store, NativeBookRequestExecutor { request, delta ->
+            assertEquals(listOf(chapter.path), request.generationAuthorization!!.chapterHrefs)
+            assertFalse(request.prompt.contains("CURRENT_CHAPTER_SECRET"))
+            assertFalse(request.prompt.contains("Ledger record"))
+            delta(response(chunks.single { request.id.endsWith(":${it.id}") }, NativeBookGenerationKind.WIKI)); result
+        })
+        assertTrue(service.selectableChapters(f.book).none { it.first == f.document.chapters[0].path })
+        assertTrue(rejected { service.plan(f.book, f.snapshot(), NativeBookGenerationKind.WIKI,
+            GenerationScope.SELECTED_CHAPTERS, listOf(f.document.chapters[0].path)) } is IllegalArgumentException)
+        val plan = service.plan(f.book, f.snapshot(), NativeBookGenerationKind.WIKI,
+            GenerationScope.SELECTED_CHAPTERS, listOf(chapter.path))
+        val task = service.create(plan, true, true)
+        service.run(f.bookId, task.id, true)
+        assertEquals("completed", ReadingTaskRepository(f.store).get(f.bookId, task.id)!!.state.status)
+        assertCheckpoint(ReadingTaskRepository(f.store).get(f.bookId, task.id)!!, chunks)
+        assertEquals(0, f.count("tb_book_wikis")) // A subset cannot claim contiguous whole-book coverage.
+        assertTrue(BookWikiRepository(f.store).materials(f.bookId, .6, f.snapshot()).isEmpty())
+        assertEquals(.6, f.book.progress, 0.0)
+    } }
+
+    @Test fun schemaCorrectionIsOnceWithSameProviderAndGrant() = runBlocking { fixture { f ->
+        val chunks = f.chunks()
+        val calls = mutableListOf<AiRequest>()
+        val service = NativeBookGenerationService(f.store, NativeBookRequestExecutor { request, delta ->
+            calls += request
+            val chunk = chunks.single { request.id.removeSuffix(":repair").endsWith(":${it.id}") }
+            if (calls.size == 1) delta("invalid JSON") else delta(response(chunk, NativeBookGenerationKind.WIKI))
+            result
+        })
+        val task = service.create(service.plan(f.book, f.snapshot(), NativeBookGenerationKind.WIKI), true)
+        service.run(f.bookId, task.id, true)
+        assertEquals(chunks.size + 1, calls.size)
+        assertEquals(1, calls.count { it.id.endsWith(":repair") })
+        assertEquals("fixture", calls[1].requiredProviderId)
+        assertEquals(calls[0].generationAuthorization, calls[1].generationAuthorization)
+        assertEquals(calls[0].snapshot, calls[1].snapshot)
+        assertCheckpoint(ReadingTaskRepository(f.store).get(f.bookId, task.id)!!, chunks)
+    } }
+
+    @Test fun sourceChangeRejectsConfirmedPlanAndQueuedTaskWithoutModelCall() = runBlocking { fixture { f ->
+        var calls = 0
+        val service = NativeBookGenerationService(f.store, NativeBookRequestExecutor { _, _ -> calls++; result })
+        val plan = service.plan(f.book, f.snapshot(), NativeBookGenerationKind.WIKI, GenerationScope.WHOLE_BOOK)
+        val task = service.create(plan, true, true)
+        f.book.file.appendBytes(byteArrayOf(0)) // ZIP remains readable, but the authorized bytes changed.
+        assertTrue(rejected { service.create(plan, true, true) } is IllegalArgumentException)
+        assertTrue(rejected { service.run(f.bookId, task.id, true) } is IllegalArgumentException)
+        assertEquals(0, calls)
+        assertNoWrites(f)
+    } }
+
+    @Test fun legacyWithCapturedManifestDefaultsToReadScopeAndUnknownVersionCannotExecute() = runBlocking {
+        for (version in listOf(1, 9)) fixture { f ->
+            var calls = 0
+            val chunks = f.chunks()
+            val service = NativeBookGenerationService(f.store, NativeBookRequestExecutor { request, delta ->
+                calls++
+                assertEquals(GenerationScope.READ_BOUNDARY, request.generationAuthorization!!.scope)
+                assertFalse(request.prompt.contains("UNREAD_CHAPTER_SECRET"))
+                delta(response(chunks.single { request.id.endsWith(":${it.id}") }, NativeBookGenerationKind.WIKI)); result
+            })
+            val task = service.create(service.plan(f.book, f.snapshot(), NativeBookGenerationKind.WIKI), true)
+            val payload = JSONObject(task.payload).put("version", version)
+            listOf("scope", "scopeConfirmed", "bookId").forEach { payload.remove(it) }
+            f.store.writableDatabase.update("tb_reading_tasks", android.content.ContentValues().apply {
+                put("payload_json", payload.toString())
+            }, "id = ?", arrayOf(task.id))
+            if (version == 1) {
+                service.run(f.bookId, task.id, true)
+                assertEquals(chunks.size, calls)
+            } else {
+                assertTrue(rejected { service.run(f.bookId, task.id, true) } is IllegalArgumentException)
+                assertEquals(0, calls)
+                assertNoWrites(f)
+            }
+        }
+    }
+
+    @Test fun legacyWithoutCapturedSourceHashPausesEvenWhenCurrentBookIsReadable() = runBlocking {
+        for (replaceSource in listOf(false, true)) fixture { f ->
+            var calls = 0
+            val service = NativeBookGenerationService(f.store, NativeBookRequestExecutor { _, _ -> calls++; result })
+            val task = service.create(service.plan(f.book, f.snapshot(), NativeBookGenerationKind.WIKI), true)
+            val payload = JSONObject(task.payload).put("version", 1)
+            listOf("scope", "scopeConfirmed", "contentHash", "bookId").forEach { payload.remove(it) }
+            f.store.writableDatabase.update("tb_reading_tasks", android.content.ContentValues().apply {
+                put("payload_json", payload.toString())
+            }, "id = ?", arrayOf(task.id))
+            if (replaceSource) f.book.file.appendBytes(byteArrayOf(0))
+            assertTrue(rejected { service.run(f.bookId, task.id, true) } is GenerationReconfirmationRequiredException)
+            assertEquals(0, calls)
+            val preserved = ReadingTaskRepository(f.store).get(f.bookId, task.id)!!
+            assertEquals("paused", preserved.state.status)
+            assertEquals(task.checkpoint, preserved.checkpoint)
+            assertEquals(payload.toString(), preserved.payload)
+            assertNoWrites(f)
+        }
+    }
+
+    @Test fun sourceNavigationRevalidatesExactTextBookAndCurrentGrant() = runBlocking { fixture { f ->
+        val chapter = f.document.chapters[4]
+        val text = BookParser.readChapter(f.book.file, chapter)
+        val source = BookMaterialSource(chapter.path, chapter.title, "", text.take(30), 1.0, 4, 30)
+        val resolver = NativeBookSourceResolver(f.store)
+        assertNull(resolver.resolve(f.bookId, source, f.snapshot()))
+        val permission = BookViewAuthorization(f.bookId, true)
+        assertEquals(source, resolver.resolve(f.bookId, source, f.snapshot(), permission))
+        assertNull(resolver.resolve(f.bookId, source, f.snapshot(), permission.copy(bookId = f.bookId + 1)))
+        assertNull(resolver.resolve(f.bookId, source, f.snapshot(), permission.copy(userConfirmed = false)))
+        assertNull(resolver.resolve(f.bookId, source.copy(text = "fabricated source text"), f.snapshot(), permission))
+        assertNull(resolver.resolve(f.bookId, source.copy(chapterHref = "other.xhtml"), f.snapshot(), permission))
+        assertNull(resolver.resolve(f.bookId, source.copy(endOffset = Int.MAX_VALUE), f.snapshot(), permission))
+        assertEquals(.6, f.book.progress, 0.0)
+    } }
+
+    @Test fun threeAnnotationStylesShareConflictSafeUndoAndPreserveSelectionSource() = runBlocking { fixture { f ->
+        val chapter = f.document.chapters[1]
+        val body = BookParser.readEpubText(f.book.file, chapter)
+        val location = body.rangeCfiAt(requireNotNull(chapter.baseCfi), 0, 20)!!
+        val content = body.text.take(20)
+        for (type in listOf("highlight", "underline", "wavy")) {
+            val created = f.store.saveAnnotation(f.bookId, content, location, chapter.title, type, "66CCFF", "Note")
+            val saved = f.store.annotations(f.bookId).single()
+            assertEquals(type, saved.type)
+            assertEquals(location, saved.cfi)
+            val changed = f.store.saveAnnotation(f.bookId, content, location, chapter.title, type, "FFD700", "Note", saved)
+            assertEquals(created.annotationId, changed.annotationId)
+            assertTrue(rejected { f.store.saveAnnotation(f.bookId, content, location, chapter.title, type, "FF0000", "Note", saved) } is IllegalStateException)
+            assertEquals(AnnotationUndoResult.CONFLICT, f.store.undoAnnotation(created.actionId))
+            assertEquals(AnnotationUndoResult.UNDONE, f.store.undoAnnotation(changed.actionId))
+            assertEquals(saved, f.store.annotations(f.bookId).single())
+            val delete = f.store.deleteAnnotation(f.bookId, saved)
+            assertTrue(f.store.annotations(f.bookId).isEmpty())
+            assertEquals(AnnotationUndoResult.UNDONE, f.store.undoAnnotation(delete))
+            assertEquals(saved, f.store.annotations(f.bookId).single())
+            f.store.deleteAnnotation(f.bookId, saved)
+        }
+        assertEquals(.6, f.book.progress, 0.0)
+    } }
+
 }

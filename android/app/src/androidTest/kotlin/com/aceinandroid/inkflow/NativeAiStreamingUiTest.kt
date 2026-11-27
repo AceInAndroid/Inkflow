@@ -92,8 +92,9 @@ class NativeAiStreamingUiTest {
                 scenario.onActivity { originalActivity = it }
                 waitForLabel(localized.getString(R.string.library))
                 waitUntil("launch splash dismissed") {
-                    findLabel("A modern reader, elevated by AI.") == null
+                    findLabel(com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline)) == null
                 }
+                click(localized.getString(R.string.library))
                 waitForLabel(localized.getString(R.string.search_books))
                 setEditableText(title)
                 click(title)

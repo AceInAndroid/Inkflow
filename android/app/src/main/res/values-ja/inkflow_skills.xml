@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_agents_title">読書エージェント</string>
+    <string name="inkflow_agents_hint">エージェントの選択とスキルの割り当ては、この端末にのみ保存されます。</string>
+    <string name="inkflow_agents_general">本の質問アシスタント</string>
+    <string name="inkflow_agents_story">登場人物と関係</string>
+    <string name="inkflow_agents_background">背景の調査</string>
+    <string name="inkflow_agents_argument">論証と批判的思考</string>
+    <string name="inkflow_agents_language">外国語の精読</string>
+    <string name="inkflow_agents_coach">能動的なコーチ</string>
+    <string name="inkflow_agents_disabled">利用できません。能動的なコーチは無効のままです。</string>
+    <string name="inkflow_agents_default_skill">スキル：%1$s</string>
+    <string name="inkflow_agents_context">端末内の読書資料</string>
+    <string name="inkflow_agents_navigation">出典への移動</string>
+    <string name="inkflow_agents_search">端末内の書籍検索</string>
+    <string name="inkflow_agents_note_preview">ノートのプレビュー</string>
+    <string name="inkflow_skills_limits">JSON または Markdown。UTF-8 で最大 64 KiB、各スキルの指示は最大 16,000 文字です。</string>
+    <string name="inkflow_skills_invalid">プレビューできません。形式、スキーマのバージョン、UTF-8 サイズ、指示の長さを確認してください。Markdown のメタデータはスカラーとリストのみ対応し、タグ、アンカー、不明な項目は使えません。</string>
+    <string name="inkflow_skills_paste">スキルを貼り付け</string>
+    <string name="inkflow_skills_edit">編集</string>
+    <string name="inkflow_skills_export_json">JSON を出力</string>
+    <string name="inkflow_skills_export_md">Markdown を出力</string>
+    <string name="inkflow_skills_editor_title">スキルの貼り付け・編集</string>
+    <string name="inkflow_skills_source">JSON または Markdown の内容</string>
+    <string name="inkflow_skills_preview">インポートのプレビュー</string>
+    <string name="inkflow_skills_preview_count">インポートするスキル：%1$d</string>
+    <string name="inkflow_skills_copy_hint">同じ ID は通常コピーとして保存します。内蔵スキルは常にカスタムコピーになります。</string>
+    <string name="inkflow_skills_category">カテゴリ：%1$s</string>
+    <string name="inkflow_skills_recommended_agent">推奨エージェント：%1$s</string>
+    <string name="inkflow_skills_output_format">出力形式：%1$s</string>
+    <string name="inkflow_skills_quick_prompts">クイック質問</string>
+    <string name="inkflow_skills_overwrite">同じ ID の既存カスタムスキルを置き換える</string>
+    <string name="inkflow_skills_confirm">インポートを確定</string>
+</resources>

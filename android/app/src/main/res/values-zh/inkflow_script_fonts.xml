@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_font_general">通用字体</string>
+    <string name="reader_font_cjk">中文 / CJK 字体</string>
+    <string name="reader_font_latin">拉丁字体</string>
+    <string name="reader_font_inherit">跟随通用字体</string>
+    <string name="reader_font_import_script">导入%1$s</string>
+</resources>

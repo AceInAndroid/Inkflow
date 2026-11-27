@@ -89,6 +89,19 @@ class WirelessTransferServerTest {
         }
     }
 
+    @Test fun rejectedUploadStillDeliversHttpStatusAndNextValidUploadSucceeds() {
+        var count = 0
+        withServer({ count++ }) { _, uri, _ ->
+            repeat(8) {
+                assertTrue(upload(uri, "rejected.txt", ByteArray(32 * 1024), token = "wrong")
+                    .startsWith("HTTP/1.1 403"))
+            }
+            assertEquals(0, count)
+            assertTrue(upload(uri, "valid.txt", byteArrayOf(1)).startsWith("HTTP/1.1 201"))
+            assertEquals(1, count)
+        }
+    }
+
     @Test fun failedImportDoesNotPreventNextFileAndSessionCountIsBounded() {
         var count = 0
         withServer({ if (it.name == "bad.txt") error("Invalid book"); count++ }) { _, uri, _ ->

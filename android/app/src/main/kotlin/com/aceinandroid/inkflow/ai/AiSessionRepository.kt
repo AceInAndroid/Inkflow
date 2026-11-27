@@ -84,6 +84,14 @@ class AiSessionRepository(private val store: BookStore) {
             messages.forEach { m -> put(JSONObject().apply {
                 put("id", m.id); put("role", m.role.name.lowercase()); put("content", m.content)
                 put("quote", m.quote); put("timestampMs", m.timestampMs); put("isError", m.isError)
+                put("citations", JSONArray().apply { m.citations.forEach { citation ->
+                    put(JSONObject().put("id", citation.id).put("bookId", citation.bookId).put("source", JSONObject().apply {
+                        val source = citation.source
+                        put("href", source.chapterHref); put("title", source.chapterTitle); put("cfi", source.cfi)
+                        put("text", source.text); put("progress", source.progress)
+                        put("chapterIndex", source.chapterIndex); put("endOffset", source.endOffset)
+                    }))
+                } })
                 put("visibleFromProgress", m.visibleFromProgress); put("chapterIndex", m.chapterIndex); put("readOffset", m.readOffset); put("sourceChapterTitle", m.sourceChapterTitle); put("sourceProgress", m.sourceProgress)
             }) }
         }
@@ -94,7 +102,15 @@ class AiSessionRepository(private val store: BookStore) {
                 val role = AiRole.entries.firstOrNull { it.name.equals(obj.optString("role"), true) } ?: continue
                 add(AiChatMessage(obj.optString("id", "restored-$i"), role, obj.optString("content"),
                     obj.optString("quote").takeIf { it.isNotBlank() && it != "null" }, obj.optLong("timestampMs"), obj.optBoolean("isError"),
-                    obj.optInt("visibleFromProgress", fallbackBoundary).coerceIn(0, 100), obj.optInt("chapterIndex", -1), obj.optInt("readOffset", -1), obj.optString("sourceChapterTitle"), obj.optDouble("sourceProgress", fallbackBoundary / 100.0)))
+                    obj.optInt("visibleFromProgress", fallbackBoundary).coerceIn(0, 100), obj.optInt("chapterIndex", -1), obj.optInt("readOffset", -1), obj.optString("sourceChapterTitle"), obj.optDouble("sourceProgress", fallbackBoundary / 100.0),
+                    obj.optJSONArray("citations")?.let { rows -> (0 until minOf(rows.length(), 32)).mapNotNull { index ->
+                        runCatching {
+                            val row = rows.getJSONObject(index); val source = row.getJSONObject("source")
+                            com.aceinandroid.inkflow.core.ai.AiCitation(row.getString("id"), row.getLong("bookId"),
+                                com.aceinandroid.inkflow.core.ai.BookMaterialSource(source.getString("href"), source.getString("title"), source.optString("cfi"),
+                                    source.getString("text"), source.getDouble("progress"), source.getInt("chapterIndex"), source.getInt("endOffset")))
+                        }.getOrNull()
+                    } } ?: emptyList()))
             } }
         }.getOrDefault(emptyList())
     }

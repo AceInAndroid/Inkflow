@@ -71,6 +71,7 @@ class ReadingNoteWorkspaceUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
+            click(localized.getString(R.string.home_me))
             click(localized.getString(R.string.reading_notes))
             assertNotNull(waitFor("Workspace UI note"))
             val listLabels = mutableListOf<String>()
@@ -156,6 +157,8 @@ class ReadingNoteWorkspaceUiTest {
         val node = waitFor(label)
         assertNotNull("Missing $label", node)
         assertTrue("Cannot click $label", performOnClickable(node!!, AccessibilityNodeInfo.ACTION_CLICK))
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        InstrumentationRegistry.getInstrumentation().uiAutomation.waitForIdle(250, 3_000)
     }
 
     private fun clickLast(label: String) {
@@ -241,7 +244,9 @@ class ReadingNoteWorkspaceUiTest {
             }
             SystemClock.sleep(100)
         }
-        throw AssertionError("Missing expected label: $label")
+        val labels = mutableListOf<String>()
+        collectLabels(InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow, labels)
+        throw AssertionError("Missing expected label: $label; visible=${labels.take(40)}")
     }
 
     private fun collectLabels(node: AccessibilityNodeInfo?, labels: MutableList<String>) {

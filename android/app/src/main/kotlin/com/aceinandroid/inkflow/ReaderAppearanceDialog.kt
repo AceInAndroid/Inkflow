@@ -36,6 +36,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -60,10 +62,16 @@ fun ReaderAppearanceDialog(
     onDismiss: () -> Unit,
     swipeToTurnPage: Boolean = false,
     onSwipeToTurnPageChange: (Boolean) -> Unit = {},
+    spreadEnabled: Boolean = false,
+    onSpreadChange: (Boolean) -> Unit = {},
+    edgeSelectionEnabled: Boolean = false,
+    onEdgeSelectionChange: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     val store = remember(context) { ReaderAppearanceStore(context) }
     val scope = rememberCoroutineScope()
+    val latestAppearance by rememberUpdatedState(appearance)
+    var fontImportTarget by rememberSaveable { mutableStateOf("base") }
     var fonts by remember { mutableStateOf(store.fonts()) }
     var images by remember { mutableStateOf(store.images()) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -73,13 +81,20 @@ fun ReaderAppearanceDialog(
     var backgroundHex by remember { mutableStateOf(appearance.customBackground ?: "FFFBFBF3") }
     var foregroundHex by remember { mutableStateOf(appearance.customForeground ?: "FF343434") }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val target = fontImportTarget
+        fontImportTarget = "base"
         if (uri != null) scope.launch {
             importing = true
             error = null
             try {
                 val imported = withContext(Dispatchers.IO) { store.importFont(uri) }
                 fonts = store.fonts()
-                onChange(appearance.copy(customFontId = imported.id))
+                val current = latestAppearance
+                onChange(when (target) {
+                    "cjk" -> current.copy(cjkFont = (current.cjkFont ?: ReaderScriptFont()).copy(customFontId = imported.id))
+                    "latin" -> current.copy(latinFont = (current.latinFont ?: ReaderScriptFont()).copy(customFontId = imported.id))
+                    else -> current.copy(customFontId = imported.id)
+                })
             } catch (failure: Exception) {
                 error = failure.message ?: context.getString(R.string.font_import_failed)
             } finally {
@@ -160,6 +175,14 @@ fun ReaderAppearanceDialog(
                 ReaderAppearanceToggle(stringResource(R.string.migration_battery), appearance.showBattery) {
                     onChange(appearance.copy(showBattery = it))
                 }
+                ReaderAppearanceToggle(stringResource(R.string.inkflow_reader_spread), spreadEnabled, onSpreadChange)
+                Text(stringResource(R.string.inkflow_reader_spread_summary), style = MaterialTheme.typography.bodySmall)
+                if (com.aceinandroid.inkflow.ui.theme.LocalEInkConfig.current.enabled) {
+                    Text(stringResource(R.string.inkflow_edge_selection_eink), style = MaterialTheme.typography.bodySmall)
+                } else {
+                    ReaderAppearanceToggle(stringResource(R.string.inkflow_edge_selection), edgeSelectionEnabled, onEdgeSelectionChange)
+                    Text(stringResource(R.string.inkflow_edge_selection_summary), style = MaterialTheme.typography.bodySmall)
+                }
                 ReaderAppearanceToggle(stringResource(R.string.migration_swipe_paging), swipeToTurnPage,
                     onSwipeToTurnPageChange)
                 Text("${stringResource(R.string.font_size)}: ${appearance.fontSize}")
@@ -170,7 +193,7 @@ fun ReaderAppearanceDialog(
                 Slider(value = appearance.lineSpacing, onValueChange = {
                     onChange(appearance.copy(lineSpacing = (it * 10).roundToInt() / 10f))
                 }, valueRange = 1.2f..2.2f, steps = 9)
-                Text(stringResource(R.string.font_family))
+                Text(stringResource(R.string.reader_font_general))
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ReaderFont.entries.forEach { font ->
@@ -195,10 +218,16 @@ fun ReaderAppearanceDialog(
                         }
                     }
                 }
-                OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }, enabled = !importing) {
+                OutlinedButton(onClick = { fontImportTarget = "base"; picker.launch(arrayOf("*/*")) }, enabled = !importing) {
                     Icon(Icons.Default.FileUpload, null)
                     Text(stringResource(if (importing) R.string.font_importing else R.string.import_font))
                 }
+                ReaderScriptFontChooser(R.string.reader_font_cjk, appearance.cjkFont, fonts, !importing,
+                    onChange = { onChange(appearance.copy(cjkFont = it)) },
+                    onImport = { fontImportTarget = "cjk"; picker.launch(arrayOf("*/*")) })
+                ReaderScriptFontChooser(R.string.reader_font_latin, appearance.latinFont, fonts, !importing,
+                    onChange = { onChange(appearance.copy(latinFont = it)) },
+                    onImport = { fontImportTarget = "latin"; picker.launch(arrayOf("*/*")) })
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Text(stringResource(R.string.reader_theme))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -345,7 +374,12 @@ fun ReaderAppearanceDialog(
                     try {
                         withContext(Dispatchers.IO) { store.removeFont(font.id) }
                         fonts = store.fonts()
-                        if (appearance.customFontId == font.id) onChange(appearance.copy(customFontId = null))
+                        val current = latestAppearance
+                        onChange(current.copy(
+                            customFontId = current.customFontId?.takeUnless { it == font.id },
+                            cjkFont = current.cjkFont?.let { it.copy(customFontId = it.customFontId?.takeUnless { id -> id == font.id }) },
+                            latinFont = current.latinFont?.let { it.copy(customFontId = it.customFontId?.takeUnless { id -> id == font.id }) },
+                        ))
                     } catch (failure: Exception) {
                         error = failure.message ?: context.getString(R.string.font_remove_failed)
                     }
@@ -380,5 +414,40 @@ private fun ReaderAppearanceToggle(label: String, checked: Boolean, onChange: (B
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+@Composable
+private fun ReaderScriptFontChooser(
+    title: Int, selection: ReaderScriptFont?, fonts: List<ImportedFont>, enabled: Boolean,
+    onChange: (ReaderScriptFont?) -> Unit, onImport: () -> Unit,
+) {
+    val name = stringResource(title)
+    Text(name)
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(selected = selection == null, onClick = { onChange(null) },
+            label = { Text(stringResource(R.string.reader_font_inherit)) })
+        ReaderFont.entries.forEach { font ->
+            val label = when (font) {
+                ReaderFont.SYSTEM -> R.string.font_system
+                ReaderFont.SERIF -> R.string.font_serif
+                ReaderFont.MONOSPACE -> R.string.font_monospace
+            }
+            FilterChip(selected = selection?.customFontId == null && selection?.font == font,
+                onClick = { onChange(ReaderScriptFont(font)) }, label = { Text(stringResource(label)) })
+        }
+    }
+    if (fonts.isNotEmpty()) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        fonts.forEach { font ->
+            FilterChip(selected = selection?.customFontId == font.id,
+                onClick = { onChange((selection ?: ReaderScriptFont()).copy(customFontId = font.id)) },
+                label = { Text(font.name, maxLines = 1, overflow = TextOverflow.Ellipsis) })
+        }
+    }
+    OutlinedButton(onClick = onImport, enabled = enabled) {
+        Icon(Icons.Default.FileUpload, null)
+        Text(stringResource(R.string.reader_font_import_script, name))
     }
 }

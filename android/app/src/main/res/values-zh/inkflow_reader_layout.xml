@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_reader_spread">宽屏双页阅读</string>
+    <string name="inkflow_reader_spread_summary">窗口足够宽时显示对开页，打开 AI 后显示单页。</string>
+</resources>

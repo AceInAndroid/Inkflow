@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_edge_selection">ページ端で選択範囲を拡張</string>
+    <string name="inkflow_edge_selection_summary">選択ハンドルをページ端に留めると、同じ章内で最大4ページまで拡張します。初期設定ではオフです。</string>
+    <string name="inkflow_edge_selection_eink">電子ペーパーではページ端での拡張を使用できません。範囲調整ボタンをご利用ください。</string>
+</resources>

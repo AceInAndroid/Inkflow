@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="m4_tts_minimize">プレーヤーを最小化</string>
+    <string name="m4_tts_settings">音声と再生の設定</string>
+    <string name="m4_tts_time_seek_unavailable">この音声エンジンは時間指定の移動に対応していません。章やテキスト位置で移動してください。</string>
+    <string name="m4_tts_previous_chapter">前の章</string>
+    <string name="m4_tts_next_chapter">次の章</string>
+    <string name="m4_tts_original_position">最初の読書位置へ</string>
+    <string name="m4_tts_current_position">本文</string>
+    <string name="m4_tts_text_offset">テキスト位置 %1$d / %2$d</string>
+    <string name="m4_tts_timer">スリープタイマー</string>
+    <string name="m4_tts_timer_remaining">%1$s 後に一時停止</string>
+    <string name="m4_tts_timer_off">タイマーを解除</string>
+    <string name="m4_tts_timer_minutes">%1$d 分</string>
+    <string name="m4_tts_online_voice">オンライン音声は音声プロバイダーの設定で選択してください。</string>
+    <string name="m4_tts_range_unavailable">エンジンが実際のテキスト範囲を通知すると文を強調表示します。それ以外はテキストブロックの境界のみ利用できます。</string>
+    <string name="m4_tts_boundary_highlight">最後に通知されたテキストブロック境界の段落です。エンジンは文の範囲を通知していません。</string>
+    <string name="m4_tts_listen_from_reader">読書位置から聴く</string>
+</resources>

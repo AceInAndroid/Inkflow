@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_transfer_timeout">アップロードがタイムアウトしました。Wi-Fi接続を確認し、もう一度送信してください。</string>
+    <string name="inkflow_transfer_session_failed">この転送セッションは無効です。転送を再開し、新しいアドレスを開いてください。</string>
+    <string name="inkflow_transfer_file_failed">このファイルを取り込めません。形式とサイズを確認して、もう一度お試しください。</string>
+    <string name="inkflow_skill_transfer_failed">確認待ちのSkillを更新できません。プレビューを開き直して、もう一度お試しください。</string>
+    <string name="inkflow_skill_transfer_changed">Skill またはローカル定義が変更されました。最新のプレビューを確認してから承認してください。</string>
+    <string name="inkflow_skill_transfer_uncertain">前回の承認が中断されました。インストール済みの Skill を確認し、このアップロードを破棄してください。自動で再インポートしません。</string>
+</resources>

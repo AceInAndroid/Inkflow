@@ -50,7 +50,7 @@ class NativeAiPersistenceTest {
         val repo = AiSessionRepository(store)
         val first = repo.create(book.id, "First", snapshot)
         val second = repo.create(book.id, "Second", snapshot)
-        val messages = listOf(AiChatMessage("m1", AiRole.USER, "Question", visibleFromProgress = 30), AiChatMessage("m2", AiRole.ASSISTANT, "Answer", visibleFromProgress = 30))
+        val messages = listOf(AiChatMessage("m1", AiRole.USER, "Question", visibleFromProgress = 30), AiChatMessage("m2", AiRole.ASSISTANT, "Answer", visibleFromProgress = 30, citations = listOf(AiCitation("stable:0", book.id, BookMaterialSource("chapter", "Chapter", "", "Exact quote", .2, 0, 11)))))
         store.writableDatabase.execSQL("UPDATE tb_ai_sessions SET analysisResult = 'opaque-future-value' WHERE id = ?", arrayOf(first.id))
         repo.save(book.id, first.id, messages, "reading.argument", snapshot, "provider-id", "model")
         repo.rename(book.id, first.id, "Renamed")

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_font_general">共通フォント</string>
+    <string name="reader_font_cjk">中国語・CJK フォント</string>
+    <string name="reader_font_latin">ラテン文字フォント</string>
+    <string name="reader_font_inherit">共通フォントに従う</string>
+    <string name="reader_font_import_script">%1$sを読み込む</string>
+</resources>

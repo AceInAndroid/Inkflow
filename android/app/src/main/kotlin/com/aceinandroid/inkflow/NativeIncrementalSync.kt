@@ -65,6 +65,7 @@ internal class NativeIncrementalSync(private val context: Context) {
                     }
                 }, capture = { local.capture(key, id) })
             }
+            report += NativeSyncIntegration.synchronizeSkills(context, store, device, protocol)
             preferences.edit().putString("last_report", "${report.merged}/${report.uploaded}/${report.conflicts}/${report.ignored}")
                 .putLong("last_success", System.currentTimeMillis()).apply()
             return report

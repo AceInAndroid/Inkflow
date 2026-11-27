@@ -208,7 +208,7 @@ class LinkedCssDeviceTest {
     }
 
     private fun splashPresent(): Boolean = findNode {
-        it.text?.toString()?.contains("A modern reader, elevated by AI.") == true
+        it.text?.toString()?.contains(com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline)) == true
     } != null
 
     private fun findVisibleText(value: String): AccessibilityNodeInfo? = findNode {

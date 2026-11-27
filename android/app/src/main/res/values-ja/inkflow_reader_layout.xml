@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_reader_spread">ワイド画面で見開き表示</string>
+    <string name="inkflow_reader_spread_summary">ウィンドウの幅に余裕があるときに見開きで表示します。AI を開くと単ページに戻ります。</string>
+</resources>

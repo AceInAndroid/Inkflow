@@ -84,14 +84,15 @@ class NativeIncrementalSyncRunnerTest {
             assertNotEquals(a.id, b.id)
             first.writableDatabase.execSQL("INSERT INTO tb_reading_memory_documents(id,book_id,title,markdown,created_at,updated_at) VALUES ('memory',?,'Title','User memory',10,100)", arrayOf(a.id))
             val server = Server()
-            assertEquals(2, NativeIncrementalSync(firstContext).synchronize(first, server).uploaded)
+            assertEquals(3, NativeIncrementalSync(firstContext).synchronize(first, server).uploaded)
             NativeIncrementalSync(secondContext).synchronize(second, server)
             second.readableDatabase.rawQuery("SELECT book_id,markdown FROM tb_reading_memory_documents WHERE id='memory'", null).use {
                 assertTrue(it.moveToFirst()); assertEquals(b.id, it.getLong(0)); assertEquals("User memory", it.getString(1))
             }
             assertEquals(0.0, second.all().first { it.id == b.id }.progress, 0.00001)
             // The second installation also publishes its unrelated filler book branch.
-            assertEquals(5, server.entries.size)
+            assertEquals(7, server.entries.size)
+            assertEquals(2, server.entries.keys.count { it.contains("reading-skills/v1") })
             assertEquals(3, server.entries.keys.count { it.contains("reading-agent") })
             assertEquals(2, server.entries.keys.count { it.contains("vocabulary/v1") })
         } finally { first.close(); second.close() }

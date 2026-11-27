@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="inkflow_ai_reading_materials">检索本地资料</string>
+  <string name="inkflow_ai_context_ready">上下文已准备</string>
+  <string name="inkflow_ai_generating">正在生成回答</string>
+  <string name="inkflow_ai_verifying_sources">正在校验引用来源</string>
+    <string name="inkflow_ai_invalid_source">来源已失效或超出当前阅读范围。</string>
+    <string name="inkflow_ai_return">返回 AI</string>
+    <string name="inkflow_ai_send_all_once">本次发送使用全书内容（包含未读资料）</string>
+</resources>

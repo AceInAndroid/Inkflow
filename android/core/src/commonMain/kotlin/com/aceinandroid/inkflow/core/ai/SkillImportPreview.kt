@@ -1,13 +1,19 @@
 package com.aceinandroid.inkflow.core.ai
 
 /** A preview has no persistence/model side effects; conflict policy is explicit at application. */
-data class SkillImportPreview(val skills: List<ReadingSkill>, val conflictingIds: Set<String>) {
+data class SkillImportPreview(
+    val skills: List<ReadingSkill>,
+    val conflictingIds: Set<String>,
+    /** Frozen local definitions shown by the conflict preview, not just their IDs. */
+    val conflictingSkills: List<ReadingSkill> = emptyList(),
+) {
     companion object {
         fun create(skills: List<ReadingSkill>, existing: ReadingSkillRegistry): SkillImportPreview {
             require(skills.isNotEmpty() && skills.size <= SkillCodec.MAX_SKILLS)
             skills.forEach(SkillCodec::validate)
             require(skills.map { it.id }.distinct().size == skills.size) { "Duplicate skill IDs" }
-            return SkillImportPreview(skills, skills.filter { existing.find(it.id) != null }.map { it.id }.toSet())
+            val conflicts = skills.mapNotNull { existing.find(it.id) }
+            return SkillImportPreview(skills, conflicts.map { it.id }.toSet(), conflicts)
         }
     }
 

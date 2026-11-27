@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_tab">Home</string>
+    <string name="home_me">Me</string>
+    <string name="home_style">Home style</string>
+    <string name="home_classic">Classic</string>
+    <string name="home_immersive">Wallpaper</string>
+    <string name="home_minimal">Minimal</string>
+    <string name="home_eink">EINK</string>
+    <string name="home_hardware_eink">E-ink display mode overrides colors, wallpaper and decoration. Your chosen style is retained.</string>
+    <string name="home_greeting">Make room for reading.</string>
+    <string name="home_motto_default">One page at a time, a world unfolds.</string>
+    <string name="home_edit_motto">Edit motto</string>
+    <string name="home_motto_hint">Your motto (up to 240 characters)</string>
+    <string name="home_continue">Continue reading</string>
+    <string name="home_recent">Recently read</string>
+    <string name="home_no_recent">Open a book to begin your reading journey.</string>
+    <string name="home_browse">Browse library</string>
+    <string name="home_all_books">All books</string>
+    <string name="home_progress">%1$s read</string>
+    <string name="home_total_minutes">%1$s min</string>
+    <string name="home_statistics">Your reading</string>
+    <string name="home_wallpaper_choose">Choose wallpaper</string>
+    <string name="home_wallpaper_remove">Remove wallpaper</string>
+    <string name="home_wallpaper_hint">Choose an image in Home style to personalize this space.</string>
+    <string name="home_wallpaper_error">Could not use this image. Choose a valid image under 20 MB.</string>
+    <string name="home_wallpaper_loading">Saving wallpaper…</string>
+    <string name="home_appearance">App appearance</string>
+    <string name="home_appearance_summary">Applies to the app. Reading paper and ink are set separately.</string>
+    <string name="home_theme_system">Follow system</string>
+    <string name="home_theme_light">Light</string>
+    <string name="home_theme_dark">Dark</string>
+    <string name="home_me_summary">Your notes, words and reading preferences.</string>
+</resources>

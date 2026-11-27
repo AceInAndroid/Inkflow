@@ -17,6 +17,9 @@ object AiWorkloads {
 }
 
 data class BookContextNode(val text: String, val visibleFromProgress: Int, val kind: String, val readingProgress: Double = visibleFromProgress / 100.0, val citations: List<AiCitation> = emptyList())
+/** Exact immutable source and task revision captured by the foreground generation scheduler. */
+data class GenerationRequestSource(val taskRevision: Long, val chapterIndex: Int, val chunk: ReadingChunk)
+
 data class AiRequest(
     val id: String,
     val workload: String,
@@ -32,6 +35,7 @@ data class AiRequest(
     val bookViewAuthorization: BookViewAuthorization? = null,
     val requiredProviderId: String? = null,
     val agentId: String = ReadingAgentRegistry.DEFAULT_ID,
+    val generationSource: GenerationRequestSource? = null,
 )
 data class PreparedAiRequest(val request: AiRequest, val systemPrompt: String, val history: List<AiChatMessage>)
 
@@ -87,20 +91,30 @@ fun interface AiStreamTransport {
 }
 data class AiRequestResult(val providerId: String, val model: String, val usage: AiTokenUsage, val attempts: Int)
 
+/** Platform persistence/Evidence gate. Called anew before EVERY transport attempt, outside retry handling. */
+fun interface AiRequestPreflight {
+    suspend fun validate(request: AiRequest)
+}
+
 class AiRequestGateway(
     private val registry: AiProviderRegistry,
     private val transport: AiStreamTransport,
     private val assembler: AiContextAssembler = AiContextAssembler(),
+    private val preflight: AiRequestPreflight? = null,
 ) {
     suspend fun execute(request: AiRequest, onDelta: suspend (String) -> Unit): AiRequestResult {
         require(request.userAuthorized) { "Explicit user action required" }
         require(request.id.isNotBlank() && request.prompt.isNotBlank())
         val workload = AiWorkloads.registered[request.workload] ?: error("Unknown AI workload")
-        val prepared = assembler.assemble(request)
+        require(request.generationSource == null || request.generationAuthorization != null)
+        require(request.generationAuthorization == null || preflight != null) { "Generation requires a persistent authorization gate" }
         val candidates = registry.candidates(workload.role).filter { request.requiredProviderId == null || it.first == request.requiredProviderId }.take(4)
         check(candidates.isNotEmpty()) { "AI provider is not configured" }
         var attempts = 0
         for ((index, candidate) in candidates.withIndex()) {
+            // A retryable transport failure cannot bypass a revoked task or stale Evidence.
+            preflight?.validate(request)
+            val prepared = assembler.assemble(request)
             attempts++
             val (providerId, config) = candidate
             val output = StringBuilder()

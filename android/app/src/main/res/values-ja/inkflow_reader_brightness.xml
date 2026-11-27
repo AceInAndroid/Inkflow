@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_reader_brightness_title">読書画面の明るさ</string>
+    <string name="inkflow_reader_brightness_summary">読書ウィンドウだけに適用し、この端末にのみ保存します。</string>
+    <string name="inkflow_reader_brightness_follow_system">システムに従う</string>
+    <string name="inkflow_reader_brightness_level">明るさ：%1$d%%</string>
+    <string name="inkflow_reader_brightness_done">完了</string>
+</resources>

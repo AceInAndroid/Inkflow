@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bookshelf_select">本を選択</string>
+    <string name="bookshelf_selected_count">%1$d 冊を選択中</string>
+    <string name="bookshelf_select_all">表示中の本をすべて選択・解除</string>
+    <string name="bookshelf_delete_selected">選択した本を削除</string>
+    <string name="bookshelf_selected">選択済み</string>
+    <string name="bookshelf_not_selected">未選択</string>
+    <string name="bookshelf_delete_title">%1$d 冊を削除しますか？</string>
+    <string name="bookshelf_delete_message">選択した本と端末内のファイルを削除します。この操作は元に戻せません。</string>
+    <string name="bookshelf_batch_result">完了 %1$d 冊 · 失敗 %2$d 冊</string>
+    <string name="bookshelf_listen">読み上げ</string>
+    <string name="bookshelf_listen_in_reader">リーダーを開き、ツールバーから読み上げを選択してください。</string>
+    <string name="bookshelf_local_file">端末内のファイル：%1$s</string>
+</resources>

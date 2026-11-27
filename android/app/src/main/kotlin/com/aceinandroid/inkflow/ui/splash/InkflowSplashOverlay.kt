@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import com.aceinandroid.inkflow.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -123,7 +125,7 @@ fun InkflowSplashOverlay(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "A modern reader, elevated by AI.",
+                    text = stringResource(R.string.inkflow_launch_tagline),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     letterSpacing = 0.4.sp,

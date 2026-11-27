@@ -13,6 +13,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
+import android.os.SystemClock
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -24,6 +25,7 @@ enum class NarrationState { INITIALIZING, READY, PREPARING, PLAYING, PAUSED, ERR
 
 data class SpeechChunk(val start: Int, val end: Int, val text: String)
 data class SpeechVoice(val name: String, val label: String)
+data class NarrationSource(val sourceId: String?, val text: String, val startOffset: Int)
 
 internal fun nextSpeechChunk(source: String, offset: Int, maxLength: Int = 3000): SpeechChunk? {
     require(maxLength > 0)
@@ -47,6 +49,7 @@ class NativeNarrator(context: Context) {
     private val onlineStore = OnlineTtsSettingsStore(appContext)
     private var onlineConfig = runCatching { onlineStore.load() }.getOrElse { OnlineTtsConfig() }
     private var onlinePlayback: OnlineTtsPlayback? = null
+    private var onlineSourceOffset = 0
     private val chunkQueue = TtsChunkQueue(capacity = 1, maxLength = 3000)
     private val fallback = TtsFallback(chunkQueue)
     private val main = Handler(Looper.getMainLooper())
@@ -78,12 +81,49 @@ class NativeNarrator(context: Context) {
     private var ready = false
     private var systemUnavailable = false
     private var closed = false
-    private var source = ""
+    private var source by mutableStateOf("")
     private var cursor = 0
     private var activeChunk: SpeechChunk? = null
     private var activeUtterance = ""
     private var utteranceNumber = 0
     private var onFinished: (() -> Unit)? = null
+    private val positionTracker = NarrationPositionTracker()
+    private val positionListeners = linkedSetOf<(NarrationPosition?) -> Unit>()
+    private val sentenceListeners = linkedSetOf<(NarrationPosition?) -> Unit>()
+    private val paragraphListeners = linkedSetOf<(NarrationPosition?) -> Unit>()
+    private val stateListeners = linkedSetOf<(NarrationState) -> Unit>()
+    private val sleepTimer = NarrationSleepTimer()
+    private val sleepTick = object : Runnable {
+        override fun run() {
+            if (closed) return
+            sleepTimerRemainingMillis = sleepTimer.remaining(SystemClock.elapsedRealtime())
+            if (sleepTimerRemainingMillis == 0L) {
+                sleepTimer.clear()
+                sleepTimerRemainingMillis = null
+                pause()
+            } else if (sleepTimerRemainingMillis != null) main.postDelayed(this, 1000)
+        }
+    }
+
+    private var sourceSessionActive = false
+    var sourceId by mutableStateOf<String?>(null)
+        private set
+    /** First source of this listening session, retained after Stop for returning to the reader. */
+    var originalSource by mutableStateOf<NarrationSource?>(null)
+        private set
+    var position by mutableStateOf<NarrationPosition?>(null)
+        private set
+    var sleepTimerRemainingMillis by mutableStateOf<Long?>(null)
+        private set
+    var mediaTitle by mutableStateOf("")
+        private set
+    var mediaChapterTitle by mutableStateOf("")
+        private set
+    /** Neither backend exposes a chapter time map. Media/UI must not advertise temporal seeking. */
+    val supportsTimeSeek: Boolean get() = false
+    val currentOffset: Int get() = cursor
+    val sourceLength: Int get() = source.length
+    val narrationText: String get() = source
 
     var onlineEnabled by mutableStateOf(onlineConfig.enabled)
         private set
@@ -130,18 +170,20 @@ class NativeNarrator(context: Context) {
         }.also { tts ->
             tts.setAudioAttributes(audioAttributes)
             tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String) = Unit
+                override fun onStart(utteranceId: String) {
+                    main.post {
+                        if (!closed && !usesOnlineSpeech() && utteranceId == activeUtterance && state == NarrationState.PLAYING) {
+                            publishPosition(positionTracker.boundary(activeChunk?.start ?: cursor))
+                        }
+                    }
+                }
 
                 override fun onDone(utteranceId: String) {
                     main.post {
                         if (closed || usesOnlineSpeech() || utteranceId != activeUtterance || state != NarrationState.PLAYING) return@post
                         cursor = activeChunk?.end ?: cursor
-                        chunkQueue.head?.let { chunkQueue.complete(it) }
-                        if (chunkQueue.reserve() == null) {
-                            val completion = onFinished
-                            stop()
-                            completion?.invoke()
-                        } else speakNext()
+                        publishPosition(positionTracker.boundary(cursor))
+                        speakNext()
                     }
                 }
 
@@ -163,8 +205,11 @@ class NativeNarrator(context: Context) {
 
                 override fun onRangeStart(utteranceId: String, start: Int, end: Int, frame: Int) {
                     main.post {
-                        if (!closed && utteranceId == activeUtterance && state == NarrationState.PLAYING) {
-                            cursor = (activeChunk?.start ?: cursor) + start
+                        if (!closed && !usesOnlineSpeech() && utteranceId == activeUtterance && state == NarrationState.PLAYING) {
+                            positionTracker.range(utteranceId, start, end)?.let { actual ->
+                                cursor = actual.offset
+                                publishPosition(actual)
+                            }
                         }
                     }
                 }
@@ -172,23 +217,40 @@ class NativeNarrator(context: Context) {
         }
     }
 
-    fun play(text: String, fromOffset: Int = 0, onFinished: (() -> Unit)? = null) {
+    fun play(text: String, fromOffset: Int = 0, sourceId: String? = null, onFinished: (() -> Unit)? = null) =
+        playSource(text, sourceId, fromOffset, onFinished)
+
+    /** Preserve legacy positional play(text, offset, completion) calls. */
+    fun play(text: String, fromOffset: Int, completion: (() -> Unit)?) =
+        playSource(text, null, fromOffset, completion)
+
+    /** sourceId binds callbacks to a book/chapter; offsets address text without normalization. */
+    fun playSource(text: String, sourceId: String?, fromOffset: Int = 0, onFinished: (() -> Unit)? = null) {
         if (closed || (!onlineEnabled && state == NarrationState.UNAVAILABLE)) return
         onlinePlayback?.stop()
         engine?.stop()
         activeUtterance = ""
+        publishPosition(null)
         fallback.reset()
         this.onFinished = onFinished
         source = text
+        this.sourceId = sourceId
+        positionTracker.reset(text, sourceId)
         cursor = fromOffset.coerceIn(0, text.length)
         onlineError = null
         chunkQueue.reset(source, cursor)
+        cursor = chunkQueue.reserve()?.start ?: source.length
+        if (!sourceSessionActive) originalSource = NarrationSource(sourceId, text, cursor)
+        sourceSessionActive = true
+        publishPosition(positionTracker.boundary(cursor))
         if (onlineEnabled || ready) speakNext() else transitionTo(NarrationState.PREPARING)
     }
 
     fun pause() {
         if (state !in setOf(NarrationState.PLAYING, NarrationState.PREPARING)) return
         activeUtterance = ""
+        positionTracker.invalidateUtterance()
+        publishPosition(positionTracker.boundary(cursor))
         chunkQueue.reset(source, cursor)
         onlinePlayback?.stop()
         transitionTo(NarrationState.PAUSED)
@@ -200,10 +262,26 @@ class NativeNarrator(context: Context) {
         if (state == NarrationState.PAUSED) speakNext()
     }
 
-    fun stop() {
+    fun stop() = stopPlayback(clearTimer = true)
+
+    private fun completePlayback() {
+        val completion = onFinished
+        // Natural chapter transitions keep the same sleep deadline.
+        stopPlayback(clearTimer = false)
+        completion?.invoke()
+    }
+
+    private fun stopPlayback(clearTimer: Boolean) {
         if (closed) return
+        if (clearTimer) {
+            setSleepTimer(null)
+            sourceSessionActive = false
+        }
+        positionTracker.reset()
+        publishPosition(null)
         activeUtterance = ""
         source = ""
+        sourceId = null
         fallback.reset()
         chunkQueue.reset()
         onlinePlayback?.stop()
@@ -220,6 +298,7 @@ class NativeNarrator(context: Context) {
         saveSettings()
         engine?.setSpeechRate(rate)
         onlinePlayback?.updateParameters(rate, pitch)
+        notifyStateListeners()
     }
 
     fun updatePitch(value: Float) {
@@ -261,6 +340,12 @@ class NativeNarrator(context: Context) {
         closed = true
         engine?.shutdown()
         engine = null
+        main.removeCallbacks(sleepTick)
+        positionListeners.clear()
+        sentenceListeners.clear()
+        paragraphListeners.clear()
+        stateListeners.clear()
+        onStateChanged = null
         onlinePlayback?.close()
         onlinePlayback = null
     }
@@ -268,18 +353,20 @@ class NativeNarrator(context: Context) {
     private fun usesOnlineSpeech(): Boolean = fallback.usesOnline(onlineEnabled)
 
     private fun speakNext() {
+        val paragraph = narrationParagraphRange(source, cursor)
+        if (paragraph == null) { completePlayback(); return }
+        // Bound each backend to a real paragraph and map its local offsets back to the source.
+        val paragraphSource = source.substring(paragraph.start, paragraph.end)
         if (usesOnlineSpeech()) {
             if (!hasFocus && !requestFocus()) { transitionTo(NarrationState.ERROR); return }
-            onlinePlayer().start(source, cursor, onlineConfig, rate, pitch)
+            onlineSourceOffset = paragraph.start
+            onlinePlayer().start(paragraphSource, 0, onlineConfig, rate, pitch)
             return
         }
         if (!ready) { transitionTo(NarrationState.PREPARING); return }
-        val queued = chunkQueue.head ?: chunkQueue.reserve()
-        val chunk = queued?.let { SpeechChunk(it.start, it.end, it.text) }
-        if (chunk == null) {
-            stop()
-            return
-        }
+        chunkQueue.reset(paragraphSource)
+        val queued = chunkQueue.reserve()
+        val chunk = queued?.let { SpeechChunk(paragraph.start + it.start, paragraph.start + it.end, it.text) } ?: return
         if (!hasFocus && !requestFocus()) {
             transitionTo(NarrationState.ERROR)
             return
@@ -288,6 +375,7 @@ class NativeNarrator(context: Context) {
         cursor = chunk.start
         val id = "native-${++utteranceNumber}"
         activeUtterance = id
+        positionTracker.start(id, chunk.start, chunk.end)
         transitionTo(NarrationState.PLAYING)
         if (engine?.speak(chunk.text, TextToSpeech.QUEUE_FLUSH, null, id) != TextToSpeech.SUCCESS) {
             activeUtterance = ""
@@ -319,13 +407,13 @@ class NativeNarrator(context: Context) {
     private fun onlinePlayer(): OnlineTtsPlayback = onlinePlayback ?: OnlineTtsPlayback(
         File(appContext.cacheDir, "online-tts/${UUID.randomUUID()}"), audioAttributes,
         onPreparing = { if (!closed) transitionTo(NarrationState.PREPARING) },
-        onPlaying = { start -> cursor = start; transitionTo(NarrationState.PLAYING) },
-        onChunkFinished = { end -> cursor = end },
-        onFinished = {
-            val completion = onFinished
-            stop()
-            completion?.invoke()
+        onPlaying = { start ->
+            cursor = onlineSourceOffset + start
+            publishPosition(positionTracker.boundary(cursor))
+            transitionTo(NarrationState.PLAYING)
         },
+        onChunkFinished = { end -> cursor = onlineSourceOffset + end; publishPosition(positionTracker.boundary(cursor)) },
+        onFinished = { speakNext() },
         onError = { message -> fallBackToSystem(message) },
     ).also { onlinePlayback = it }
 
@@ -373,9 +461,58 @@ class NativeNarrator(context: Context) {
         return hasFocus
     }
 
+    /** All observation and playback APIs are owned by the main thread, as are engine callbacks. */
+    fun addPositionListener(listener: (NarrationPosition?) -> Unit): () -> Unit {
+        positionListeners += listener
+        listener(position)
+        return { positionListeners -= listener }
+    }
+    fun addSentenceListener(listener: (NarrationPosition?) -> Unit): () -> Unit {
+        sentenceListeners += listener
+        listener(position?.takeIf { it.sentence != null })
+        return { sentenceListeners -= listener }
+    }
+    fun addParagraphListener(listener: (NarrationPosition?) -> Unit): () -> Unit {
+        paragraphListeners += listener
+        listener(position?.takeIf { it.paragraph != null })
+        return { paragraphListeners -= listener }
+    }
+    fun addStateListener(listener: (NarrationState) -> Unit): () -> Unit {
+        stateListeners += listener
+        return { stateListeners -= listener }
+    }
+    fun setSleepTimer(minutes: Int?) {
+        sleepTimer.set(minutes, SystemClock.elapsedRealtime())
+        main.removeCallbacks(sleepTick)
+        sleepTimerRemainingMillis = sleepTimer.remaining(SystemClock.elapsedRealtime())
+        if (minutes != null) main.post(sleepTick)
+    }
+    fun updateMediaMetadata(title: String, chapterTitle: String) {
+        if (mediaTitle == title && mediaChapterTitle == chapterTitle) return
+        mediaTitle = title
+        mediaChapterTitle = chapterTitle
+        notifyStateListeners()
+    }
+    private fun publishPosition(value: NarrationPosition?) {
+        val previous = position
+        position = value
+        positionListeners.toList().forEach { it(value) }
+        if (previous?.sourceId != value?.sourceId || previous?.sentence != value?.sentence)
+            sentenceListeners.toList().forEach { it(value?.takeIf { current -> current.sentence != null }) }
+        if (previous?.sourceId != value?.sourceId || previous?.paragraph != value?.paragraph)
+            paragraphListeners.toList().forEach { it(value?.takeIf { current -> current.paragraph != null }) }
+    }
+    private fun notifyStateListeners() {
+        onStateChanged?.invoke(state)
+        stateListeners.toList().forEach { it(state) }
+    }
     private fun transitionTo(value: NarrationState) {
         state = value
-        onStateChanged?.invoke(value)
+        if (value != NarrationState.PLAYING) {
+            positionTracker.invalidateUtterance()
+            publishPosition(if (source.isNotEmpty()) positionTracker.boundary(cursor) else null)
+        }
+        notifyStateListeners()
     }
 
     private fun releaseFocus() {

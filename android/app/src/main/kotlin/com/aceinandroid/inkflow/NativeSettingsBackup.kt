@@ -1,6 +1,8 @@
 package com.aceinandroid.inkflow
 
 import android.content.Context
+import com.aceinandroid.inkflow.core.ai.SkillCodec
+import com.aceinandroid.inkflow.ai.NativeAiStore
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -15,23 +17,30 @@ internal object NativeSettingsBackup {
     )
 
     fun capture(context: Context): JSONObject = JSONObject().apply {
-        put("version", 4)
+        put("version", 5)
         preferenceNames.forEach { name ->
             val entries = JSONObject()
-            context.getSharedPreferences(name, Context.MODE_PRIVATE).all.toSortedMap().forEach { (key, value) ->
-                val entry = JSONObject()
-                when (value) {
-                    is Boolean -> entry.put("type", "bool").put("value", value)
-                    is Int -> entry.put("type", "int").put("value", value)
-                    is Float -> {
-                        if (!value.isFinite()) throw IOException("Invalid native preference: $key")
-                        entry.put("type", "float").put("value", value.toDouble())
+            val preferences = context.getSharedPreferences(name, Context.MODE_PRIVATE)
+            // The Skill export boundary preserves the legacy single-key fallback. Never
+            // enumerate the private AI workspace or include its providers/selection/bindings.
+            val settings = if (name == "native_reading_skills") {
+                mapOf("custom_skills" to NativeAiStore(context).exportStoredSkills())
+            } else preferences.all
+            settings.toSortedMap().filterKeys { !deviceLocal(it) && !hardwareLocal(name, it) }
+                .forEach { (key, value) ->
+                    val entry = JSONObject()
+                    when (value) {
+                        is Boolean -> entry.put("type", "bool").put("value", value)
+                        is Int -> entry.put("type", "int").put("value", value)
+                        is Float -> {
+                            if (!value.isFinite()) throw IOException("Invalid native preference: $key")
+                            entry.put("type", "float").put("value", value.toDouble())
+                        }
+                        is String -> entry.put("type", "string").put("value", value)
+                        else -> throw IOException("Unsupported native preference: $key")
                     }
-                    is String -> entry.put("type", "string").put("value", value)
-                    else -> throw IOException("Unsupported native preference: $key")
+                    entries.put(key, entry)
                 }
-                entries.put(key, entry)
-            }
             put(name, entries)
         }
     }.also(::parse)
@@ -44,18 +53,20 @@ internal object NativeSettingsBackup {
 
     fun parse(document: JSONObject): JSONObject {
         val version = document.opt("version")
-        if (version !is Number || version.toInt() !in 1..4 || version.toDouble() != version.toInt().toDouble())
+        if (version !is Number || version.toInt() !in 1..5 || version.toDouble() != version.toInt().toDouble())
             throw IOException("Unsupported native settings version")
         preferenceNames.forEach { name ->
-            if (version.toInt() < 4 && name == "native_reading_skills") return@forEach
-            if (version.toInt() == 1 && name == "native_txt_rules") return@forEach
-            if (version.toInt() < 3 && name == "native_bookshelf") return@forEach
+            if (!included(name, version.toInt())) return@forEach
             val entries = document.optJSONObject(name) ?: throw IOException("Missing native settings: $name")
             if (entries.length() > 10_000) throw IOException("Too many native settings")
             val keys = entries.keys()
             while (keys.hasNext()) {
                 val key = keys.next()
                 if (key.length > 256 || '\u0000' in key) throw IOException("Invalid native setting name")
+                // v1–v4 exported hardware policy. Ignore it, including obsolete value formats.
+                if (hardwareLocal(name, key) && version.toInt() < 5) continue
+                if (deviceLocal(key) || hardwareLocal(name, key))
+                    throw IOException("Device-local setting in portable backup: $key")
                 val entry = entries.optJSONObject(key) ?: throw IOException("Invalid native setting: $key")
                 val value = entry.opt("value")
                 val type = entry.optString("type")
@@ -65,11 +76,12 @@ internal object NativeSettingsBackup {
                         "palette" to "string", "font" to "string",
                         "custom_background" to "string", "custom_foreground" to "string",
                         "custom_font_id" to "string", "custom_fonts" to "string",
+                        "cjk_font" to "string", "cjk_custom_font_id" to "string",
+                        "latin_font" to "string", "latin_custom_font_id" to "string",
                         "background_image" to "string", "background_image_fit" to "string",
-                        "volume_key_turn_page" to "bool", "swipe_to_turn_page" to "bool",
+                        "volume_key_turn_page" to "bool", "swipe_to_turn_page" to "bool", "two_page_layout" to "bool",
+                        "edge_selection_enabled" to "bool",
                         "reader_engine_mode" to "string", "bookshelf_view_mode" to "string",
-                        "eink_mode_enabled" to "bool", "eink_high_contrast" to "bool",
-                        "eink_disable_animations" to "bool", "eink_large_touch_targets" to "bool",
                         "page_margin" to "int", "paragraph_spacing" to "int", "first_line_indent" to "int",
                         "text_alignment" to "string", "show_header" to "bool", "show_footer" to "bool",
                         "show_time" to "bool", "show_battery" to "bool",
@@ -99,7 +111,11 @@ internal object NativeSettingsBackup {
                     "string" -> value is String
                     else -> false
                 }
-                if (!valid || (name == "native_reading_skills" && !validCustomSkills(value as? String)) || (name == "native_reader_appearance" &&
+                if (!valid || (name == "native_reader_appearance" &&
+                        key in setOf("cjk_font", "latin_font") && ReaderFont.entries.none { it.name == value }) ||
+                    (name == "native_reader_appearance" && key in setOf("cjk_custom_font_id", "latin_custom_font_id") &&
+                        (value !is String || !importedReaderFontIdPattern.matches(value))) ||
+                    (name == "native_reading_skills" && !validCustomSkills(value as? String)) || (name == "native_reader_appearance" &&
                         key in setOf("custom_background", "custom_foreground") &&
                         readerThemeColor(value as? String) == null) ||
                     (name == "native_reader_appearance" && key == "background_image" &&
@@ -116,25 +132,41 @@ internal object NativeSettingsBackup {
     }
 
     private fun validCustomSkills(raw: String?): Boolean = runCatching {
-        require(raw != null && raw.length <= 128000)
-        val array = JSONArray(raw)
-        val skills = (0 until array.length()).map { index ->
-            val item = array.getJSONObject(index)
-            com.aceinandroid.inkflow.core.ai.ReadingSkill(item.getString("id"), item.getString("title"), item.getString("summary"), item.getString("instructions"))
-        }
-        com.aceinandroid.inkflow.core.ai.ReadingSkillRegistry(skills)
-        true
-    }.getOrDefault(false)
+        SkillCodec.decodeStored(requireNotNull(raw))
+    }.isSuccess
+
+    private fun included(name: String, version: Int): Boolean = when (name) {
+        "native_reading_skills" -> version >= 4
+        "native_txt_rules" -> version >= 2
+        "native_bookshelf" -> version >= 3
+        else -> true
+    }
+
+    private fun hardwareLocal(name: String, key: String): Boolean =
+        name == "native_reader_appearance" && key.startsWith("eink")
+
+    // Language, agent selection and bindings belong to this device, even during restore.
+    private fun deviceLocal(key: String): Boolean = key in setOf(
+        "language", "locale", "app_language", "device_language", "selected_agent", "agent_selection",
+    ) || key.startsWith("agent_skill_binding.") || key.startsWith("book_agent.") ||
+        key.startsWith("book_skill_binding.")
 
     fun apply(context: Context, document: JSONObject) {
         parse(document)
         preferenceNames.forEach { name ->
             val entries = document.optJSONObject(name) ?: JSONObject()
-            if (!document.has(name)) return@forEach
-            val editor = context.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear()
+            if (!included(name, document.getInt("version")) || !document.has(name)) return@forEach
+            val preferences = context.getSharedPreferences(name, Context.MODE_PRIVATE)
+            val editor = preferences.edit()
+            val portableKeys = if (name == "native_reading_skills") listOf("custom_skills")
+                else preferences.all.keys.filterNot { deviceLocal(it) || hardwareLocal(name, it) }
+            portableKeys.forEach(editor::remove)
+            if (name == "native_reading_skills" && !entries.has("custom_skills"))
+                editor.putString("custom_skills", SkillCodec.encodeStored(emptyList()))
             val keys = entries.keys()
             while (keys.hasNext()) {
                 val key = keys.next()
+                if (hardwareLocal(name, key)) continue
                 val entry = entries.getJSONObject(key)
                 when (entry.getString("type")) {
                     "bool" -> editor.putBoolean(key, entry.getBoolean("value"))
@@ -146,6 +178,13 @@ internal object NativeSettingsBackup {
             if (!editor.commit()) throw IOException("Cannot restore native settings: $name")
         }
     }
+
+    /** All selected imported faces; archive already carries the complete existing font library. */
+    fun selectedFontIds(document: JSONObject): Set<String> = listOf(
+        "custom_font_id", "cjk_custom_font_id", "latin_custom_font_id",
+    ).mapNotNull { key ->
+        document.optJSONObject("native_reader_appearance")?.optJSONObject(key)?.opt("value") as? String
+    }.toSet()
 
     fun selectedFontId(document: JSONObject): String? =
         document.optJSONObject("native_reader_appearance")?.optJSONObject("custom_font_id")

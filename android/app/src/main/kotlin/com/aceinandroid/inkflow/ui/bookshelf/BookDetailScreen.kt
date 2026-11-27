@@ -5,15 +5,19 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -28,11 +32,14 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -48,7 +55,7 @@ import kotlinx.coroutines.withContext
 /** Local metadata and notes, backed by the existing book row and annotation projection. */
 @Composable
 fun BookDetailScreen(book: StoredBook, store: BookStore, onDismiss: () -> Unit,
-    onSaved: () -> Unit, onRead: () -> Unit) {
+    onSaved: () -> Unit, onRead: () -> Unit, onListen: (() -> Unit)? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var title by remember(book.id) { mutableStateOf(book.title) }
@@ -73,15 +80,37 @@ fun BookDetailScreen(book: StoredBook, store: BookStore, onDismiss: () -> Unit,
     }
     Dialog(onDismissRequest = { if (!saving) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        Surface(Modifier.fillMaxSize().testTag("bookshelf.details"), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(stringResource(R.string.migration_book_details), style = MaterialTheme.typography.headlineSmall)
                     TextButton(onClick = onDismiss, enabled = !saving) { Text(stringResource(R.string.close)) }
                 }
-                cover?.let { Image(it.asImageBitmap(), stringResource(R.string.migration_cover),
-                    Modifier.fillMaxWidth().height(240.dp), contentScale = ContentScale.Fit) }
+                Box(Modifier.align(Alignment.CenterHorizontally).widthIn(max = 168.dp)
+                    .fillMaxWidth().aspectRatio(BOOKSHELF_COVER_RATIO)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh), contentAlignment = Alignment.Center) {
+                    val image = cover
+                    if (image != null) Image(image.asImageBitmap(), stringResource(R.string.migration_cover),
+                        Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+                    else Text(book.format.uppercase(), style = MaterialTheme.typography.titleLarge)
+                }
+                Text(book.title, style = MaterialTheme.typography.headlineSmall)
+                if (book.author.isNotBlank()) Text(book.author, style = MaterialTheme.typography.bodyLarge)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(onClick = onRead, enabled = !saving, modifier = Modifier.weight(1f).testTag("bookshelf.read")) {
+                        Text(stringResource(R.string.migration_read_book))
+                    }
+                    OutlinedButton(onClick = onListen ?: onRead, enabled = !saving,
+                        modifier = Modifier.weight(1f).testTag("bookshelf.listen")) {
+                        Text(stringResource(R.string.bookshelf_listen))
+                    }
+                }
+                if (onListen == null) Text(stringResource(R.string.bookshelf_listen_in_reader),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.bookshelf_local_file, book.file.name),
+                    style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                HorizontalDivider()
                 OutlinedButton(onClick = { picker.launch(arrayOf("image/*")) }, enabled = !saving) {
                     Text(stringResource(R.string.migration_change_cover))
                 }
@@ -121,7 +150,6 @@ fun BookDetailScreen(book: StoredBook, store: BookStore, onDismiss: () -> Unit,
                             } finally { saving = false }
                         }
                     }) { Text(stringResource(R.string.migration_save_details)) }
-                    TextButton(onClick = onRead, enabled = !saving) { Text(stringResource(R.string.migration_read_book)) }
                 }
             }
         }

@@ -12,7 +12,10 @@ import java.security.MessageDigest
 
 /** Read-only v22 projection. Unknown rows are neither rewritten nor removed. */
 class BookWikiRepository(private val store: BookStore) {
-    fun materials(bookId: Long, boundary: Double, snapshot: ReadingContextSnapshot? = null): List<BookMaterial> {
+    fun materials(bookId: Long, boundary: Double, snapshot: ReadingContextSnapshot? = null,
+                  viewAuthorization: BookViewAuthorization? = null): List<BookMaterial> {
+        require(viewAuthorization == null || viewAuthorization.bookId == bookId && viewAuthorization.userConfirmed)
+        val fullView = viewAuthorization != null
         val db = store.readableDatabase
         val sources = ReadingSql.rows(db, "tb_book_wiki_entry_sources", "book_id = ?", arrayOf(bookId.toString()))
             .groupBy { it.getString("entry_id") }
@@ -61,11 +64,16 @@ class BookWikiRepository(private val store: BookStore) {
                     listOf(BookMaterialSource(source.optString("href"), source.optString("chapter"), "",
                         source.optString("text"), source.optDouble("progress", Double.NaN), source.optInt("chapterIndex", -1), source.optInt("endOffset", -1))))
             }
-        return BookWikiProjector().visible(bookId, boundary, wiki + artifacts + nativeSuggestions, snapshot?.chapterIndex ?: -1, snapshot?.readOffset ?: -1)
+        return BookWikiProjector().visible(bookId, if (fullView) 1.0 else boundary, wiki + artifacts + nativeSuggestions,
+            if (fullView) -1 else snapshot?.chapterIndex ?: -1, if (fullView) -1 else snapshot?.readOffset ?: -1)
     }
 
-    fun contextPack(bookId: Long, boundary: Double, query: String = "", chapterHref: String = "", snapshot: ReadingContextSnapshot? = null): List<BookContextNode> =
-        ReadingContextPackBuilder().build(bookId, boundary, materials(bookId, boundary, snapshot), query, chapterHref, chapterIndex = snapshot?.chapterIndex ?: -1, readOffset = snapshot?.readOffset ?: -1)
+    fun contextPack(bookId: Long, boundary: Double, query: String = "", chapterHref: String = "", snapshot: ReadingContextSnapshot? = null,
+                    viewAuthorization: BookViewAuthorization? = null): List<BookContextNode> =
+        ReadingContextPackBuilder().build(bookId, if (viewAuthorization != null) 1.0 else boundary,
+            materials(bookId, boundary, snapshot, viewAuthorization), query, chapterHref,
+            chapterIndex = if (viewAuthorization != null) -1 else snapshot?.chapterIndex ?: -1,
+            readOffset = if (viewAuthorization != null) -1 else snapshot?.readOffset ?: -1)
 }
 
 /** Shared journal codec. Canonical hashing includes every column, including unknown metadata. */

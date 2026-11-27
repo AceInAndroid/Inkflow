@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_font_general">General font</string>
+    <string name="reader_font_cjk">Chinese / CJK font</string>
+    <string name="reader_font_latin">Latin font</string>
+    <string name="reader_font_inherit">Follow general font</string>
+    <string name="reader_font_import_script">Import %1$s</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="inkflow_ai_reading_materials">ローカル資料を検索中</string>
+  <string name="inkflow_ai_context_ready">コンテキストの準備完了</string>
+  <string name="inkflow_ai_generating">回答を生成中</string>
+  <string name="inkflow_ai_verifying_sources">引用元を検証中</string>
+    <string name="inkflow_ai_invalid_source">この引用元は無効か、現在の読書範囲外です。</string>
+    <string name="inkflow_ai_return">AI に戻る</string>
+    <string name="inkflow_ai_send_all_once">この質問で本全体の内容を使用（未読部分を含む）</string>
+</resources>

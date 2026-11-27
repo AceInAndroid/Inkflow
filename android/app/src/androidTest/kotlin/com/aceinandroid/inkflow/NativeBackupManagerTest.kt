@@ -162,7 +162,7 @@ class NativeBackupManagerTest {
         assertFalse(obsoleteFont.exists())
         assertEquals(narration, NarrationSettingsStore(destination).load())
         assertEquals("cover", File(destination.filesDir, "cover/sample.png").readText())
-        assertEquals(flutterPreferences,
+        assertEquals(NativeLegacyPreferenceFilter.portable(JSONObject(flutterPreferences)).toString(),
             File(destination.filesDir, "flutter_preferences_backup.json").readText())
         assertFalse(NativeProgressSync(destination).account().signedIn)
         destinationStore.close()
@@ -302,7 +302,7 @@ class NativeBackupManagerTest {
         assertFalse(ReaderControlsStore(destination).volumeKeysTurnPages())
         assertEquals(BookshelfSort(BookSortField.PROGRESS, descending = false),
             BookshelfSortStore(destination).load())
-        assertEquals(preferences.readText(),
+        assertEquals(NativeLegacyPreferenceFilter.portable(JSONObject(preferences.readText())).toString(),
             File(destination.filesDir, "flutter_preferences_backup.json").readText())
         destinationStore.close()
     }

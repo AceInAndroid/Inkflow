@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="m4_tts_minimize">Minimize player</string>
+    <string name="m4_tts_settings">Voice and playback settings</string>
+    <string name="m4_tts_time_seek_unavailable">Time seeking is unavailable for this speech engine. Use chapter controls or text positions.</string>
+    <string name="m4_tts_previous_chapter">Previous chapter</string>
+    <string name="m4_tts_next_chapter">Next chapter</string>
+    <string name="m4_tts_original_position">Return to initial reading position</string>
+    <string name="m4_tts_current_position">Show text</string>
+    <string name="m4_tts_text_offset">Text position %1$d / %2$d</string>
+    <string name="m4_tts_timer">Sleep timer</string>
+    <string name="m4_tts_timer_remaining">Sleep in %1$s</string>
+    <string name="m4_tts_timer_off">Turn timer off</string>
+    <string name="m4_tts_timer_minutes">%1$d minutes</string>
+    <string name="m4_tts_online_voice">Online voice is managed in speech provider settings.</string>
+    <string name="m4_tts_range_unavailable">Sentence highlighting appears only when the engine reports real text ranges. Otherwise only chunk boundaries are available.</string>
+    <string name="m4_tts_boundary_highlight">Paragraph at the last reported chunk boundary; this engine has not reported sentence ranges.</string>
+    <string name="m4_tts_listen_from_reader">Listen from reading position</string>
+</resources>

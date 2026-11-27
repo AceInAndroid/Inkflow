@@ -20,7 +20,7 @@ internal class NativeAnnotationActions(private val db: SQLiteDatabase) {
         db.beginTransaction()
         try {
             check(activeBook(bookId)) { "Book is no longer in the library" }
-            val existing = first("tb_notes", "book_id = ? AND cfi = ? AND type IN ('highlight', 'underline')",
+            val existing = first("tb_notes", "book_id = ? AND cfi = ? AND type IN ('highlight', 'underline', 'wavy')",
                 arrayOf(bookId.toString(), cfi))
             checkExpected(existing, expected)
             val id = existing?.getLong("id") ?: 0L
@@ -76,7 +76,7 @@ internal class NativeAnnotationActions(private val db: SQLiteDatabase) {
     fun delete(bookId: Long, expected: StoredAnnotation): String {
         db.beginTransaction()
         try {
-            val current = first("tb_notes", "id = ? AND book_id = ? AND type IN ('highlight', 'underline')",
+            val current = first("tb_notes", "id = ? AND book_id = ? AND type IN ('highlight', 'underline', 'wavy')",
                 arrayOf(expected.id.toString(), bookId.toString()))
             checkExpected(current, expected)
             val before = snapshot(expected.id)

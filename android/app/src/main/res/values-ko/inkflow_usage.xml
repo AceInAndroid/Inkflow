@@ -1,0 +1,20 @@
+<resources>
+    <string name="usage_scope">이 기기에 기록된 토큰 사용량입니다. 금액은 추정하지 않습니다.</string>
+    <string name="usage_quality">보고됨 %1$s · 추정 %2$s · 혼합 또는 알 수 없음 %3$s</string>
+    <string name="usage_requests">요청 수: %1$s</string>
+    <string name="usage_unknown">알 수 없음</string>
+    <string name="usage_empty">아직 사용 기록이 없습니다.</string>
+    <string name="usage_book">도서 %1$s</string>
+    <string name="usage_io">입력 %1$s · 출력 %2$s 토큰</string>
+    <string name="usage_limit">사용량이 가장 많은 100개 그룹을 표시합니다.</string>
+    <string name="usage_gaps">기록이 불완전할 수 있습니다. 이전 기록에는 귀속 정보가 없으며 실패 또는 재시도 사용량이 누락될 수 있습니다. 보고값, 추정값, 혼합값을 구분합니다.</string>
+    <string name="usage_refresh">사용량 새로고침</string>
+    <string name="usage_by_book">도서</string>
+    <string name="usage_by_task">작업</string>
+    <string name="usage_by_request">요청</string>
+    <string name="usage_by_provider">제공업체</string>
+    <string name="usage_by_role">역할</string>
+    <string name="usage_by_workload">기능</string>
+    <string name="usage_by_model">모델</string>
+    <string name="usage_by_day">날짜</string>
+</resources>

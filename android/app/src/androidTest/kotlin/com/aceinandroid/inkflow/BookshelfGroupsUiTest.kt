@@ -33,6 +33,7 @@ class BookshelfGroupsUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
+            click(localized.getString(R.string.library))
             click(localized.getString(R.string.group_create))
             setDialogText(original)
             click(localized.getString(R.string.save))

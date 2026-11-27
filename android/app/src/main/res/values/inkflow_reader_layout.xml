@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_reader_spread">Two-page layout on wide screens</string>
+    <string name="inkflow_reader_spread_summary">Shows facing pages when the window is wide enough. Opening AI returns to a single page.</string>
+</resources>

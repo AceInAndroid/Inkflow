@@ -1,0 +1,20 @@
+<resources>
+    <string name="usage_scope">この端末で記録されたトークン使用量。金額は推定しません。</string>
+    <string name="usage_quality">報告値 %1$s · 推定 %2$s · 混在・不明 %3$s</string>
+    <string name="usage_requests">リクエスト数：%1$s</string>
+    <string name="usage_unknown">不明</string>
+    <string name="usage_empty">使用量の記録はまだありません。</string>
+    <string name="usage_book">書籍 %1$s</string>
+    <string name="usage_io">入力 %1$s · 出力 %2$s トークン</string>
+    <string name="usage_limit">使用量上位100グループを表示しています。</string>
+    <string name="usage_gaps">古い記録は帰属情報がなく、失敗・再試行の使用量も欠ける場合があります。報告値、推定値、混在値は区別して表示します。</string>
+    <string name="usage_refresh">使用量を更新</string>
+    <string name="usage_by_book">書籍</string>
+    <string name="usage_by_task">タスク</string>
+    <string name="usage_by_request">リクエスト</string>
+    <string name="usage_by_provider">プロバイダー</string>
+    <string name="usage_by_role">役割</string>
+    <string name="usage_by_workload">機能</string>
+    <string name="usage_by_model">モデル</string>
+    <string name="usage_by_day">日付</string>
+</resources>

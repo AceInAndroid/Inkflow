@@ -10,6 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.aceinandroid.inkflow.localization.NativeLocaleContext
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,6 +37,7 @@ class NativeVocabularyUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
+            click(localized.getString(R.string.home_me))
             click(localized.getString(R.string.vocabulary_title))
             click(word)
             val icon = waitFor(localized.getString(R.string.vocabulary_pronunciation))
@@ -69,6 +71,8 @@ class NativeVocabularyUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
+            click(localized.getString(R.string.library))
+            assertNotNull(waitFor(localized.getString(R.string.search_books)))
             click(book.title)
             val text = waitForContainingText(word)
             val offset = text.text.toString().indexOf(word)
@@ -83,6 +87,9 @@ class NativeVocabularyUiTest {
             click(localized.getString(R.string.vocabulary_add))
             click(localized.getString(R.string.save))
             waitUntil { vocabulary.all().any { it.word == word } }
+            waitUntil { find(instrumentation.uiAutomation.rootInActiveWindow,
+                localized.getString(R.string.vocabulary_add)) == null }
+            instrumentation.waitForIdleSync()
             val saved = vocabulary.all().single { it.word == word }
             assertTrue(saved.position == "native:chapter:0:$offset")
             assertTrue(saved.sourceSentence.contains(word))
@@ -90,6 +97,7 @@ class NativeVocabularyUiTest {
             instrumentation.runOnMainSync {
                 (activity as ComponentActivity).onBackPressedDispatcher.onBackPressed()
             }
+            click(localized.getString(R.string.home_me))
             click(localized.getString(R.string.vocabulary_title))
             click(word)
             click(localized.getString(R.string.vocabulary_open_source))
@@ -133,6 +141,8 @@ class NativeVocabularyUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
+            click(localized.getString(R.string.library))
+            assertNotNull(waitFor(localized.getString(R.string.search_books)))
             click(title)
             val text = waitForContainingText(word)
             val offset = text.text.toString().indexOf(word)
@@ -147,6 +157,9 @@ class NativeVocabularyUiTest {
             click(localized.getString(R.string.vocabulary_add))
             click(localized.getString(R.string.save))
             waitUntil { vocabulary.all().any { it.word == word } }
+            waitUntil { find(instrumentation.uiAutomation.rootInActiveWindow,
+                localized.getString(R.string.vocabulary_add)) == null }
+            instrumentation.waitForIdleSync()
             val saved = vocabulary.all().single { it.word == word }
             assertTrue(saved.sourceSentence.contains(word))
             assertTrue(saved.bookTitle == title)
@@ -154,6 +167,7 @@ class NativeVocabularyUiTest {
             instrumentation.runOnMainSync {
                 (activity as ComponentActivity).onBackPressedDispatcher.onBackPressed()
             }
+            click(localized.getString(R.string.home_me))
             click(localized.getString(R.string.vocabulary_title))
             click(word)
             click(localized.getString(R.string.vocabulary_open_source))
@@ -184,6 +198,7 @@ class NativeVocabularyUiTest {
             activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             })
+            click(localized.getString(R.string.home_me))
             click(localized.getString(R.string.vocabulary_title))
             click(word)
             click(localized.getString(R.string.vocabulary_pronunciation))
@@ -203,14 +218,29 @@ class NativeVocabularyUiTest {
         while (SystemClock.uptimeMillis() < deadline) {
             // A selection popup can publish its label before its clickable ancestor is
             // ready. Refresh the tree after a rejected action; never resend an accepted click.
-            val node = find(automation.rootInActiveWindow, label)
-                ?: automation.windows.firstNotNullOfOrNull { find(it.root, label) }
+            val node = find(automation.rootInActiveWindow?.also { it.refresh() }, label)
+                ?: automation.windows.firstNotNullOfOrNull { find(it.root?.also { root -> root.refresh() }, label) }
             var clickable: AccessibilityNodeInfo? = node
             while (clickable != null && !clickable.isClickable) clickable = clickable.parent
-            if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) return
+            if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) {
+                runCatching { automation.waitForIdle(100, 2_000) }
+                return
+            }
             SystemClock.sleep(100)
         }
-        error("Cannot click expected test label: $label")
+        error("Cannot click expected test label: $label; visible=${visibleLabels()}")
+    }
+
+    private fun visibleLabels(): List<String> {
+        val labels = mutableListOf<String>()
+        fun collect(node: AccessibilityNodeInfo?) {
+            if (node == null || labels.size >= 40) return
+            node.text?.toString()?.takeIf { it.isNotBlank() }?.let { labels += it.take(100) }
+            node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { labels += it.take(100) }
+            for (index in 0 until node.childCount) collect(node.getChild(index))
+        }
+        collect(InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow)
+        return labels
     }
 
     private fun waitFor(label: String): AccessibilityNodeInfo? {
@@ -228,7 +258,7 @@ class NativeVocabularyUiTest {
                 value)?.let { return it }
             SystemClock.sleep(100)
         }
-        error("Missing expected reader fixture text")
+        error("Missing expected reader fixture text; visible=${visibleLabels()}")
     }
 
     private fun waitUntil(condition: () -> Boolean) {
@@ -241,6 +271,7 @@ class NativeVocabularyUiTest {
 
     private fun find(node: AccessibilityNodeInfo?, label: String): AccessibilityNodeInfo? {
         if (node == null) return null
+        node.refresh()
         if (node.text?.toString() == label || node.contentDescription?.toString() == label) return node
         for (index in 0 until node.childCount) find(node.getChild(index), label)?.let { return it }
         return null

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skill_transfer_title">待确认的阅读 Skill</string>
+    <string name="skill_transfer_received">已收到 %1$s，请在本机预览并确认导入。</string>
+    <string name="skill_transfer_notice">接收和预览 Skill 不会执行或调用模型。仅导入定义；本机默认和单书绑定保留在本机。</string>
+    <string name="skill_transfer_empty">没有待确认的 Skill</string>
+    <string name="skill_transfer_review">预览 %1$s</string>
+    <string name="skill_transfer_reject">丢弃</string>
+    <string name="skill_transfer_preview">预览 Skill 定义</string>
+    <string name="skill_transfer_copy_policy">ID 冲突时创建副本。导入不会自动选择或执行 Skill。</string>
+    <string name="skill_transfer_metadata">分类：%1$s · 推荐助手：%2$s · 输出：%3$s</string>
+    <string name="skill_transfer_confirm">确认导入，冲突建副本</string>
+    <string name="skill_transfer_back">返回</string>
+</resources>

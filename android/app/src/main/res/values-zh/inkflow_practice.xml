@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_practice_title">阅读练习</string>
+    <string name="inkflow_practice_local">设定目标，复习本书已保存的卡片。</string>
+    <string name="inkflow_practice_goal">阅读目标</string>
+    <string name="inkflow_practice_no_goal">暂无进行中的目标。</string>
+    <string name="inkflow_practice_goal_new">新建目标</string>
+    <string name="inkflow_practice_goal_edit">编辑目标</string>
+    <string name="inkflow_practice_goal_replace">保存新目标会将当前目标标记为已放弃，此操作可撤销。</string>
+    <string name="inkflow_practice_goal_title">目标标题</string>
+    <string name="inkflow_practice_minutes">分钟数（可选）</string>
+    <string name="inkflow_practice_minutes_value">%1$d 分钟</string>
+    <string name="inkflow_practice_goal_hint">标题为 1–500 个字符。分钟数可留空，填写时须为正整数。</string>
+    <string name="inkflow_practice_save">保存目标</string>
+    <string name="inkflow_practice_cancel">取消</string>
+    <string name="inkflow_practice_cards">卡片复习</string>
+    <string name="inkflow_practice_due">已到期</string>
+    <string name="inkflow_practice_all">全部卡片</string>
+    <string name="inkflow_practice_refresh">刷新</string>
+    <string name="inkflow_practice_loading">正在加载练习…</string>
+    <string name="inkflow_practice_load_failed">练习加载失败，请重试。</string>
+    <string name="inkflow_practice_retry">重试</string>
+    <string name="inkflow_practice_no_cards">当前已读范围内，暂无来源可验证的卡片。</string>
+    <string name="inkflow_practice_none_due">暂无到期卡片，可查看全部卡片。</string>
+    <string name="inkflow_practice_next_review">下次复习：%1$s</string>
+    <string name="inkflow_practice_show_answer">查看答案</string>
+    <string name="inkflow_practice_hard">困难</string>
+    <string name="inkflow_practice_remembered">记得</string>
+    <string name="inkflow_practice_mastered">掌握</string>
+    <string name="inkflow_practice_open_source">查看原文：%1$s</string>
+    <string name="inkflow_practice_goal_saved">目标已保存。</string>
+    <string name="inkflow_practice_rating_saved">评级已保存。</string>
+    <string name="inkflow_practice_undo">撤销</string>
+    <string name="inkflow_practice_write_failed">操作未能完成，已刷新数据。请重新打开后重试。</string>
+</resources>

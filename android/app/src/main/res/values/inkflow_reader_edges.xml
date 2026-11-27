@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_edge_selection">Extend selection at page edges</string>
+    <string name="inkflow_edge_selection_summary">Hold a selection handle at the page edge to extend within this chapter. Off by default; up to four pages.</string>
+    <string name="inkflow_edge_selection_eink">Edge extension is disabled on e-ink displays. Use the range buttons.</string>
+</resources>

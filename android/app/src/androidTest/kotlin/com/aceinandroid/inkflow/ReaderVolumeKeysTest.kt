@@ -29,6 +29,8 @@ class ReaderVolumeKeysTest {
         val context = instrumentation.targetContext
         val controls = ReaderControlsStore(context)
         val original = controls.volumeKeysTurnPages()
+        val originalEngine = controls.readerEngineMode()
+        controls.setReaderEngineMode(com.aceinandroid.inkflow.core.ReaderEngineMode.NATIVE_PAGED)
         val rules = TxtChapterRuleStore(context)
         val originalRule = rules.selectedRuleId()
         val title = "Volume previous ${UUID.randomUUID()}"
@@ -64,6 +66,7 @@ class ReaderVolumeKeysTest {
             store.close()
             source.delete()
             controls.setVolumeKeysTurnPages(original)
+            controls.setReaderEngineMode(originalEngine)
             rules.select(originalRule)
         }
     }
@@ -73,6 +76,8 @@ class ReaderVolumeKeysTest {
         val context = instrumentation.targetContext
         val controls = ReaderControlsStore(context)
         val original = controls.volumeKeysTurnPages()
+        val originalEngine = controls.readerEngineMode()
+        controls.setReaderEngineMode(com.aceinandroid.inkflow.core.ReaderEngineMode.NATIVE_PAGED)
         val rules = TxtChapterRuleStore(context)
         val originalRule = rules.selectedRuleId()
         val title = "Volume pages ${UUID.randomUUID()}"
@@ -103,6 +108,7 @@ class ReaderVolumeKeysTest {
             store.close()
             source.delete()
             controls.setVolumeKeysTurnPages(original)
+            controls.setReaderEngineMode(originalEngine)
             rules.select(originalRule)
         }
     }
@@ -112,6 +118,8 @@ class ReaderVolumeKeysTest {
         val context = instrumentation.targetContext
         val controls = ReaderControlsStore(context)
         val original = controls.volumeKeysTurnPages()
+        val originalEngine = controls.readerEngineMode()
+        controls.setReaderEngineMode(com.aceinandroid.inkflow.core.ReaderEngineMode.NATIVE_PAGED)
         val activity = instrumentation.startActivitySync(Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }) as MainActivity
@@ -138,15 +146,21 @@ class ReaderVolumeKeysTest {
         } finally {
             activity.finish()
             controls.setVolumeKeysTurnPages(original)
+            controls.setReaderEngineMode(originalEngine)
         }
     }
 
     private fun openLibraryBook(activity: android.app.Activity, title: String) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.waitForIdleSync()
+        val library = NativeLocaleContext(instrumentation.targetContext).getString(R.string.library)
+        waitUntil("home navigation ready") { findOnScreen(library) != null && findOnScreen(com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline)) == null }
+        var tab = findOnScreen(library)
+        while (tab != null && !tab.isClickable) tab = tab.parent
+        assertTrue("Cannot open library", tab?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true)
         waitUntil("library search ready after splash") {
             findNode { it.isVisibleToUser && it.isEditable } != null &&
-                findOnScreen("A modern reader, elevated by AI.") == null
+                findOnScreen(com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline)) == null
         }
         dismissLibraryKeyboard(activity)
         val search = requireNotNull(findNode { it.isVisibleToUser && it.isEditable })
@@ -178,10 +192,10 @@ class ReaderVolumeKeysTest {
     private fun dismissLibraryKeyboard(activity: android.app.Activity) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.waitForIdleSync()
-        val settings = NativeLocaleContext(instrumentation.targetContext).getString(R.string.settings)
+        val settings = NativeLocaleContext(instrumentation.targetContext).getString(R.string.home_me)
         var backSent = false
         var hiddenSince: Long? = null
-        waitUntil("library keyboard stably hidden with Settings visible") {
+        waitUntil("library keyboard stably hidden with Me visible") {
             var imeVisible: Boolean? = null
             var windowFocused = false
             instrumentation.runOnMainSync {
@@ -218,7 +232,11 @@ class ReaderVolumeKeysTest {
         waitUntil { findOnScreen(label, nonEditable)?.also { found = it } != null }
         var clickable = found
         while (clickable != null && !clickable.isClickable) clickable = clickable.parent
-        if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) return
+        if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) {
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            InstrumentationRegistry.getInstrumentation().uiAutomation.waitForIdle(250, 3_000)
+            return
+        }
         val bounds = Rect().also(found!!::getBoundsInScreen)
         val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
         val time = SystemClock.uptimeMillis()
@@ -272,6 +290,13 @@ class ReaderVolumeKeysTest {
             if (condition()) return
             SystemClock.sleep(100)
         }
-        throw AssertionError("Timed out waiting for $description")
+        val labels = mutableListOf<String>()
+        fun collect(node: AccessibilityNodeInfo?) {
+            if (node == null) return
+            (node.text ?: node.contentDescription)?.toString()?.takeIf { it.isNotBlank() }?.let(labels::add)
+            for (i in 0 until node.childCount) collect(node.getChild(i))
+        }
+        collect(InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow)
+        throw AssertionError("Timed out waiting for $description; visible=${labels.take(40)}")
     }
 }

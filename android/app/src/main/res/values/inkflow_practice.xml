@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_practice_title">Reading practice</string>
+    <string name="inkflow_practice_local">Set a goal and review cards saved for this book.</string>
+    <string name="inkflow_practice_goal">Reading goal</string>
+    <string name="inkflow_practice_no_goal">No active goal.</string>
+    <string name="inkflow_practice_goal_new">New goal</string>
+    <string name="inkflow_practice_goal_edit">Edit goal</string>
+    <string name="inkflow_practice_goal_replace">Saving a new goal marks the current goal as abandoned. You can undo this change.</string>
+    <string name="inkflow_practice_goal_title">Goal title</string>
+    <string name="inkflow_practice_minutes">Minutes (optional)</string>
+    <string name="inkflow_practice_minutes_value">%1$d minutes</string>
+    <string name="inkflow_practice_goal_hint">Use 1–500 characters for the title. Leave minutes blank or enter a positive whole number.</string>
+    <string name="inkflow_practice_save">Save goal</string>
+    <string name="inkflow_practice_cancel">Cancel</string>
+    <string name="inkflow_practice_cards">Review cards</string>
+    <string name="inkflow_practice_due">Due</string>
+    <string name="inkflow_practice_all">All cards</string>
+    <string name="inkflow_practice_refresh">Refresh</string>
+    <string name="inkflow_practice_loading">Loading practice…</string>
+    <string name="inkflow_practice_load_failed">Could not load practice. Please retry.</string>
+    <string name="inkflow_practice_retry">Retry</string>
+    <string name="inkflow_practice_no_cards">No cards with verifiable sources in your read range.</string>
+    <string name="inkflow_practice_none_due">No cards are due. You can view all cards.</string>
+    <string name="inkflow_practice_next_review">Next review: %1$s</string>
+    <string name="inkflow_practice_show_answer">Show answer</string>
+    <string name="inkflow_practice_hard">Hard</string>
+    <string name="inkflow_practice_remembered">Remembered</string>
+    <string name="inkflow_practice_mastered">Mastered</string>
+    <string name="inkflow_practice_open_source">Read source: %1$s</string>
+    <string name="inkflow_practice_goal_saved">Goal saved.</string>
+    <string name="inkflow_practice_rating_saved">Review saved.</string>
+    <string name="inkflow_practice_undo">Undo</string>
+    <string name="inkflow_practice_write_failed">The change could not be saved. Data has been refreshed. Reopen the item and try again.</string>
+</resources>

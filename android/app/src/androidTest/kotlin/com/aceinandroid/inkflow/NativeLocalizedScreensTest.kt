@@ -100,24 +100,27 @@ class NativeLocalizedScreensTest {
                 instrumentation.waitForIdleSync()
                 waitForLabel(labels.library)
                 waitUntil("launch splash dismissed") {
-                    findLabel("A modern reader, elevated by AI.") == null
+                    findLabel(com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline)) == null
                 }
+                click(labels.library)
                 dismissKeyboard(scenario)
                 filterLibrary(scenario, localized.getString(R.string.search_books), title)
                 screenshot(language, "library")
 
                 // Labels address both the bottom navigation and the wide navigation rail.
-                click(labels.settings)
-                waitForLabel(labels.appLanguage)
-                waitForLabel(language.nativeName)
-                waitForLabel(localized.getString(R.string.reading_settings))
+                click(localized.getString(R.string.home_me))
+                click(labels.settings, scrollToVisible = true)
+                waitForLabel(labels.appLanguage, scrollToVisible = true)
+                waitForLabel(language.nativeName, scrollToVisible = true)
+                waitForLabel(localized.getString(R.string.reading_settings), scrollToVisible = true)
                 screenshot(language, "settings")
 
-                click(labels.statistics)
+                scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+                click(labels.statistics, scrollToVisible = true)
                 // A navigation label alone would also match while the page is still loading.
-                waitForLabel(labels.totalTime)
-                waitForLabel(localized.getString(R.string.reading_days))
-                waitForLabel(localized.getString(R.string.books_read))
+                waitForLabel(labels.totalTime, scrollToVisible = true)
+                waitForLabel(localized.getString(R.string.reading_days), scrollToVisible = true)
+                waitForLabel(localized.getString(R.string.books_read), scrollToVisible = true)
                 screenshot(language, "statistics")
 
                 click(labels.library)
@@ -211,9 +214,26 @@ class NativeLocalizedScreensTest {
     private fun screenshot(language: AppLanguage, page: String) {
         instrumentation.waitForIdleSync()
         instrumentation.uiAutomation.waitForIdle(250, 3_000)
-        val bitmap = checkNotNull(instrumentation.uiAutomation.takeScreenshot()) {
-            "Cannot capture ${language.tag}/$page"
+        var rendered: Bitmap? = null
+        waitUntil("rendered screenshot ${language.tag}/$page") {
+            val frame = instrumentation.uiAutomation.takeScreenshot() ?: return@waitUntil false
+            // Accessibility may be ready before the emulator compositor publishes a frame.
+            // Reject a blank central viewport rather than certifying a nonempty PNG file.
+            var darkest = 255
+            var lightest = 0
+            for (y in frame.height / 10 until frame.height * 9 / 10 step maxOf(1, frame.height / 80)) {
+                for (x in frame.width / 10 until frame.width * 9 / 10 step maxOf(1, frame.width / 60)) {
+                    val pixel = frame.getPixel(x, y)
+                    val luminance = (77 * android.graphics.Color.red(pixel) +
+                        150 * android.graphics.Color.green(pixel) + 29 * android.graphics.Color.blue(pixel)) shr 8
+                    darkest = minOf(darkest, luminance)
+                    lightest = maxOf(lightest, luminance)
+                }
+            }
+            if (lightest - darkest > 24) { rendered = frame; true }
+            else { frame.recycle(); false }
         }
+        val bitmap = requireNotNull(rendered)
         try {
             val directory = File(checkNotNull(context.getExternalFilesDir(null)), "language-acceptance/${language.tag}")
             assertTrue("Cannot create screenshot directory $directory", directory.isDirectory || directory.mkdirs())
@@ -230,10 +250,10 @@ class NativeLocalizedScreensTest {
 
     private fun dismissKeyboard(scenario: ActivityScenario<MainActivity>) {
         instrumentation.waitForIdleSync()
-        val settings = NativeLocaleContext(context).getString(R.string.settings)
+        val settings = NativeLocaleContext(context).getString(R.string.home_me)
         var backSent = false
         var hiddenSince: Long? = null
-        waitUntil("software keyboard stably dismissed with Settings navigation visible") {
+        waitUntil("software keyboard stably dismissed with Me navigation visible") {
             var imeVisible: Boolean? = null
             var windowFocused = false
             scenario.onActivity { activity ->
@@ -267,11 +287,15 @@ class NativeLocalizedScreensTest {
         }
     }
 
-    private fun click(label: String, nonEditable: Boolean = false) {
-        val node = waitForLabel(label, nonEditable)
+    private fun click(label: String, nonEditable: Boolean = false, scrollToVisible: Boolean = false) {
+        val node = waitForLabel(label, nonEditable, scrollToVisible)
         var clickable: AccessibilityNodeInfo? = node
         while (clickable != null && !clickable.isClickable) clickable = clickable.parent
-        if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) return
+        if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) {
+            instrumentation.waitForIdleSync()
+            instrumentation.uiAutomation.waitForIdle(250, 3_000)
+            return
+        }
         val bounds = Rect().also(node::getBoundsInScreen)
         assertFalse("No visible bounds for $label", bounds.isEmpty)
         val time = SystemClock.uptimeMillis()
@@ -288,12 +312,45 @@ class NativeLocalizedScreensTest {
         }
     }
 
-    private fun waitForLabel(label: String, nonEditable: Boolean = false): AccessibilityNodeInfo {
+    private fun waitForLabel(label: String, nonEditable: Boolean = false, scrollToVisible: Boolean = false): AccessibilityNodeInfo {
         var found: AccessibilityNodeInfo? = null
+        var scrollBack = false
+        var nextScrollAt = SystemClock.uptimeMillis() + 300
         waitUntil("visible label: $label") {
-            findNode { node -> (!nonEditable || !node.isEditable) &&
+            // Use the same refreshed root/window lookup for both labels and scrolling.
+            // An absent tree simply yields through waitUntil's polling delay.
+            found = findNode { node -> (!nonEditable || !node.isEditable) &&
                 (node.text?.toString()?.lineSequence()?.any { it == label } == true ||
-                    node.contentDescription?.toString() == label) }?.also { found = it } != null
+                    node.contentDescription?.toString() == label) }
+            if (found != null) return@waitUntil true
+            val now = SystemClock.uptimeMillis()
+            if (scrollToVisible && now >= nextScrollAt) {
+                val scroll = findNode { node ->
+                    val actions = node.actionList.map { it.id }
+                    node.packageName?.toString() == context.packageName && node.isScrollable &&
+                        (AccessibilityNodeInfo.ACTION_SCROLL_FORWARD in actions ||
+                            AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD in actions ||
+                            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id in actions ||
+                            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id in actions) &&
+                        // A horizontal period/chip row is not the page's scroll container.
+                        (AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT.id !in actions &&
+                            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT.id !in actions ||
+                            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id in actions ||
+                            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id in actions)
+                }
+                if (scroll != null) {
+                    val actions = scroll.actionList.map { it.id }
+                    val candidates = if (scrollBack) listOf(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id)
+                    else listOf(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id)
+                    val action = candidates.firstOrNull { it in actions }
+                    // Restored Me/Settings positions may put the next target above us.
+                    if (action == null || !scroll.performAction(action)) scrollBack = !scrollBack
+                    nextScrollAt = now + 300
+                }
+            }
+            false
         }
         return requireNotNull(found)
     }
@@ -304,16 +361,20 @@ class NativeLocalizedScreensTest {
     }
 
     private fun findNode(predicate: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
-        fun find(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
-            if (node == null) return null
-            if (node.isVisibleToUser && predicate(node)) return node
-            for (index in 0 until node.childCount) find(node.getChild(index))?.let { return it }
-            return null
-        }
         val automation = instrumentation.uiAutomation
-        find(automation.rootInActiveWindow)?.let { return it }
+        findNode(automation.rootInActiveWindow, predicate)?.let { return it }
         // Modal sheet windows and the docked wide panel use the same semantic lookup.
-        for (window in automation.windows) find(window.root)?.let { return it }
+        for (window in automation.windows) findNode(window.root, predicate)?.let { return it }
+        return null
+    }
+
+    private fun findNode(node: AccessibilityNodeInfo?, predicate: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
+        if (node == null) return null
+        // Refresh descendants too: Compose can reuse the root while updating scroll children.
+        // A failed refresh must not hide a usable freshly acquired root/window subtree.
+        node.refresh()
+        if (node.isVisibleToUser && predicate(node)) return node
+        for (index in 0 until node.childCount) findNode(node.getChild(index), predicate)?.let { return it }
         return null
     }
 
@@ -341,7 +402,7 @@ class NativeLocalizedScreensTest {
             "imeAcceptingText=${context.getSystemService(InputMethodManager::class.java).isAcceptingText}",
             "libraryVisible=${findLabel(localized.getString(R.string.library)) != null}",
             "settingsVisible=${findLabel(localized.getString(R.string.settings)) != null}",
-            "splashVisible=${findLabel("A modern reader, elevated by AI.") != null}",
+            "splashVisible=${findLabel(com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline)) != null}",
         ).joinToString()
     }.getOrDefault("uiDiagnosticsUnavailable=true")
 

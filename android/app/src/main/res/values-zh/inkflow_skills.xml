@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_agents_title">阅读 Agent</string>
+    <string name="inkflow_agents_hint">Agent 选择和 Skill 绑定仅保存在本机。</string>
+    <string name="inkflow_agents_general">问书助手</string>
+    <string name="inkflow_agents_story">人物脉络</string>
+    <string name="inkflow_agents_background">背景考据</string>
+    <string name="inkflow_agents_argument">论证思辨</string>
+    <string name="inkflow_agents_language">外语精读</string>
+    <string name="inkflow_agents_coach">主动教练</string>
+    <string name="inkflow_agents_disabled">暂不可用；主动教练保持禁用。</string>
+    <string name="inkflow_agents_default_skill">阅读方法：%1$s</string>
+    <string name="inkflow_agents_context">本地阅读资料</string>
+    <string name="inkflow_agents_navigation">来源定位</string>
+    <string name="inkflow_agents_search">本地书内搜索</string>
+    <string name="inkflow_agents_note_preview">笔记预览</string>
+    <string name="inkflow_skills_limits">支持 JSON 或 Markdown；UTF-8 文件不超过 64 KiB，每个 Skill 的 instructions 不超过 16000 字符。</string>
+    <string name="inkflow_skills_invalid">无法预览。请检查格式、schema 版本、UTF-8 大小和 instructions 长度。Markdown 元数据仅支持标量和列表，不接受 tags、anchors 或未知字段。</string>
+    <string name="inkflow_skills_paste">粘贴 Skill</string>
+    <string name="inkflow_skills_edit">编辑</string>
+    <string name="inkflow_skills_export_json">导出 JSON</string>
+    <string name="inkflow_skills_export_md">导出 Markdown</string>
+    <string name="inkflow_skills_editor_title">粘贴或编辑 Skill</string>
+    <string name="inkflow_skills_source">JSON 或 Markdown 内容</string>
+    <string name="inkflow_skills_preview">导入预览</string>
+    <string name="inkflow_skills_preview_count">将导入 %1$d 个 Skill</string>
+    <string name="inkflow_skills_copy_hint">同 ID 默认另存副本；内置 Skill 始终另存为自定义副本。</string>
+    <string name="inkflow_skills_category">分类：%1$s</string>
+    <string name="inkflow_skills_recommended_agent">建议 Agent：%1$s</string>
+    <string name="inkflow_skills_output_format">输出格式：%1$s</string>
+    <string name="inkflow_skills_quick_prompts">快捷提问</string>
+    <string name="inkflow_skills_overwrite">覆盖同 ID 的已有自定义 Skill</string>
+    <string name="inkflow_skills_confirm">确认导入</string>
+</resources>

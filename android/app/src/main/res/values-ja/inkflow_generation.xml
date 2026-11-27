@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="inkflow_scope_read">読了した章</string>
+  <string name="inkflow_scope_selected">章を選択</string>
+  <string name="inkflow_scope_whole">本全体</string>
+  <string name="inkflow_generation_size">原文の推定文字数：%1$d</string>
+  <string name="inkflow_scope_warning">このタスクは未読の章を読み取る場合があります。許可はこのタスクに限られ、読書の進捗は変わりません。</string>
+  <string name="inkflow_view_all">すべての成果を表示</string>
+  <string name="inkflow_view_all_warning">未読内容のネタバレを含む場合があります。この本の今回の表示にのみ許可します。</string>
+  <string name="inkflow_all_content_active">すべての内容・ネタバレを許可</string>
+  <string name="inkflow_return_safe_view">既読内容に戻る</string>
+  <string name="inkflow_generation_schema_error">1 回修正しても構造化出力が無効です。完了済みのチェックポイントは保持されています。</string>
+  <string name="inkflow_generation_evidence_error">原文の根拠を検証できません。完了済みのチェックポイントは保持されています。</string>
+  <string name="inkflow_generation_auth_error">選択したプロバイダーの API キーと権限を確認してください。</string>
+  <string name="inkflow_generation_transport_error">接続に失敗しました。アドレスと接続を確認して再開してください。</string>
+  <string name="inkflow_generation_source_error">本のファイルが変更されました。タスクを取り消して新規作成してください。</string>
+  <string name="inkflow_generation_boundary_error">読書範囲が変更されました。元の位置に戻って再開してください。</string>
+  <string name="inkflow_generation_limit_error">出力上限を超えました。完了済みのチェックポイントは保持されています。</string>
+    <string name="inkflow_generation_reconfirm_legacy">この旧タスクには検証可能な元の書籍情報がありません。キャンセルし、新しい生成タスクを確認してください。既存の成果とチェックポイントは保持されます。</string>
+</resources>

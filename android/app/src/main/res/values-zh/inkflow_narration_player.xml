@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="m4_tts_minimize">收起播放器</string>
+    <string name="m4_tts_settings">声音与播放设置</string>
+    <string name="m4_tts_time_seek_unavailable">当前语音引擎不支持按时间定位，请使用章节切换或文字位置。</string>
+    <string name="m4_tts_previous_chapter">上一章</string>
+    <string name="m4_tts_next_chapter">下一章</string>
+    <string name="m4_tts_original_position">返回最初阅读位置</string>
+    <string name="m4_tts_current_position">原文</string>
+    <string name="m4_tts_text_offset">文字位置 %1$d / %2$d</string>
+    <string name="m4_tts_timer">定时暂停</string>
+    <string name="m4_tts_timer_remaining">%1$s 后暂停</string>
+    <string name="m4_tts_timer_off">关闭定时</string>
+    <string name="m4_tts_timer_minutes">%1$d 分钟</string>
+    <string name="m4_tts_online_voice">在线音色请在语音服务设置中选择。</string>
+    <string name="m4_tts_range_unavailable">引擎回传真正的文字范围时显示句子高亮；否则仅提供文本块边界。</string>
+    <string name="m4_tts_boundary_highlight">高亮为最近一次真实文本块边界所在段落；引擎未回传句子范围。</string>
+    <string name="m4_tts_listen_from_reader">听当前</string>
+</resources>

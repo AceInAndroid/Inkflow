@@ -9,6 +9,12 @@ class ReaderControlsStore(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(
         "native_reader_appearance", Context.MODE_PRIVATE)
 
+    fun edgeSelectionEnabled(): Boolean = preferences.getBoolean("edge_selection_enabled", false)
+    fun setEdgeSelectionEnabled(enabled: Boolean) { preferences.edit().putBoolean("edge_selection_enabled", enabled).apply() }
+
+    fun twoPageLayout(): Boolean = preferences.getBoolean("two_page_layout", false)
+    fun setTwoPageLayout(enabled: Boolean) { preferences.edit().putBoolean("two_page_layout", enabled).apply() }
+
     fun swipeToTurnPage(): Boolean = preferences.getBoolean("swipe_to_turn_page", false)
 
     fun setSwipeToTurnPage(enabled: Boolean) {

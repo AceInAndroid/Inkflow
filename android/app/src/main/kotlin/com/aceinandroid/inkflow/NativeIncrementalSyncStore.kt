@@ -3,6 +3,7 @@ package com.aceinandroid.inkflow
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import com.aceinandroid.inkflow.core.ai.ReadingSkill
 import com.aceinandroid.inkflow.core.sync.DeltaRow
 import com.aceinandroid.inkflow.core.sync.DeltaTable
 import com.aceinandroid.inkflow.core.sync.ReadingAgentDelta
@@ -10,7 +11,11 @@ import com.aceinandroid.inkflow.core.sync.VocabularyDelta
 import java.io.IOException
 
 /** The sync persistence boundary: validated rows only, one atomic transaction per branch. */
-internal class NativeIncrementalSyncStore(private val db: SQLiteDatabase, private val device: String) {
+internal class NativeIncrementalSyncStore(
+    private val db: SQLiteDatabase,
+    private val device: String,
+    private val skillSync: NativeSkillSyncController? = null,
+) {
     private val columns = mutableMapOf<String, Set<String>>()
     private val tombstone = ReadingAgentDelta.tables.last()
     private val vocabulary = DeltaTable("tb_vocabulary", listOf("normalized_word"), VocabularyDelta.ENTITY)
@@ -32,13 +37,22 @@ internal class NativeIncrementalSyncStore(private val db: SQLiteDatabase, privat
     fun capture(bookKey: String?, bookId: Long? = null): NativeIncrementalSyncPackage = transaction {
         var count = 0
         val keysById = if (bookKey == null) books().entries.associate { it.value.toString() to it.key } else emptyMap()
-        val tables = if (bookKey == null) listOf(vocabulary, tombstone) else ReadingAgentDelta.tables
+        val skills = bookKey == NativeSkillSyncController.BOOK_KEY && bookId == 0L
+        val tables = if (skills) listOf(ReadingAgentDelta.tables.first { it.name == "tb_reading_artifacts" })
+            else if (bookKey == null) listOf(vocabulary, tombstone) else ReadingAgentDelta.tables
         val records = tables.associate { table ->
             val where = if (bookKey == null) {
                 if (table == tombstone) "book_id = 0 AND entity_type = 'vocabulary'" else null
-            } else "book_id = ?"
+            } else if (skills) "book_id = ? AND module_id = 'reading.skills'" else "book_id = ?"
             val args = bookId?.let { arrayOf(it.toString()) }
-            val rows = query(table.name, where, args, ReadingAgentDelta.MAX_ROWS - count + 1)
+            val storedRows = query(table.name, where, args, ReadingAgentDelta.MAX_ROWS - count + 1)
+            val rows = if (bookKey != null && table.name == "tb_reading_artifacts" && skillSync != null) {
+                // Preserve opaque records verbatim, without allowing their IDs to suppress a
+                // current local definition. The bridge allocates a stable compatibility ID.
+                val opaque = storedRows.filter { skillSync.definition(it) == null }
+                val reserved = opaque.map { requireNotNull(it["id"] as? String) }.toSet()
+                opaque + skillSync.capture(bookKey, requireNotNull(bookId), reserved)
+            } else storedRows
             count += rows.size
             require(count <= ReadingAgentDelta.MAX_ROWS) { "Incremental sync row limit exceeded" }
             table.name to if (table == vocabulary) rows.map { row ->
@@ -52,16 +66,32 @@ internal class NativeIncrementalSyncStore(private val db: SQLiteDatabase, privat
     }
 
     /** Equal-time payload conflicts keep the local value and are reported without interrupting reading. */
-    fun merge(packageData: NativeIncrementalSyncPackage, bookId: Long? = null): Int = transaction {
+    fun merge(packageData: NativeIncrementalSyncPackage, bookId: Long? = null): Int {
+        val definitions = mutableListOf<ReadingSkill>()
+        val conflicts = mergeRows(packageData, bookId, definitions)
+        // SQLite first, then the existing Skill persistence boundary. A failed import leaves the
+        // branch unacknowledged so the normal protocol can retry; no page or sync SQL writes Skills.
+        skillSync?.merge(definitions)
+        return conflicts
+    }
+
+    private fun mergeRows(packageData: NativeIncrementalSyncPackage, bookId: Long?,
+        definitions: MutableList<ReadingSkill>): Int = transaction {
         require((packageData.type == ReadingAgentDelta.TYPE) == (bookId != null))
         require(packageData.rows.values.sumOf { it.size } <= ReadingAgentDelta.MAX_ROWS)
         val vocab = bookId == null
         val localBooks = if (vocab) books() else emptyMap()
-        val specs = if (vocab) listOf(vocabulary, tombstone) else ReadingAgentDelta.tables
+        val skills = packageData.bookKey == NativeSkillSyncController.BOOK_KEY && bookId == 0L
+        val specs = if (skills) listOf(ReadingAgentDelta.tables.first { it.name == "tb_reading_artifacts" })
+            else if (vocab) listOf(vocabulary, tombstone) else ReadingAgentDelta.tables
         // Validate the entire package before the first write; unknown columns must not be discarded.
         packageData.rows.forEach { (name, rows) ->
             val spec = specs.firstOrNull { it.name == name } ?: error("Unsupported table")
-            rows.forEach { raw -> validate(spec, raw, vocab) }
+            rows.forEach { raw ->
+                validate(spec, raw, vocab)
+                if (skills) require(raw["module_id"] == NativeSkillSyncController.MODULE)
+                if (spec.name == "tb_reading_artifacts") skillSync?.definition(raw)
+            }
         }
         var conflicts = 0
         val incomingTombstones = packageData.rows[tombstone.name].orEmpty()
@@ -102,7 +132,8 @@ internal class NativeIncrementalSyncStore(private val db: SQLiteDatabase, privat
                 if (spec.name == "tb_reading_goals" && winner["status"] == "active" && !resolveGoal(winner)) {
                     conflicts++; continue
                 }
-                write(spec, winner, current)
+                val definition = if (spec.name == "tb_reading_artifacts") skillSync?.definition(winner) else null
+                if (definition != null) definitions += definition else write(spec, winner, current)
             }
         }
         conflicts

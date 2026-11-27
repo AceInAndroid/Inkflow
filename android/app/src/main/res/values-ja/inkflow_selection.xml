@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="inkflow_mark_wavy">波線</string>
+  <string name="inkflow_mark_blue">青</string>
+  <string name="inkflow_mark_red">赤</string>
+  <string name="inkflow_mark_green">緑</string>
+  <string name="inkflow_mark_purple">紫</string>
+  <string name="inkflow_mark_yellow">黄</string>
+</resources>

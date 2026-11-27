@@ -131,6 +131,7 @@ class NativeAppLanguageTest {
             prepareLibrary(scenario)
             var initialActivity: MainActivity? = null
             scenario.onActivity { initialActivity = it }
+            click(localized.getString(R.string.home_me))
             click(localized.getString(R.string.settings))
             assertSettingsVisible()
             val languageBounds = Rect().also(waitForLabel(localized.getString(R.string.app_language))::getBoundsInScreen)
@@ -176,6 +177,7 @@ class NativeAppLanguageTest {
             prepareLibrary(scenario)
             var activity: MainActivity? = null
             scenario.onActivity { activity = it }
+            click(localized.getString(R.string.home_me))
             click(localized.getString(R.string.settings))
             click(localized.getString(R.string.app_language))
             waitForLabel("Choose app language")
@@ -398,8 +400,10 @@ class NativeAppLanguageTest {
         instrumentation.waitForIdleSync()
         waitForLabel(localized.getString(R.string.library))
         waitUntil("launch splash dismissed") {
-            findLabel("A modern reader, elevated by AI.") == null
+            findLabel(com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline)) == null
         }
+        click(localized.getString(R.string.library))
+        waitForLabel(localized.getString(R.string.search_books))
         dismissKeyboard(scenario)
     }
 
@@ -421,10 +425,10 @@ class NativeAppLanguageTest {
 
     private fun dismissKeyboard(scenario: ActivityScenario<MainActivity>) {
         instrumentation.waitForIdleSync()
-        val settings = NativeLocaleContext(context).getString(R.string.settings)
+        val settings = NativeLocaleContext(context).getString(R.string.home_me)
         var backSent = false
         var hiddenSince: Long? = null
-        waitUntil("software keyboard stably dismissed with Settings navigation visible") {
+        waitUntil("software keyboard stably dismissed with Me navigation visible") {
             var imeVisible: Boolean? = null
             var windowFocused = false
             scenario.onActivity { activity ->
@@ -523,7 +527,7 @@ class NativeAppLanguageTest {
             "imeAcceptingText=${context.getSystemService(InputMethodManager::class.java).isAcceptingText}",
             "libraryVisible=${findLabel(localized.getString(R.string.library)) != null}",
             "settingsVisible=${findLabel(localized.getString(R.string.settings)) != null}",
-            "splashVisible=${findLabel("A modern reader, elevated by AI.") != null}",
+            "splashVisible=${findLabel(com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline)) != null}",
         ).joinToString()
     }.getOrDefault("uiDiagnosticsUnavailable=true")
 

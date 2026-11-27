@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="inkflow_scope_read">已读章节</string>
+  <string name="inkflow_scope_selected">选择章节</string>
+  <string name="inkflow_scope_whole">整本书</string>
+  <string name="inkflow_generation_size">预计原文：%1$d 字符</string>
+  <string name="inkflow_scope_warning">此任务可能读取未读章节。授权仅用于本次任务，不改变阅读进度。</string>
+  <string name="inkflow_view_all">查看全部成果</string>
+  <string name="inkflow_view_all_warning">全部成果可能包含剧透。权限仅用于本书本次查看。</string>
+  <string name="inkflow_all_content_active">全部内容 · 已允许剧透</string>
+  <string name="inkflow_return_safe_view">返回已读内容</string>
+  <string name="inkflow_generation_schema_error">纠正一次后结构化输出仍无效，已完成的检查点已保留。</string>
+  <string name="inkflow_generation_evidence_error">无法验证原文证据，已完成的检查点已保留。</string>
+  <string name="inkflow_generation_auth_error">请检查当前供应商的 API 密钥与访问权限。</string>
+  <string name="inkflow_generation_transport_error">模型连接失败，请检查地址和网络后继续任务。</string>
+  <string name="inkflow_generation_source_error">图书文件已变化，请取消此任务并新建任务。</string>
+  <string name="inkflow_generation_boundary_error">阅读范围已变化，请返回原阅读位置后继续。</string>
+  <string name="inkflow_generation_limit_error">回答超出输出上限，已完成的检查点已保留。</string>
+    <string name="inkflow_generation_reconfirm_legacy">此旧任务缺少可验证的原始书源信息。请取消它并重新确认生成任务；已有成果与检查点会保留。</string>
+</resources>

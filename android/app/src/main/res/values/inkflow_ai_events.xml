@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="inkflow_ai_reading_materials">Reading local materials</string>
+  <string name="inkflow_ai_context_ready">Context ready</string>
+  <string name="inkflow_ai_generating">Generating answer</string>
+  <string name="inkflow_ai_verifying_sources">Verifying cited sources</string>
+    <string name="inkflow_ai_invalid_source">This source is unavailable or outside the current reading range.</string>
+    <string name="inkflow_ai_return">Return to AI</string>
+    <string name="inkflow_ai_send_all_once">Use all book content for this message (includes unread material)</string>
+</resources>

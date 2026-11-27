@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="inkflow_ai_reading_materials">로컬 자료 검색 중</string>
+  <string name="inkflow_ai_context_ready">문맥 준비 완료</string>
+  <string name="inkflow_ai_generating">답변 생성 중</string>
+  <string name="inkflow_ai_verifying_sources">인용 출처 확인 중</string>
+    <string name="inkflow_ai_invalid_source">출처를 사용할 수 없거나 현재 읽기 범위를 벗어났습니다.</string>
+    <string name="inkflow_ai_return">AI로 돌아가기</string>
+    <string name="inkflow_ai_send_all_once">이 질문에 책 전체 내용 사용 (읽지 않은 자료 포함)</string>
+</resources>

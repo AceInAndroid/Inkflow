@@ -10,6 +10,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.Build
@@ -22,6 +23,7 @@ class NarrationPlaybackService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var mediaSession: MediaSession
     private var narrator: NativeNarrator? = null
+    private var removeStateListener: (() -> Unit)? = null
     private var title = ""
     private var foreground = false
     private val localeContext by lazy { NativeLocaleContext(this) }
@@ -74,10 +76,12 @@ class NarrationPlaybackService : Service() {
         }
         val current = NarrationPlayback.current() ?: run { stopSelf(); return START_NOT_STICKY }
         if (narrator !== current) {
-            narrator?.onStateChanged = null
+            removeStateListener?.invoke()
             narrator = current
-            current.onStateChanged = ::onStateChanged
+            removeStateListener = current.addStateListener(::onStateChanged)
         }
+        if (intent?.hasExtra(EXTRA_TITLE) == true) current.updateMediaMetadata(title,
+            intent.getStringExtra(EXTRA_CHAPTER) ?: current.mediaChapterTitle)
         when (intent?.action) {
             ACTION_STOP -> { stopPlayback(); return START_NOT_STICKY }
             ACTION_PAUSE -> current.pause()
@@ -92,7 +96,8 @@ class NarrationPlaybackService : Service() {
     override fun onDestroy() {
         NativeLocaleController.removeListener(languageChanged)
         handler.removeCallbacks(endPlayback)
-        narrator?.onStateChanged = null
+        removeStateListener?.invoke()
+        removeStateListener = null
         if (narrator?.state in setOf(NarrationState.PLAYING, NarrationState.PAUSED, NarrationState.PREPARING))
             narrator?.stop()
         narrator = null
@@ -110,6 +115,14 @@ class NarrationPlaybackService : Service() {
     // https://developer.android.com/develop/ui/views/notifications/notification-permission#media-sessions
     @android.annotation.SuppressLint("NotificationPermission")
     private fun onStateChanged(state: NarrationState) {
+        narrator?.let { current ->
+            if (current.mediaTitle.isNotBlank()) title = current.mediaTitle
+            mediaSession.setMetadata(MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_TITLE, title)
+                .putString(MediaMetadata.METADATA_KEY_ALBUM, current.mediaChapterTitle)
+                .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, current.mediaChapterTitle)
+                .build())
+        }
         handler.removeCallbacks(endPlayback)
         if (state !in setOf(NarrationState.PLAYING, NarrationState.PAUSED, NarrationState.PREPARING)) {
             if (state != NarrationState.READY || !foreground) {
@@ -131,7 +144,8 @@ class NarrationPlaybackService : Service() {
         }
         mediaSession.setPlaybackState(PlaybackState.Builder()
             .setActions(PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_STOP)
-            .setState(playbackState, PlaybackState.PLAYBACK_POSITION_UNKNOWN, 1f,
+            .setState(playbackState, PlaybackState.PLAYBACK_POSITION_UNKNOWN,
+                if (state == NarrationState.PLAYING) narrator?.rate ?: 1f else 0f,
                 SystemClock.elapsedRealtime()).build())
         val notification = notification(state)
         if (!foreground) {
@@ -154,6 +168,7 @@ class NarrationPlaybackService : Service() {
         val result = builder
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(title.ifBlank { localeContext.getString(R.string.read_aloud) })
+            .setSubText(narrator?.mediaChapterTitle?.takeIf { it.isNotBlank() })
             .setContentText(localeContext.getString(when (state) {
                 NarrationState.PLAYING -> R.string.narration_playing
                 NarrationState.PAUSED -> R.string.narration_paused
@@ -181,12 +196,14 @@ class NarrationPlaybackService : Service() {
         private const val CHANNEL = "native_narration"
         private const val NOTIFICATION_ID = 2201
         private const val EXTRA_TITLE = "title"
+        private const val EXTRA_CHAPTER = "chapter"
         private const val ACTION_PAUSE = "com.aceinandroid.inkflow.narration.PAUSE"
         private const val ACTION_RESUME = "com.aceinandroid.inkflow.narration.RESUME"
         private const val ACTION_STOP = "com.aceinandroid.inkflow.narration.STOP"
 
-        fun start(context: Context, title: String) {
+        fun start(context: Context, title: String, chapterTitle: String? = null) {
             val intent = Intent(context, NarrationPlaybackService::class.java).putExtra(EXTRA_TITLE, title)
+            if (chapterTitle != null) intent.putExtra(EXTRA_CHAPTER, chapterTitle)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent)
             else context.startService(intent)
         }

@@ -1,0 +1,20 @@
+<resources>
+    <string name="usage_scope">本设备记录的 Token 用量；不估算金额。</string>
+    <string name="usage_quality">服务返回 %1$s · 估算 %2$s · 混合或未知 %3$s</string>
+    <string name="usage_requests">请求数：%1$s</string>
+    <string name="usage_unknown">未知</string>
+    <string name="usage_empty">暂无用量记录。</string>
+    <string name="usage_book">书籍 %1$s</string>
+    <string name="usage_io">输入 %1$s · 输出 %2$s Token</string>
+    <string name="usage_limit">显示用量最多的 100 组。</string>
+    <string name="usage_gaps">记录可能不完整：旧记录缺少归因，失败请求或重试用量可能未记录。服务返回、估算和混合用量分别显示。</string>
+    <string name="usage_refresh">刷新用量</string>
+    <string name="usage_by_book">书籍</string>
+    <string name="usage_by_task">任务</string>
+    <string name="usage_by_request">请求</string>
+    <string name="usage_by_provider">服务商</string>
+    <string name="usage_by_role">角色</string>
+    <string name="usage_by_workload">能力</string>
+    <string name="usage_by_model">模型</string>
+    <string name="usage_by_day">日期</string>
+</resources>

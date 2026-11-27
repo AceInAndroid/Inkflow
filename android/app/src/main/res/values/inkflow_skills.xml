@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inkflow_agents_title">Reading agents</string>
+    <string name="inkflow_agents_hint">Agent choices and skill bindings stay on this device.</string>
+    <string name="inkflow_agents_general">Book assistant</string>
+    <string name="inkflow_agents_story">Characters and relationships</string>
+    <string name="inkflow_agents_background">Background research</string>
+    <string name="inkflow_agents_argument">Arguments and critical thinking</string>
+    <string name="inkflow_agents_language">Close language reading</string>
+    <string name="inkflow_agents_coach">Proactive coach</string>
+    <string name="inkflow_agents_disabled">Unavailable; proactive coaching remains disabled.</string>
+    <string name="inkflow_agents_default_skill">Skill: %1$s</string>
+    <string name="inkflow_agents_context">Local reading materials</string>
+    <string name="inkflow_agents_navigation">Source navigation</string>
+    <string name="inkflow_agents_search">Local book search</string>
+    <string name="inkflow_agents_note_preview">Note preview</string>
+    <string name="inkflow_skills_limits">JSON or Markdown; at most 64 KiB in UTF-8 and 16,000 instruction characters per skill.</string>
+    <string name="inkflow_skills_invalid">Cannot preview this skill. Check its format, schema version, UTF-8 size and instruction length. Markdown allows only scalar or list frontmatter; tags, anchors and unknown fields are rejected.</string>
+    <string name="inkflow_skills_paste">Paste a skill</string>
+    <string name="inkflow_skills_edit">Edit</string>
+    <string name="inkflow_skills_export_json">Export JSON</string>
+    <string name="inkflow_skills_export_md">Export Markdown</string>
+    <string name="inkflow_skills_editor_title">Paste or edit a skill</string>
+    <string name="inkflow_skills_source">JSON or Markdown source</string>
+    <string name="inkflow_skills_preview">Import preview</string>
+    <string name="inkflow_skills_preview_count">Skills to import: %1$d</string>
+    <string name="inkflow_skills_copy_hint">Existing IDs are copied by default. Built-in skills always become custom copies.</string>
+    <string name="inkflow_skills_category">Category: %1$s</string>
+    <string name="inkflow_skills_recommended_agent">Recommended agent: %1$s</string>
+    <string name="inkflow_skills_output_format">Output format: %1$s</string>
+    <string name="inkflow_skills_quick_prompts">Quick prompts</string>
+    <string name="inkflow_skills_overwrite">Replace existing custom skills with matching IDs</string>
+    <string name="inkflow_skills_confirm">Confirm import</string>
+</resources>

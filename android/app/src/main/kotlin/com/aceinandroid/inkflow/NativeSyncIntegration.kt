@@ -1,11 +1,26 @@
 package com.aceinandroid.inkflow
 
+import android.content.Context
 import com.aceinandroid.inkflow.core.sync.SyncGate
 import java.io.IOException
 
 /** Shared by WebDAV, progress worker/settings hooks, and wireless imports. No timers or network side effects. */
 internal object NativeSyncIntegration {
     val gate = SyncGate()
+
+    /** Add this report to the existing WebDAV runner while it owns its normal sync lease. */
+    fun synchronizeSkills(context: Context, store: BookStore, device: String,
+        protocol: NativeIncrementalSyncBranch): IncrementalSyncReport {
+        val local = NativeIncrementalSyncStore(store.writableDatabase, device, NativeSkillSyncController(context))
+        return protocol.synchronize(NativeSkillSyncController.DIRECTORY, NativeSkillSyncController.BOOK_KEY,
+            merge = { data ->
+                try { local.merge(data, 0L) }
+                catch (failure: android.database.sqlite.SQLiteException) {
+                    throw IOException("Rejected Skill sync SQLite package", failure)
+                }
+            },
+            capture = { local.capture(NativeSkillSyncController.BOOK_KEY, 0L) })
+    }
 
     fun readingStarted(): Long = gate.beginReading()
 

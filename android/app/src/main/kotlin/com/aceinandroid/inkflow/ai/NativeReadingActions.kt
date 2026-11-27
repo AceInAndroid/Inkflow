@@ -2,6 +2,7 @@ package com.aceinandroid.inkflow.ai
 
 import android.content.ContentValues
 import com.aceinandroid.inkflow.BookStore
+import com.aceinandroid.inkflow.NativeIncrementalSyncPackage
 import com.aceinandroid.inkflow.ReadingNoteWorkspaceStore
 import com.aceinandroid.inkflow.core.ReadingContextSnapshot
 import com.aceinandroid.inkflow.core.ai.*
@@ -26,6 +27,9 @@ class NativeReadingActions(private val store: BookStore, private val clock: () -
         "tb_reading_note_blocks" to "note_id", "tb_reading_note_sources" to "note_id",
         "tb_reading_note_tags" to "note_id", "tb_reading_note_revisions" to "note_id", "tb_notes" to "id", "tb_reading_tags" to "id", "tb_reading_goals" to "id",
         "tb_reading_checkpoints" to "id", "tb_reading_difficulties" to "id",
+        "tb_reading_knowledge_cards" to "id", "tb_reading_card_reviews" to "card_id",
+        "tb_reading_card_sources" to "card_id", "tb_reading_memory_sources" to "id",
+        "tb_reading_sync_tombstones" to "entity_id",
     )
     private fun noteScopes(id: String) = listOf("tb_reading_notes", "tb_reading_note_blocks", "tb_reading_note_sources",
         "tb_reading_note_tags", "tb_reading_note_revisions").map { Scope(it, allowed.getValue(it), id) }
@@ -218,27 +222,28 @@ class NativeReadingActions(private val store: BookStore, private val clock: () -
         }
     }
 
-    fun recordWikiCoverage(bookId: Long, coverageEnd: Double, boundary: Double, sessionId: String, userAuthorized: Boolean): String? {
+    fun recordWikiCoverage(bookId: Long, coverageEnd: Double, boundary: Double, sessionId: String, userAuthorized: Boolean, scope: GenerationScope = GenerationScope.READ_BOUNDARY, safeBoundary: Double = boundary): String? {
         require(userAuthorized && coverageEnd.isFinite() && boundary.isFinite() && coverageEnd in 0.0..boundary && boundary <= 1.0)
+        require(safeBoundary.isFinite() && safeBoundary in 0.0..boundary)
         return ReadingSql.transaction(db) {
             activeBook(bookId)
-            val scope = listOf(Scope("tb_book_wikis", "book_id", bookId.toString()))
+            val scopes = listOf(Scope("tb_book_wikis", "book_id", bookId.toString()))
             val old = ReadingSql.rows(db, "tb_book_wikis", "book_id = ?", arrayOf(bookId.toString())).singleOrNull()
-            if (old != null && (old.optString("generation_scope") != "read_boundary" ||
+            if (old != null && (old.optString("generation_scope") !in setOf("read_boundary", "selected_chapters", "whole_book") ||
                     old.optString("status") !in setOf("empty", "partial", "ready", "failed"))) return@transaction null
             if (old != null && old.getDouble("coverage_end") >= coverageEnd) return@transaction null
-            val before = snapshot(scope)
+            val before = snapshot(scopes)
             val now = clock()
             val values = ContentValues().apply {
                 put("book_id", bookId); put("version", (old?.optInt("version") ?: 0) + 1)
-                put("generation_scope", "read_boundary"); put("safe_knowledge_boundary", boundary)
+                put("generation_scope", scope.name.lowercase()); put("safe_knowledge_boundary", safeBoundary)
                 put("coverage_start", 0.0); put("coverage_end", coverageEnd)
                 put("status", if (coverageEnd == 1.0) "ready" else "partial")
                 put("last_generated_at", now); put("updated_at", now)
             }
             if (old == null) db.insertOrThrow("tb_book_wikis", null, values)
             else db.update("tb_book_wikis", values, "book_id = ?", arrayOf(bookId.toString()))
-            journal("wiki", bookId.toString(), bookId, before, snapshot(scope), sessionId, now)
+            journal("wiki", bookId.toString(), bookId, before, snapshot(scopes), sessionId, now)
         }
     }
 
@@ -366,6 +371,129 @@ class NativeReadingActions(private val store: BookStore, private val clock: () -
         }
     }
 
+    /** New goals replace the active goal atomically; an explicit revision must match the loaded row. */
+    fun saveGoal(bookId: Long, draft: CoachGoalDraft, expected: CoachGoal? = null,
+                 userAuthorized: Boolean, deviceId: String): String {
+        require(userAuthorized && NativeIncrementalSyncPackage.validDevice(deviceId))
+        draft.validate()
+        val range = JSONObject(draft.rangeJson)
+        val criteria = JSONArray(draft.criteriaJson)
+        require(criteria.length() <= 3)
+        for (i in 0 until criteria.length()) require(criteria.get(i) is JSONObject)
+        return ReadingSql.transaction(db) {
+            activeBook(bookId)
+            val goals = NativeReadingOutcomeRepository(store).goals(bookId)
+            val current = expected?.let { old ->
+                require(old.bookId == bookId && old.status == "active")
+                requireNotNull(goals.singleOrNull { it.id == old.id }).also { require(it == old) { "Goal changed; reload before saving" } }
+            }
+            val id = current?.id ?: UUID.randomUUID().toString()
+            val replaced = goals.filter { it.status == "active" && it.id != id }
+            val ids = (replaced.map { it.id } + id).distinct()
+            val scopes = ids.map { Scope("tb_reading_goals", "id", it) } +
+                Scope("tb_reading_goals", "book_id", bookId.toString(), restore = false) +
+                ids.map { Scope("tb_reading_sync_tombstones", "entity_id", it, restore = false) }
+            val before = snapshot(scopes)
+            val now = coachTimestamp(scopes)
+            replaced.forEach { old -> db.update("tb_reading_goals", ContentValues().apply {
+                put("status", "abandoned"); put("updated_at", now)
+            }, "id = ?", arrayOf(old.id)) }
+            val values = ContentValues().apply {
+                put("title", draft.title.trim()); put("range_json", range.toString()); put("criteria_json", criteria.toString())
+                if (draft.timeBudgetMinutes == null) putNull("time_budget_minutes") else put("time_budget_minutes", draft.timeBudgetMinutes)
+                put("status", "active"); put("updated_at", now)
+            }
+            if (current == null) db.insertOrThrow("tb_reading_goals", null, values.apply {
+                put("id", id); put("book_id", bookId); put("progress", 0.0); put("created_at", now)
+            }) else check(db.update("tb_reading_goals", values, "id = ? AND book_id = ?", arrayOf(id, bookId.toString())) == 1)
+            coachJournal(CoachActionTypes.SAVE_GOAL, "goal", id, bookId, before, snapshot(scopes), deviceId)
+        }
+    }
+
+    /** Only a currently read, exact selection can create a difficulty; duplicate locations never overwrite a later edit. */
+    fun saveDifficulty(bookId: Long, source: BookMaterialSource, evidence: ReadingEvidence,
+                       context: ReadingContextSnapshot, type: String = "later", note: String = "",
+                       userAuthorized: Boolean, deviceId: String): String {
+        require(userAuthorized && NativeIncrementalSyncPackage.validDevice(deviceId))
+        val kind = CoachDifficultyType.fromId(type)
+        require(note.length <= 10_000)
+        return ReadingSql.transaction(db) {
+            activeBook(bookId)
+            require(NativeReadingOutcomeRepository(store).difficultyEvidence(bookId, source, context) == evidence) {
+                "Selection source is invalid, changed or unread"
+            }
+            val duplicate = ReadingSql.rows(db, "tb_reading_difficulties", "book_id = ? AND cfi = ? AND selected_text = ?",
+                arrayOf(bookId.toString(), source.cfi, evidence.exactText))
+            require(duplicate.isEmpty()) { "This selection is already saved as a difficulty" }
+            val id = UUID.randomUUID().toString()
+            val scopes = listOf(Scope("tb_reading_difficulties", "id", id),
+                Scope("tb_reading_sync_tombstones", "entity_id", id, restore = false))
+            val before = snapshot(scopes)
+            val now = coachTimestamp(scopes)
+            db.insertOrThrow("tb_reading_difficulties", null, ContentValues().apply {
+                put("id", id); put("book_id", bookId); put("cfi", source.cfi); put("selected_text", evidence.exactText)
+                put("chapter_href", evidence.chapterHref); put("chapter_title", evidence.chapterTitle)
+                put("context", evidence.exactText); put("difficulty_type", kind.id)
+                put("status", "unresolved"); put("note", note); put("created_at", now); put("updated_at", now)
+            })
+            coachJournal(CoachActionTypes.SAVE_DIFFICULTY, "difficulty", id, bookId, before, snapshot(scopes), deviceId)
+        }
+    }
+
+    fun reviewCard(bookId: Long, expected: CoachCard, rating: String,
+                   context: ReadingContextSnapshot, userAuthorized: Boolean): String {
+        require(userAuthorized && expected.bookId == bookId)
+        val grade = CoachCardRating.fromId(rating)
+        return ReadingSql.transaction(db) {
+            activeBook(bookId)
+            val current = requireNotNull(NativeReadingOutcomeRepository(store).cards(bookId, context).singleOrNull { it.id == expected.id }) { "Card source is no longer visible" }
+            require(current == expected) { "Card or source changed; reload before rating" }
+            val refs = ReadingSql.rows(db, "tb_reading_card_sources", "card_id = ?", arrayOf(current.id))
+            val scopes = listOf(Scope("tb_reading_knowledge_cards", "id", current.id),
+                Scope("tb_reading_card_reviews", "card_id", current.id),
+                Scope("tb_reading_card_sources", "card_id", current.id, restore = false)) +
+                refs.map { Scope("tb_reading_memory_sources", "id", it.getString("source_id"), restore = false) }
+            val before = snapshot(scopes)
+            val now = coachTimestamp(scopes)
+            val schedule = CoachCardScheduler.schedule(current.reviewStage, grade, now)
+            val countKey = when (grade) { CoachCardRating.HARD -> "hard_count"; CoachCardRating.REMEMBERED -> "remembered_count"; CoachCardRating.MASTERED -> "mastered_count" }
+            val previousCount = when (grade) { CoachCardRating.HARD -> current.hardCount; CoachCardRating.REMEMBERED -> current.rememberedCount; CoachCardRating.MASTERED -> current.masteredCount }
+            require(previousCount < Int.MAX_VALUE)
+            check(db.update("tb_reading_knowledge_cards", ContentValues().apply {
+                put("review_stage", schedule.stage); put("next_review_at", schedule.nextReviewAt)
+                put(countKey, previousCount + 1); put("updated_at", now)
+            }, "id = ? AND book_id = ?", arrayOf(current.id, bookId.toString())) == 1)
+            db.insertOrThrow("tb_reading_card_reviews", null, ContentValues().apply {
+                put("id", UUID.randomUUID().toString()); put("card_id", current.id); put("book_id", bookId)
+                put("rating", grade.id); put("previous_stage", current.reviewStage); put("next_stage", schedule.stage)
+                put("previous_review_at", current.nextReviewAt); put("next_review_at", schedule.nextReviewAt); put("reviewed_at", now)
+            })
+            coachJournal(CoachActionTypes.REVIEW_CARD, "memory", current.id, bookId, before, snapshot(scopes), null)
+        }
+    }
+
+    private fun coachTimestamp(scopes: List<Scope>): Long {
+        val rows = snapshot(scopes).getJSONArray("scopes")
+        var latest = -1L
+        for (i in 0 until rows.length()) {
+            val records = rows.getJSONObject(i).getJSONArray("rows")
+            for (j in 0 until records.length()) {
+                val row = records.getJSONObject(j)
+                latest = maxOf(latest, row.optLong("updated_at", -1), row.optLong("deleted_at", -1), row.optLong("reviewed_at", -1))
+            }
+        }
+        require(latest < Long.MAX_VALUE && clock() >= 0)
+        return maxOf(clock(), latest + 1)
+    }
+
+    private fun coachJournal(kind: String, type: String, target: String, bookId: Long,
+                             before: JSONObject, after: JSONObject, device: String?): String {
+        CoachActionTypes.requireKnown(kind)
+        val metadata = JSONObject().put("version", 1).put("kind", kind).apply { if (device != null) put("deviceId", device) }
+        before.put("coachAction", metadata); after.put("coachAction", metadata)
+        return journal(type, target, bookId, before, after, "coach.$kind", clock())
+    }
+
     fun completeOutcome(bookId: Long, expected: ReadingOutcome, context: ReadingContextSnapshot, userAuthorized: Boolean): String {
         require(userAuthorized && expected.bookId == bookId && expected.kind != ReadingOutcomeKind.CARD)
         return ReadingSql.transaction(db) {
@@ -407,19 +535,48 @@ class NativeReadingActions(private val store: BookStore, private val clock: () -
         if (clock() >= action.getLong("expires_at")) return@transaction NativeReadingUndoResult.EXPIRED
         val before = JSONObject(action.getString("before_snapshot"))
         val after = JSONObject(action.getString("after_snapshot"))
+        val coach = after.optJSONObject("coachAction")
+        if (action.getString("session_id").startsWith("native.reading:coach.") && coach == null)
+            return@transaction NativeReadingUndoResult.UNSUPPORTED
+        if (coach != null && (coach.optInt("version") != 1 ||
+                action.getString("session_id") != "native.reading:coach.${coach.optString("kind")}" ||
+                runCatching { CoachActionTypes.requireKnown(coach.getString("kind")) }.isFailure))
+            return@transaction NativeReadingUndoResult.UNSUPPORTED
         val scopes = decodeScopes(after)
-        if (action.getString("status") != "applied" || ReadingSql.hash(snapshot(scopes)) != action.getString("after_hash")) {
+        val current = snapshot(scopes).apply { if (coach != null) put("coachAction", coach) }
+        if (action.getString("status") != "applied" || ReadingSql.hash(current) != action.getString("after_hash")) {
             db.update("tb_agent_actions", ContentValues().apply { put("status", "conflict") }, "id = ?", arrayOf(actionId))
             return@transaction NativeReadingUndoResult.CONFLICT
         }
         require(decodeScopes(before) == scopes)
+        val undoTime = if (coach != null) coachTimestamp(scopes) else clock()
+        // A coach creation must leave an ordinary sync tombstone, otherwise an old remote row can resurrect it.
+        if (coach != null) {
+            val records = before.getJSONArray("scopes")
+            scopes.forEachIndexed { index, scope ->
+                val entity = when (scope.table) { "tb_reading_goals" -> "goal"; "tb_reading_difficulties" -> "difficulty"; else -> null }
+                if (scope.restore && entity != null && records.getJSONObject(index).getJSONArray("rows").length() == 0) {
+                    val device = coach.getString("deviceId")
+                    require(NativeIncrementalSyncPackage.validDevice(device))
+                    db.insertOrThrow("tb_reading_sync_tombstones", null, ContentValues().apply {
+                        put("entity_type", entity); put("entity_id", scope.value); put("book_id", action.getLong("book_id"))
+                        put("device_id", device); put("deleted_at", undoTime)
+                    })
+                }
+            }
+        }
         scopes.asReversed().filter { it.restore }.forEach { db.delete(it.table, "${it.key} = ?", arrayOf(it.value)) }
         val rows = before.getJSONArray("scopes")
         for (i in 0 until rows.length()) {
             val scope = scopes[i]
             if (!scope.restore) continue
             val records = rows.getJSONObject(i).getJSONArray("rows")
-            for (j in 0 until records.length()) db.insertOrThrow(scope.table, null, ReadingSql.values(records.getJSONObject(j)))
+            for (j in 0 until records.length()) {
+                val row = records.getJSONObject(j)
+                // Restored portable rows must win over the abandoned/edited state already sent to sync.
+                if (coach != null && scope.table in setOf("tb_reading_goals", "tb_reading_difficulties")) row.put("updated_at", undoTime)
+                db.insertOrThrow(scope.table, null, ReadingSql.values(row))
+            }
         }
         db.update("tb_agent_actions", ContentValues().apply { put("status", "undone"); put("undone_at", clock()) }, "id = ?", arrayOf(actionId))
         NativeReadingUndoResult.UNDONE
@@ -431,7 +588,7 @@ class NativeReadingActions(private val store: BookStore, private val clock: () -
             val rows = scopes.getJSONObject(i).getJSONArray("rows")
             for (j in 0 until rows.length()) {
                 val row = rows.getJSONObject(j)
-                val title = row.safeString("title").ifBlank { row.safeString("suggested_title") }.ifBlank {
+                val title = row.safeString("title").ifBlank { row.safeString("question") }.ifBlank { row.safeString("suggested_title") }.ifBlank {
                     runCatching { JSONObject(row.safeString("payload_json")).safeString("title") }.getOrDefault("")
                 }
                 if (title.isNotBlank()) return@runCatching title
@@ -450,9 +607,10 @@ class NativeReadingActions(private val store: BookStore, private val clock: () -
         return (0 until scopes.length()).map { index ->
             val row = scopes.getJSONObject(index)
             val table = row.getString("table"); val key = row.getString("key")
-            require(allowed[table] == key)
-            Scope(table, key, row.getString("value"), row.optBoolean("restore", true)).also {
-                require(it.table != "tb_reading_tags" || !it.restore)
+            val restore = row.optBoolean("restore", true)
+            require(allowed[table] == key || table == "tb_reading_goals" && key == "book_id" && !restore)
+            Scope(table, key, row.getString("value"), restore).also {
+                require(it.table !in setOf("tb_reading_tags", "tb_reading_card_sources", "tb_reading_memory_sources", "tb_reading_sync_tombstones") || !it.restore)
             }
         }
     }
@@ -467,7 +625,8 @@ class NativeReadingActions(private val store: BookStore, private val clock: () -
         })
         db.delete("tb_agent_actions", "session_id LIKE 'native.reading:%' AND expires_at < ?", arrayOf(now.toString()))
         db.execSQL("""DELETE FROM tb_agent_actions WHERE id IN (SELECT id FROM tb_agent_actions
-            WHERE session_id LIKE 'native.reading:%' ORDER BY created_at DESC, rowid DESC LIMIT -1 OFFSET 200)""")
+            WHERE session_id LIKE 'native.reading:%' AND session_id NOT LIKE 'native.reading:coach.%'
+            ORDER BY created_at DESC, rowid DESC LIMIT -1 OFFSET 200)""")
         return id
     }
 }

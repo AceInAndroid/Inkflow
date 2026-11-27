@@ -1,0 +1,20 @@
+<resources>
+    <string name="usage_scope">Tokens recorded on this device; no monetary estimate.</string>
+    <string name="usage_quality">Reported %1$s · Estimated %2$s · Mixed or unknown %3$s</string>
+    <string name="usage_requests">Requests: %1$s</string>
+    <string name="usage_unknown">Unknown</string>
+    <string name="usage_empty">No usage recorded yet.</string>
+    <string name="usage_book">Book %1$s</string>
+    <string name="usage_io">Input %1$s · Output %2$s tokens</string>
+    <string name="usage_limit">Showing the 100 largest groups.</string>
+    <string name="usage_gaps">Coverage may be incomplete: older records lack attribution, and failed attempts or retries may be missing. Reported, estimated and mixed usage stay separate.</string>
+    <string name="usage_refresh">Refresh usage</string>
+    <string name="usage_by_book">Book</string>
+    <string name="usage_by_task">Task</string>
+    <string name="usage_by_request">Request</string>
+    <string name="usage_by_provider">Provider</string>
+    <string name="usage_by_role">Role</string>
+    <string name="usage_by_workload">Workload</string>
+    <string name="usage_by_model">Model</string>
+    <string name="usage_by_day">Day</string>
+</resources>

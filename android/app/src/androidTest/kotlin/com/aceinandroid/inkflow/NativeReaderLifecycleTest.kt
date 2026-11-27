@@ -393,9 +393,17 @@ class NativeReaderLifecycleTest {
     private fun openLibraryBook(scenario: ActivityScenario<MainActivity>, title: String) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.waitForIdleSync()
+        val library = NativeLocaleContext(instrumentation.targetContext).getString(R.string.library)
+        waitUntil("home navigation ready") {
+            findNode { it.isVisibleToUser && it.text?.toString() == library } != null &&
+                findNode { it.isVisibleToUser && it.text?.toString() == com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline) } == null
+        }
+        var libraryNode = findNode { it.isVisibleToUser && it.text?.toString() == library }
+        while (libraryNode != null && !libraryNode.isClickable) libraryNode = libraryNode.parent
+        assertTrue("Cannot open library tab", libraryNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true)
         waitUntil("library search ready after splash") {
             findNode { it.isVisibleToUser && it.isEditable } != null &&
-                findNode { it.isVisibleToUser && it.text?.toString() == "A modern reader, elevated by AI." } == null
+                findNode { it.isVisibleToUser && it.text?.toString() == com.aceinandroid.inkflow.localization.NativeLocaleContext(InstrumentationRegistry.getInstrumentation().targetContext).getString(R.string.inkflow_launch_tagline) } == null
         }
         dismissLibraryKeyboard(scenario)
         val search = requireNotNull(findNode { it.isVisibleToUser && it.isEditable })
@@ -449,10 +457,10 @@ class NativeReaderLifecycleTest {
     private fun dismissLibraryKeyboard(scenario: ActivityScenario<MainActivity>) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.waitForIdleSync()
-        val settings = NativeLocaleContext(instrumentation.targetContext).getString(R.string.settings)
+        val settings = NativeLocaleContext(instrumentation.targetContext).getString(R.string.home_me)
         var backSent = false
         var hiddenSince: Long? = null
-        waitUntil("library keyboard stably hidden with Settings visible") {
+        waitUntil("library keyboard stably hidden with Me visible") {
             var imeVisible: Boolean? = null
             var windowFocused = false
             scenario.onActivity { activity ->

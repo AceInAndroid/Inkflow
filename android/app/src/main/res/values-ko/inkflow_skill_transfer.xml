@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="skill_transfer_title">확인 대기 중인 독서 Skill</string>
+    <string name="skill_transfer_received">%1$s 파일을 받았습니다. 이 기기에서 검토한 후 가져오기를 확인하세요.</string>
+    <string name="skill_transfer_notice">Skill 수신 및 미리보기는 실행하거나 모델을 호출하지 않습니다. 정의만 가져오며 기기 기본값과 책별 연결은 동기화하지 않습니다.</string>
+    <string name="skill_transfer_empty">확인 대기 중인 Skill이 없습니다</string>
+    <string name="skill_transfer_review">%1$s 검토</string>
+    <string name="skill_transfer_reject">삭제</string>
+    <string name="skill_transfer_preview">Skill 정의 검토</string>
+    <string name="skill_transfer_copy_policy">ID가 충돌하면 사본을 만듭니다. 가져와도 Skill이 선택되거나 실행되지 않습니다.</string>
+    <string name="skill_transfer_metadata">분류: %1$s · 추천 에이전트: %2$s · 출력: %3$s</string>
+    <string name="skill_transfer_confirm">충돌 시 사본으로 가져오기 확인</string>
+    <string name="skill_transfer_back">뒤로</string>
+</resources>

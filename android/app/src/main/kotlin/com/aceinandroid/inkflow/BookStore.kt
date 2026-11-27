@@ -529,7 +529,7 @@ class BookStore(context: Context) : SQLiteOpenHelper(context, "app_database.db",
 
     fun annotations(bookId: Long): List<StoredAnnotation> = readableDatabase.query(
         "tb_notes", arrayOf("id", "content", "cfi", "chapter", "type", "color", "reader_note"),
-        "book_id = ? AND type IN (?, ?)", arrayOf(bookId.toString(), "highlight", "underline"),
+        "book_id = ? AND type IN (?, ?, ?)", arrayOf(bookId.toString(), "highlight", "underline", "wavy"),
         null, null, "id DESC"
     ).use { cursor ->
         buildList {
@@ -547,7 +547,7 @@ class BookStore(context: Context) : SQLiteOpenHelper(context, "app_database.db",
         val workspace = ReadingNoteWorkspaceStore(this).snapshot(books)
         val legacy = readableDatabase.query("tb_notes",
             arrayOf("id", "book_id", "content", "cfi", "chapter", "type", "reader_note", "update_time"),
-            "type IN (?, ?, ?)", arrayOf("highlight", "underline", "bookmark"),
+            "type IN (?, ?, ?, ?)", arrayOf("highlight", "underline", "wavy", "bookmark"),
             null, null, "update_time DESC, id DESC").use { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
@@ -631,7 +631,7 @@ class BookStore(context: Context) : SQLiteOpenHelper(context, "app_database.db",
     fun saveAnnotation(bookId: Long, content: String, cfi: String, chapter: String,
                        type: String, color: String, readerNote: String,
                        expected: StoredAnnotation? = null): AnnotationMutation {
-        require(type == "highlight" || type == "underline")
+        require(type in setOf("highlight", "underline", "wavy"))
         require(color.matches(Regex("[0-9A-Fa-f]{6}")))
         require(content.isNotBlank() && EpubCfi.localRange(cfi) != null)
         return NativeAnnotationActions(writableDatabase).save(bookId, content, cfi, chapter,
