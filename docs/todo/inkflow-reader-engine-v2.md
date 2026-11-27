@@ -1,0 +1,149 @@
+# Inkflow 原生阅读引擎 v2 演进规划（TODO）
+
+> 状态：Proposed（待排期实施）
+> 更新日期：2026-11-27
+> 适用范围：Inkflow 原生端（Android `com.aceinandroid.inkflow`、KMP 共享核心 `:core`、未来 iOS/iPadOS `ios-native`）
+
+## 1. 背景与定位
+
+Inkflow 已完成从 Flutter + WebView 到 **KMP `:core` + 原生 Canvas 真分页引擎 + 直连 ZIP 轻量 WebView 兜底** 的架构转型。
+本文沉淀面向下一代阅读体验的原生引擎升级路线，聚焦**本地优先（Local-First）、E-INK 友好、跨端复用、高质感排版与听读联动**，同时明确排除不适合 Inkflow 的重型平台化复杂度。
+
+---
+
+## 2. 优先级路线总览
+
+| 编号 | 能力方向 | 优先级 | 归属层 | 核心收益 |
+| --- | --- | --- | --- | --- |
+| **R1** | 页边界持久化缓存 + 配置指纹 + 渐进总页码 | **P0** | `:core` + Android/iOS | 长章节 0ms 秒开、翻页零阻塞、全书真实页码体验 |
+| **R2** | 五层 Canvas 绘制模型 + 行级区间合并 + 多样式划线 | **P0** | `:core` + Android/iOS | 批注不遮字、手绘荧光笔/直线/波浪线、搜索/AI/TTS 高亮分层 |
+| **R3** | TTS 听书句级实时高亮 + 句跨页自动翻页协议 | **P0** | `:core` + Android/iOS | 听读深度一体化，放大 Inkflow 在线拟真语音优势 |
+| **R4** | 翻页动画（平移/覆盖/无动画）+ 独立阅读亮度 + 下拉书签 | **P1** | Android / iOS | 主流阅读交互完整度，E-INK 自动强制无动画 |
+| **R5** | 统一触摸竞争责任链 + 选区拖边跨页扩选 + 放大镜 | **P1** | `:core` + Android/iOS | 消除多角色手势冲突，大幅提升长段划线效率 |
+| **R6** | 复杂表格 / 数学公式离屏渲染回插分页流 | **P1** | Android / iOS | 含零星表格/公式的 EPUB 无需整章退回 WebView 模式 |
+| **R7** | 中英文混排双字体 + 智能中文分词选词 + 自动阅读模式 | **P2** | `:core` + Android/iOS | 双语/外语书排版质感提升、可控暂停掩码自动阅读 |
+| **R8** | 出版级断行内核（UAX#14 + Knuth-Plass 最优两端对齐 + 连字符） | **P3** | `:core`（或 Rust/C++） | 长期演进选项：在不改动上层缓存/绘制/AI 的前提下替换行切分内核 |
+
+---
+
+## 3. 详细设计与实现要点
+
+### R1：页边界持久化缓存与渐进总页码（P0）
+
+**核心思想**：排版贵、绘制便宜；只持久化“页边界”，阅读时按窗口懒加载装配页面。
+
+- **配置指纹（`LayoutConfigFingerprint`）**：
+  - 放入 KMP `:core`，由以下维度稳定序列化：`engineVersion`、`viewportWidthPx`、`viewportHeightPx`、`fontSizeSp`、`lineSpacing`、`fontId`、`margins`、`paragraphSpacing`、`firstLineIndent`、`textAlign`。
+  - 每当引擎排版规则升级时递增 `ENGINE_VERSION`，自动使旧缓存失效。
+- **本地持久化缓存表（或独立缓存索引）**：
+  - 按 `(bookId, chapterIndex, configFingerprint)` 存储每页起始/结束 UTF-16 字符偏移 `pages: IntArray` 与章节字符总数。
+  - 缓存头带 `magic / version / bookHash / chapterIndex` 校验；读取异常或指纹不匹配时静默作废并触发后台重排，保证天然容错。
+- **后台预排与相邻页窗口**：
+  - 打开书籍时优先排当前章，随后在低优先级 IO/Default 协程中按 `当前章 + 1 → 当前章 - 1 → 其余章节` 渐进预排。
+  - 翻页路径仅维护 `当前页 - 1 / 当前页 / 当前页 + 1` 三页渲染窗口，确保翻页零磁盘 IO。
+- **全书渐进总页码**：
+  - 已排版章取精确 `pages.size`；未排版章按 `ceil(chapterCharCount / avgCharsPerPage)` 估算，随预排完成平滑收敛。
+- **样式变更防跳动不变量**：
+  - 修改字号/行距/边距（200ms 防抖）或旋转屏幕时，始终锚定**当前页首个可见字符偏移**，重排完成后校验该偏移落入目标页区间内。
+
+---
+
+### R2：五层 Canvas 绘制顺序与多样式划线（P0）
+
+重构 [NativePagedReader.kt](file:///Users/bingzhang/Documents/code/anx-reader/android/app/src/main/kotlin/com/aceinandroid/inkflow/ui/reader/NativePagedReader.kt)（及未来 iOS TextKit 2 渲染层）的绘制管线，明确五层职责：
+
+1. **Background 层**：纯色 / 主题底纹 / 背景图（尽量置于外层容器，避免翻页时每帧重复重绘）。
+2. **Underlay 划线层（正文之下）**：
+   - 用户批注仍以「章节 + CFI / 字符偏移区间」持久化，与排版完全解耦；
+   - 绘制单页时按本页 `LineMetrics` 将同条批注的连续字符合并为行级 `Rect`（$O(\text{页内行数})$）；
+   - 支持 **3 种划线样式** × 多色板：
+     - **荧光笔刷**（柔和半透明底色 + 微随机圆角/笔触感）；
+     - **实线 / 虚线下划线**；
+     - **手写波浪线**（正弦/贝塞尔路径）。
+   - 点击已有划线直接命中并唤起改色/编辑笔记/删除浮层。
+3. **Content 正文层**：统一 `AnnotatedString` 文字、页内插图块与离屏表格/公式图块。
+4. **Overlay 瞬时高亮与装饰层（正文之上）**：
+   - 统一 `ReaderHighlightLayer` 管理瞬时高亮类型：`SEARCH`（书内搜索命中）、`TTS`（当前朗读句）、`AI_SOURCE`（AI 证据溯源跳转闪烁定位）、`AUTO_READ`（自动阅读当前句）；
+   - 页眉（章首页自动隐藏、竖滚模式隐藏）、页脚（页码/进度/时间/电量）与页角书签标。
+5. **Interactive 交互层**：跨段/跨页选区水滴手柄与拖动放大镜。
+
+---
+
+### R3：TTS 听书句级高亮与跨页自动翻页（P0）
+
+复用现有 [TtsChunkQueue.kt](file:///Users/bingzhang/Documents/code/anx-reader/android/core/src/commonMain/kotlin/com/aceinandroid/inkflow/core/tts/TtsChunkQueue.kt) 与在线/系统 TTS 引擎，补齐听读联动闭环：
+
+- **绝对字符区间契约**：每个待朗读分块携带章节内绝对 `IntRange(startOffset, endOffset)`，与阅读器统一坐标系，零换算误差。
+- **句级高亮同步**：播放器切换分块时广播当前 `IntRange`，通过 R2 的 `Overlay(TTS)` 层即时绘制句级底色（播放/暂停区分浅色状态）。
+- **句跨页 `turnCharPos` 防抖协议**：
+  - 当前句终点超出当前页 `endOffset` 时自动翻到包含终点（或下一半）的页面；
+  - 若单句横跨两页，记录 `pendingTurnCharPos = 下一页起始偏移`，本句播完或进度过半时翻页且抑制重复跳转。
+- **反向交互**：点击正文里正在朗读的高亮句直接切换暂停/续播；支持从当前选区起点直接起播。
+
+---
+
+### R4：翻页动画、独立亮度与快捷书签（P1）
+
+- **翻页模式扩展**：在现有点击/滑动翻页基础上提供 **平移（Slide）/ 覆盖（Cover，底层微压暗）/ 仿真（可选）/ 无动画（None）**；**E-INK 模式下强制锁定无动画**，杜绝残影。
+- **阅读页独立亮度**：底部外观/亮度面板提供独立亮度滑条（调整 `WindowManager.LayoutParams.screenBrightness`，5%–100%，退出阅读页自动恢复系统亮度 `BRIGHTNESS_OVERRIDE_NONE`）。
+- **快捷书签**：支持顶部下拉手势或顶栏一键添加/移除当前页书签，并在右上角显示页角书签徽标；书签正文自动摘取当前页首行摘要。
+
+---
+
+### R5：触摸竞争责任链与选区进阶交互（P1）
+
+- **统一触摸仲裁链**（按优先级短路，谁命中谁独占，其余 cancel）：
+  1. 选区手柄拖动 / 取消当前选区
+  2. 正在朗读的 TTS 高亮句点击（暂停/续播）
+  3. 页内链接 / 脚注弹窗 / 插图点击放大
+  4. 已有批注划线点击（弹出编辑/改色栏）
+  5. 滑动选句 / 水平滑动翻页
+  6. 边缘点击翻页 / 中央点击切换沉浸式菜单
+- **选区进阶体验**：
+  - 长按选区后拖动水滴手柄至屏幕左右/上下边缘停留 `600ms`（连续翻页 `900ms`）自动翻页跨页扩选（上限 ±4 页）；
+  - 拖动选区手柄时在上方绘制局部放大镜，避免手指遮挡光标位置。
+
+---
+
+### R6：复杂表格与数学公式离屏渲染回插（P1）
+
+- 解析 EPUB/HTML 章节时，将 `<table>`（及后续 MathML 公式块）提取为独立轻量 HTML 片段并插入占位块；
+- 后台使用离屏原生 `WebView`（套用当前阅读主题背景/文字色与最大内容宽度）截图生成高分位图并缓存至章节缓存目录；
+- 在 Canvas 分页引擎中按普通 `ImageBlock` 排布与点击放大查看，无需为了书里偶尔出现的几张表格而把整章降级到全页 WebView。
+
+---
+
+### R7：中英文混排双字体、智能选词与自动阅读（P2）
+
+- **中英文分离字体**：允许用户分别选择中文字体（如思源宋体/霞鹜文楷）与西文字体（如 Lora/Georgia），在构建 `AnnotatedString` 时按 CJK/Latin 区间自动挂载对应 `FontFamily`。
+- **智能中文选词**：在现有 `SentenceBoundaryResolver` 基础上结合本地轻量词表/中文词典实现点按/长按自动扩展到完整中文词语（无需另起独立 AIDL 进程）。
+- **自动阅读模式**：
+  - 按句推进 + 速度档位（0.5x–3.0x）+ 句长自适应停留时长公式；
+  - 引入**暂停原因位掩码**（`TOOLBAR | LIFECYCLE | SELECTION | DIALOG | AI_SHEET | LOOKUP`），任一条件激活即置位暂停，仅当所有位清零时自动恢复，彻底杜绝状态竞态。
+
+---
+
+### R8：出版级断行内核演进（P3，长期预留）
+
+- 当未来需要追求实体出版物级排版（严格避头尾禁则、标点挤压、英文 TeX 连字符断词、Knuth-Plass 最优两端对齐）时：
+  - 在 KMP `:core`（或共享 Rust/C++ 模块）引入 UAX#14 断行与 Knuth-Plass 算法，替换行切分器；
+  - 上层 R1 分页缓存、R2 五层绘制、R3 TTS 联动、R5 触摸仲裁以及全套 AI 工作台保持契约不变、100% 复用。
+
+---
+
+## 4. 明确不做的反模式（Non-Goals）
+
+以下属于重型商业书城平台架构，**明确不引入 Inkflow**：
+
+1. **不引入 React Native / 混合业务壳**：保持纯 Jetpack Compose + KMP `:core` + 未来 SwiftUI 原生架构。
+2. **不依赖云端服务端做解析、分章或预排版**：坚持 Local-First 本地解析与本地缓存，保障离线可用与隐私安全。
+3. **不引入封闭 DRM 加密正文流、商业付费/广告虚拟页或防刷时长作弊系统**。
+4. **不在短期内从零重造 FreeType 与全量 W3C CSS 引擎**：复杂固定版式继续由直连 ZIP 的轻量原生 WebView 兜底，局部表格/公式由 R6 离屏位图解决。
+
+---
+
+## 5. 验收原则（后续落地时遵守）
+
+- 所有纯算法模块（`LayoutConfigFingerprint`、页码估算、TTS 跨页协议、自动阅读暂停位掩码、选区状态机）必须落在 `:core/src/commonMain` 并附带 `:core:jvmTest` 单测；
+- 任何绘制与动画增强必须提供 **E-INK 静态降级路径**（`eInkConfig.enabled == true` 时关闭翻页动画与渐变过渡）；
+- 每次引入分页缓存或新绘制层后，必须补齐「改字号/旋转不跳位置」「跨章翻回末页」「大章节（≥10 万字）内存与开书耗时」回归验证。
