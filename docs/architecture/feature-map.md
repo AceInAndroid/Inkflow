@@ -1,5 +1,20 @@
 # Anx Reader 功能地图（供 AI 开发前必读）
 
+## Inkflow 原生状态与正式规格（2026-11-27）
+
+[总体路线](../todo/inkflow-master-roadmap.md)是当前排期与真实状态入口，
+[UI](../todo/inkflow-ui-structure-and-specs.md)、
+[AI/Skill](../todo/inkflow-ai-interaction-and-skills-spec.md)、
+[阅读交互](../todo/inkflow-reader-interaction-spec.md)定义已批准的待交付行为。
+本文中 `lib/`、Riverpod 和 Flutter 入口记录原端实现/扩展边界，不能视作原生功能已完成。
+原生代码映射优先查 [Native AI Contract](native-ai-contract.md) 和
+[Native P1](native-reading-p1.md)，验收以
+[持续阅读与生成报告](../../android/CONTINUED_TEST_2026-11-26.md)、
+[四语报告](../../android/LOCALIZATION.md)为基线。
+GenerationAuthorization 已由主线程初步实现，**待测试**；scope 扩展、v5 兼容与整阶段交付
+须分别验证。默认展示已读与本书本次“查看全部”授权必须隔离。
+当前同步为 WebDAV、自托管 HTTPS 进度与本地 ZIP；新功能不得另起同步/剧透链路。
+
 原生 Android/KMP 迁移同时遵循 [Native AI Contract](native-ai-contract.md)，实施范围见
 [原生迁移验收记录](../../android/NATIVE_MIGRATION_PLAN.md)。
 
@@ -80,7 +95,7 @@ namespaced string ID（`story.*`、`stage.*`、`relation.*`）；旧短 ID 在�
      │
      └─> 阅读成果 ──> FictionStoryAtlasService ──> 图谱/时间线 ViewModel
 
-  所有持久化 AI 写入 ──> AgentActionService ──> SQLite ──> WebDAV/CloudBase 增量同步
+  所有持久化 AI 写入 ──> AgentActionService ──> SQLite ──> WebDAV 增量同步
 ```
 
 核心原则：普通翻页/停留/回看/打开图谱不调用模型；模型只由用户问答、明确分析或用户确认的整理动作触发。
@@ -100,7 +115,6 @@ namespaced string ID（`story.*`、`stage.*`、`relation.*`）；旧短 ID 在�
 | 人物关系图 | 已实现 | 人物关系图 | `fiction_character_graph_page.dart` | Artifact 投影 | 不生成/下载人物肖像 |
 | Agent 动作与撤销 | 已实现 | 明确指令/建议确认卡/动作记录 | `agent_action_service.dart`、`reading_agent_tools.dart` | 30 天/最多 200 条 | 不直接写业务表 |
 | 阅读进度多设备同步 | 已实现 | 同步按钮/自动同步/最远进度提示 | `lib/service/sync/reading_agent_sync_service.dart`、`lib/service/sync/sync_request_gate.dart` | per-device package | 不自动覆盖本地位置/不自动跳转 |
-| CloudBase Sync | 已实现 | 设置 > CloudBase | `lib/service/sync/cloudbase_reading_sync_coordinator.dart`、`cloudbase_reading_sync_transport.dart` | 账号 session + 增量包 | 不把管理员 Key 放进 App |
 | 自托管进度同步 | 已实现 | 设置 > 自托管进度同步 | `lib/service/sync/self_hosted_progress_sync_coordinator.dart`、`self_hosted_progress_sync_transport.dart` | 独立 HTTPS JSON API，仅位置字段；`self_hosted/progress_sync/` 可 Docker 部署 | 不上传书籍/数据库/笔记/书签/AI；复用现有 merge、最远进度提示和 single-flight |
 | WebDAV 同步 | 已实现 | 设置/同步按钮 | `service/sync/` | 整库兼容 + Agent 包 | 入口必须走 single-flight gate |
 | E-INK/OLED 配置 | 已实现 | 设置 > 外观 | `device_display_profile.dart`、`shared_preference_provider.dart` | 设备本地，不备份 | 不把 E-INK 当普通主题 |
@@ -260,10 +274,9 @@ TOC 作品节点建立稳定的 href 派生 `workId`；Artifact 与回填 checkp
 - 阅读位置按 `(bookId, deviceId)` 保存，设备重新打开默认恢复自己的位置。
 - 全局最远进度只用于提示“继续当前位置/跳转到最远进度”，默认继续当前位置，不自动跳转。
 - Agent 增量包按书和设备隔离；稳定 ID 用 LWW，终态优先，Artifact 采用更保守的展示边界，目标每本最多一个 active。
-- CloudBase 是可选 Reading Agent transport；登录注册后多设备共用账号。同步不触发 AI、不扩大剧透边界。
 - 自托管进度同步是独立的可选 transport，面向 NAS + Cloudflare Tunnel 部署；只传书籍稳定标识、设备位置、百分比、章节和更新时间，凭 Bearer session 认证。服务端使用 SQLite WAL，客户端不上传整库或其他同步表。
-- 自托管服务的 endpoint、session token、过期时间和增量 cursor 保持安装本地，不进入偏好备份；CloudBase 与 WebDAV 配置和行为不变。
-- WebDAV/CloudBase 所有手动和自动入口走 single-flight gate；重复点击复用在途请求，避免重复任务和 ANR。
+- 自托管服务的 endpoint、session token、过期时间和增量 cursor 保持安装本地，不进入偏好备份；WebDAV 继续按原有边界工作。
+- WebDAV 所有手动和自动入口走 single-flight gate；重复点击复用在途请求，避免重复任务和 ANR。
 - `ReadingActivityCoordinator` 是阅读状态与同步之间的唯一节流边界：阅读中的自动请求只合并为一个 pending intent；退出/后台先保存阅读状态再 flush。离线或非 Wi-Fi 只保留 intent，不做循环重试。
 - 自动 WebDAV 冲突只设置“需要手动处理”状态，不弹方向选择框；用户从“本书”手动同步时才允许选择。工具栏不再保留独立同步按钮。
 
@@ -286,7 +299,6 @@ E-INK 有效覆盖：浅色高对比、无翻页动画、无背景图、无代�
 | 查看下一阅读行动 | 阅读页 > 本书，或本书阅读成果页顶部 |
 | 查看阅读耗电/打断/同步合并 | 设置 > 开发者选项 > 阅读体验诊断 |
 | 看 AI 用量 | 设置 > AI 设置 > Token 用量 |
-| 配置 CloudBase | 设置 > CloudBase，注册/登录/测试；无单独保存按钮 |
 | 区分墨水屏/OLED | 设置 > 外观 > 当前设备显示配置 |
 | 学习如何使用 Agent/Skill | 设置/AI 入口中的帮助与教学页 |
 
@@ -312,7 +324,6 @@ E-INK 有效覆盖：浅色高对比、无翻页动画、无背景图、无代�
 - 故事世界绝对年代轴的可靠推断。
 - 跨书知识图谱、后台定时唤醒、自动 Skill 学习。
 - 自动把小说章节变成 mastery 分数或强制复习卡。
-- CloudBase 服务端管理员控制台、邀请制和跨设备撤销保证。
 - 自动扫描未读后文、以全局最远设备进度替代当前设备整理上限。
 - 页面直接编辑 AI 产物而不经过动作日志/来源校验。
 - Wiki 整页自由编辑；一期仅支持隐藏与带版本的局部纠正。

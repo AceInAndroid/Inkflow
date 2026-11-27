@@ -1,5 +1,20 @@
 # Anx Reader AI 架构
 
+## Inkflow 原生状态与正式规格（2026-11-27）
+
+[总体路线](../todo/inkflow-master-roadmap.md)是当前排期与真实状态入口，
+[UI](../todo/inkflow-ui-structure-and-specs.md)、
+[AI/Skill](../todo/inkflow-ai-interaction-and-skills-spec.md)、
+[阅读交互](../todo/inkflow-reader-interaction-spec.md)定义已批准的待交付行为。
+本文中 `lib/`、Riverpod 和 Flutter 入口记录原端实现/扩展边界，不能视作原生功能已完成。
+原生代码映射优先查 [Native AI Contract](native-ai-contract.md) 和
+[Native P1](native-reading-p1.md)，验收以
+[持续阅读与生成报告](../../android/CONTINUED_TEST_2026-11-26.md)、
+[四语报告](../../android/LOCALIZATION.md)为基线。
+GenerationAuthorization、持久任务/真实来源校验及重试前复核已有分项设备验收；
+当前构建记录见[实施验收报告](../../android/IMPLEMENTATION_2026-11-27.md)。v5 兼容与整阶段交付仍须分别验证。默认展示已读与本书本次“查看全部”授权必须隔离。
+当前同步为 WebDAV、自托管 HTTPS 进度与本地 ZIP；新功能不得另起同步/剧透链路。
+
 原生 Android/KMP 迁移同时遵循 [Native AI Contract](native-ai-contract.md)，实施范围见
 [原生迁移验收记录](../../android/NATIVE_MIGRATION_PLAN.md)。
 
@@ -115,7 +130,7 @@ flowchart TD
   Action --> SQLite
   Outcomes --> Atlas[FictionStoryAtlasService]
   Atlas --> SQLite
-  SQLite --> Sync[WebDAV / CloudBase Reading Sync]
+  SQLite --> Sync[WebDAV Reading Sync]
 ```
 
 ## 3. 能力矩阵
@@ -225,12 +240,12 @@ Artifact 的剧透字段必须保持分离：`sourceProgress` 是内容发生位
 
 ## 9. 同步与多设备
 
-`ReadingAgentSyncService` 以书和设备生成增量包；WebDAV 与 CloudBase 只是 transport。同步流程为：捕获本地变更 → 下载同书各设备包 → 按表合并 → 恢复本设备位置 → 重新捕获并上传。
+`ReadingAgentSyncService` 以书和设备生成增量包，由 WebDAV transport 传输；自托管 HTTPS 进度仅传位置字段。同步流程为：捕获本地变更 → 下载同书各设备包 → 按表合并 → 恢复本设备位置 → 重新捕获并上传。
 
 - 位置按 `(book, deviceId)` 保存；其他设备的进度不会覆盖本机当前位置。
 - 全局最远进度只用于主动提示“继续当前位置/跳转到最远进度”，不自动跳转，也不作为手动故事整理的默认上限。
 - 目标按每书单 active 规则解决；Artifact/笔记/难点/卡片/记忆按稳定 ID、更新时间、状态和 tombstone 合并。
-- Agent action 日志不跨设备同步，避免重复撤销；CloudBase 同步需要登录，其他阅读和 AI 能力不受影响。
+- Agent action 日志不跨设备同步，避免重复撤销；远端服务不可用不影响本地阅读和 AI。
 - 同步不调用模型；登录、网络和远端错误只影响同步，不影响本地阅读。
 
 ## 10. Token 用量与可观测性
@@ -300,7 +315,7 @@ AI 设置中的 Token 用量面板展示本月输入、输出、合计和请求�
 | 方法与闭环 | `lib/service/ai/reading_skills.dart`, `reading_closure_policy.dart`, `reading_experience_profile_service.dart` |
 | 工具与写入 | `lib/service/ai/tools/ai_tool_registry.dart`, `tools/reading_agent_tools.dart`, `agent_action_service.dart` |
 | 小说档案 | `fiction_backfill_service.dart`, `fiction_story_atlas_service.dart`, `fiction_character_graph_page.dart`, `fiction_story_timeline_page.dart` |
-| 同步 | `lib/service/sync/reading_agent_sync_service.dart`, `cloudbase_reading_sync_coordinator.dart`, `cloudbase_reading_sync_transport.dart` |
+| 同步 | `lib/service/sync/reading_agent_sync_service.dart`, `webdav_client.dart`, `self_hosted_progress_sync_coordinator.dart` |
 | 用量 | `lib/service/ai/ai_token_usage_service.dart`, `lib/page/settings_page/ai.dart` |
 
 ## 15. 变更验证清单

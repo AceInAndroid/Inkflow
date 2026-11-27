@@ -1,7 +1,20 @@
 # Native reading P1 integration notes
 
-Updated 2026-11-26. This slice extends the native AI contract and existing SQLite
+Updated 2026-11-27. This slice extends the native AI contract and existing SQLite
 v22 tables. It introduces no provider transport, schema, or reading-event model call.
+
+## Approved roadmap and limits
+
+[Master roadmap](../todo/inkflow-master-roadmap.md),
+[UI](../todo/inkflow-ui-structure-and-specs.md),
+[AI/Skill](../todo/inkflow-ai-interaction-and-skills-spec.md), and
+[reader interaction](../todo/inkflow-reader-interaction-spec.md) now define future
+delivery. The P1 capabilities below are reusable partial native implementation,
+not completion of the v0.5 coach or v0.3–v1.0 milestones. Scope authorization is
+initially implemented in parallel integration and awaits testing under the
+[native scope contract](native-ai-contract.md#generation-scope-extension-contract-2026-11-27).
+The completed-source limits below describe the accepted v0.2 behavior; they are
+not permission to bypass validation in the new scopes.
 
 ## Existing note organization
 
@@ -74,14 +87,14 @@ opening the hub, searching, filtering, source navigation or ordinary reading.
 - `NativeReadingActions.saveAiNote(bookId: Long, title: String, content: String,
   quote: String?, snapshot: ReadingContextSnapshot, userAuthorized: Boolean): String`
   returns the action ID; `undo(actionId)` returns `NativeReadingUndoResult`.
-- Native test classes: `com.aceinandroid.airead.NativeReadingDomainTest` and
-  `com.aceinandroid.airead.NativeNoteOrganizationTest` (10 new integration tests).
-- Core tests: `com.aceinandroid.airead.core.ai.NativeReadingDomainTest` (21 cases).
+- Native test classes: `com.aceinandroid.inkflow.NativeReadingDomainTest` and
+  `com.aceinandroid.inkflow.NativeNoteOrganizationTest` (10 new integration tests).
+- Core tests: `com.aceinandroid.inkflow.core.ai.NativeReadingDomainTest` (21 cases).
 
 ## Bounded limits
 
-Source navigation and integrated Android builds/device execution are leader-owned.
-The current agent runs targeted compiler/JUnit checks only, never concurrent Gradle.
+The acceptance scope is recorded in the migration and continued-validation
+reports; these integration notes do not assert an additional device pass.
 Old evidence without a verifiable exact endpoint stays hidden on rewind. Old notes
 must already have workspace IDs to participate; annotation-only migration remains
 in the existing workspace. Large notes require editing before organization.

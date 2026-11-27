@@ -1,4 +1,25 @@
-# Anx Reader Product Design Decisions
+# Inkflow Product Design Decisions
+
+## Inkflow 原生总体计划（2026-11-27）
+
+本节是当前原生产品决策入口。下文的 Flutter/Riverpod/WebView 具体实现仅为旧端参考，
+其“已实现”不能迁移为原生验收结论。原生事实以代码和链接的验收报告为准；
+批准的目标规格不等于阶段已完成。
+
+- [总路线与真实状态](docs/todo/inkflow-master-roadmap.md)：v0.2 基线、五主线与 R1–R8、v0.3–v1.0 放行条件。
+- [原生 UI 结构](docs/todo/inkflow-ui-structure-and-specs.md)：首页｜书架｜我的三 Tab；经典、壁纸沉浸、极简、E-INK 四首页 v0.3 一次交付；App 与阅读双层皮肤。
+- [AI 交互与 Skill](docs/todo/inkflow-ai-interaction-and-skills-spec.md)：手机高占比问书 Sheet、宽屏左书右 AI、真实执行轨迹、六 Agent、十内置 Skill 与 Markdown/JSON 导入。
+- [阅读交互](docs/todo/inkflow-reader-interaction-spec.md)：默认显式跨页扩选，拖边可选且 E-INK 禁用；双层胶囊、三样式五颜色、听读同步和 QueryBack。
+- [原生 AI 契约](docs/architecture/native-ai-contract.md)：复用注册请求、上下文、scheduler、Evidence、授权动作及领域投影。
+
+稳定性与 UI 各阶段并行。尽量贴近批准计划中两段录屏的原生层次/操作顺序，
+视觉近似度须真实构建比对，不能以本次文档落库作为截图或通过证据。
+全书生成一次明确授权冻结任务，单独授权查看全部成果；默认展示仍已读安全范围，
+查看授权仅本书本次本机有效，不改阅读进度，不扩大普通 AI 上下文。
+GenerationAuthorization 已由并行主线程初步实现、仍待测试，不代表范围验收或整阶段交付。
+数据复用 SQLite v22；偏好备份目标 v5 兼容 v1–v4（基线捕获仍 v4）；界面中英日韩四语。
+当前同步/恢复入口为 WebDAV、自托管 HTTPS 进度、本地 ZIP，均不得因同步触发模型。
+本节的新手机/平板布局替代下文旧端 56% 面板默认高度；原生扩选以显式命令优先。
 
 ## AI 架构索引
 
@@ -16,7 +37,7 @@
 Reading Skill 使用稳定字符串 ID。内置方法继续由注册表提供；用户可以在 AI
 工作台新建或导入 `custom.*` JSON。自定义 Skill 只描述阅读方法，不包含 Provider、
 API Key、工具执行或自动写库权限，并沿用摘要/完整两级渐进加载。自定义 Skill
-保存在偏好备份中，随现有 WebDAV 偏好备份恢复；不参与 CloudBase Agent 包同步。
+保存在偏好备份中，随现有 WebDAV 偏好备份恢复；Skill 增量适配沿用现有 WebDAV 边界，不包含凭据。
 
 当前 AI 分层、调用链、持久化归属、同步边界、Token 用量统计和扩展契约见
 [`docs/architecture/ai-architecture.md`](docs/architecture/ai-architecture.md)。
@@ -120,9 +141,9 @@ API Key、工具执行或自动写库权限，并沿用摘要/完整两级渐进
 ### 连续阅读和同步
 
 - `ReadingActivityCoordinator` 向同步层暴露 `activeReading / idle /
-  background`。阅读期间的自动 WebDAV/CloudBase 请求合并为一个 pending
+  background`。阅读期间的自动 WebDAV 请求合并为一个 pending
   intent；用户手动同步仍立即进入现有 single-flight gate。
-- 自托管进度同步是与 WebDAV、CloudBase 并列的可选入口。它通过
+- 自托管进度同步是与 WebDAV 并列的可选入口。它通过
   `SelfHostedProgressSyncCoordinator` 复用现有位置 merge、最远进度提示和
   single-flight 边界；仅在退出/后台、打开书和手动同步时访问轻量 HTTPS API，
   普通翻页不发请求。
@@ -132,7 +153,7 @@ API Key、工具执行或自动写库权限，并沿用摘要/完整两级渐进
   Cloudflare Tunnel 终止，容器不发布公网端口。
 - 自托管账号使用单账号 Bearer session；客户端只保存 token、过期时间和
   增量 cursor 在本机，且这些字段（包括 endpoint）不进入偏好备份、WebDAV
-  或 CloudBase 同步。Token 失效时清理本地会话并提示重新登录。
+  或其他同步。Token 失效时清理本地会话并提示重新登录。
 - 退出阅读或进入后台时，先保存阅读位置、Runtime 和阅读时长，再执行一次合并
   后的自动同步。离线或不满足 Wi-Fi 策略时只保留一个 intent，不循环重试。
 - 自动同步冲突不打开方向选择弹窗，只在本书面板标记需要手动处理。手动同步才
@@ -154,7 +175,7 @@ API Key、工具执行或自动写库权限，并沿用摘要/完整两级渐进
 - `ReadingExperienceDiagnostics` 仅在内存累计，会话结束后一次写入本机偏好。
   它保存会话时长、首尾电量、非用户提示、同步合并、模型/任务、行动和来源返回
   的计数，不保存正文、选区、密钥或模型输出，也不参与偏好备份、WebDAV、
-  CloudBase 或遥测。仅开发者设置可查看和清空最近 30 天/100 次会话。
+  其他同步或遥测。仅开发者设置可查看和清空最近 30 天/100 次会话。
 
 普通翻页、停留、回看、切章和打开本书面板的共同硬门槛是：零模型调用、零同步
 网络请求、零新增模态打断。
@@ -600,37 +621,6 @@ legacy `readingCoach` or its MaterialBanner behavior.
   and per device, not synchronized.
 - Person recall and the mystery ledger are the baseline fiction outputs;
   generating or opening a relationship graph is optional and never triggers AI.
-
-## CloudBase Reading Agent Sync
-
-CloudBase is an optional transport for Reading Agent state, not a replacement
-for WebDAV whole-database or book-file sync. Each device uploads an independent
-`ReadingAgentBookDelta`. The local `ReadingAgentSyncService` remains the source
-of truth for tombstones, per-device positions, coverage, goals and Artifact
-merge rules; the server only isolates and returns packages.
-
-- Flutter never contains a CloudBase administrator API Key. The normal flow
-  keeps only an account session token. Legacy sync-space IDs and recovery codes
-  are deliberately unsupported; users sign in with the same account on every
-  device.
-- The account session token is excluded from normal preferences backup/import.
-- CloudBase PG stores only hashes of account sessions and scrypt password
-  hashes. Tables deny direct
-  `anon` and `authenticated` access; the HTTP Function is the only data path.
-- The HTTP Function does not return headers, environment variables or CloudBase
-  context, caps request bodies at 2 MiB, and validates package/path identities.
-- Automatic CloudBase sync is silent. Failures are logged and do not block
-  reading or WebDAV; explicit manual sync reports success or failure.
-- CloudBase settings use explicit actions: register/sign in, test connection,
-  and sign out. There is no separate Save button. Registration/sign-in saves
-  the endpoint and session immediately; a successful connection test saves a
-  newly entered endpoint, while dismissing the dialog leaves it unchanged.
-- CloudBase sync never invokes an AI model and does not broaden the Reading
-  Agent's spoiler boundary or artifact coverage.
-- New CloudBase sync accounts no longer require an invitation. Registration
-  creates one account-owned sync space, and any number of devices can sign in
-  to that account. Passwords are scrypt-hashed in the function's PG boundary;
-  the account session is the only sync credential exposed to Flutter.
 
 ### WebDAV automatic-sync interruption policy
 

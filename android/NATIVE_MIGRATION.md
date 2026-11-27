@@ -4,6 +4,32 @@
 
 Inkflow is an independent project on `main`. The Android package is `com.aceinandroid.inkflow`; it installs alongside the Flutter application. The native build uses Kotlin and Compose with minSdk 24, compileSdk 36, and targetSdk 35.
 
+## Approved roadmap and current integration status (2026-11-27)
+
+The [master roadmap](../docs/todo/inkflow-master-roadmap.md) separates the v0.2
+acceptance baseline from planned v0.3–v1.0 delivery. Its
+[UI](../docs/todo/inkflow-ui-structure-and-specs.md),
+[AI/Skill](../docs/todo/inkflow-ai-interaction-and-skills-spec.md),
+[reader interaction](../docs/todo/inkflow-reader-interaction-spec.md) and
+[R1–R8 engine](../docs/todo/inkflow-reader-engine-v2.md) specifications are approved
+requirements, not new test reports.
+
+Three tabs (Home, Bookshelf, Me), all four home styles in one v0.3 delivery, and
+stability alongside UI are mandatory. Four UI languages remain Chinese, English,
+Japanese and Korean. Reuse SQLite v22; native preference payload v5 must read
+v1–v4. The historical implementation/acceptance entries below retain their
+original version-specific facts.
+
+GenerationAuthorization scope support is initially implemented in parallel
+integration and **awaiting tests**, as reported by the implementation owner.
+Its [scope contract](../docs/architecture/native-ai-contract.md#generation-scope-extension-contract-2026-11-27)
+requires payload v2, v1 read-boundary compatibility, source/call/write checks,
+one whole-book task confirmation and a separate local book/session view-all
+grant. Neither that code nor document approval is whole-book acceptance or
+completion of v0.4. Native preference v5 code is also being integrated; its
+v1–v4 restore matrix still needs validation. Default views stay read-boundary
+filtered; view-all grants do not change reading progress.
+
 ## Native v0.2 migration (2026-11-26)
 
 Additional real-device WiFi EPUB transfer, reading restoration, and OpenAI/Anthropic LAN model acceptance, including fixes and updated APKs: [LIVE_TEST_2026-11-26.md](LIVE_TEST_2026-11-26.md).
@@ -11,8 +37,8 @@ Additional real-device WiFi EPUB transfer, reading restoration, and OpenAI/Anthr
 The current P0–P3 implementation and acceptance scope are recorded in
 [NATIVE_MIGRATION_PLAN.md](NATIVE_MIGRATION_PLAN.md). Native AI follows the
 [shared architecture contract](../docs/architecture/native-ai-contract.md).
-CloudBase sync has been removed from the native migration scope. It is not a
-native dependency, setting, or future acceptance requirement.
+Supported native synchronization and recovery use WebDAV, self-hosted HTTPS
+progress and local ZIP backups.
 
 The Android build now has `standard` and `fullOcr` flavors. Use explicit variant
 names, for example `:app:assembleStandardDebug` and `:app:assembleFullOcrDebug`;

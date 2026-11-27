@@ -2,9 +2,27 @@
 
 更新：2026-11-26。应用：`com.aceinandroid.inkflow`，版本：0.2.0。
 
-本文件将原 P0–P3 方案落到实际入口与验证范围。**CloudBase 同步从方案中移除**；
-原生端只使用本地 ZIP、WebDAV 与自托管 HTTPS 进度同步。旧 Flutter 目录保留为
+本文件将原 P0–P3 方案落到实际入口与验证范围。
+当前同步/恢复只使用本地 ZIP、WebDAV 与自托管 HTTPS 进度同步。旧 Flutter 目录保留为
 兼容性参考，不能视为新的原生依赖。
+
+
+## 正式总体计划与状态口径（2026-11-27）
+
+[总路线](../docs/todo/inkflow-master-roadmap.md)是 v0.3–v1.0 排期入口，配套
+[UI 结构](../docs/todo/inkflow-ui-structure-and-specs.md)、
+[AI/Skill](../docs/todo/inkflow-ai-interaction-and-skills-spec.md)、
+[阅读交互](../docs/todo/inkflow-reader-interaction-spec.md)和
+[R1–R8 引擎](../docs/todo/inkflow-reader-engine-v2.md)。三 Tab 与四首页一次交付、
+贴近录屏、稳定性与 UI 并行、四语、v22 复用和偏好 v5 兼容 v1–v4 均为已批准门禁。
+
+下方 2026-11-26 验收是历史构建事实，不是新增里程碑完成证明。
+主线程已初步实现 GenerationAuthorization，**仍待测试**；
+[payload v2/范围契约](../docs/architecture/native-ai-contract.md#generation-scope-extension-contract-2026-11-27)
+要求读源/调用/写入前复核、旧 v1 默认已读、同供应商最多一次 schema 纠正与 checkpoint 保留。
+全书一次授权与本书本次查看全部成果分开；默认已读显示，不改进度。
+偏好 v5 代码也在并行集成，不能把版本号提升视为 v1–v4 兼容已经通过。
+v0.3/v0.4 及后续阶段都保持未整体验收；本次文档工作不增加新测试结果。
 
 ## 实书与局域网模型后续验收
 
@@ -13,7 +31,7 @@ WiFi 传书、实书阅读和 OpenAI/Anthropic 接入见 [LIVE_TEST_2026-11-26.m
 最终 API 31 standard 全量为 154 通过 / 15 条件跳过 / 0 失败；API 34 fullOcr 为
 158 通过 / 11 条件跳过 / 0 失败。实书 30 分钟、300 次翻页、22 次跨章及各 3 次
 前后台/进程重启恢复通过，小屏与宽屏补测各 12/12 通过，既有失败与限制保留在报告中。
-原生生成当前只支持已完成章节，尚无全书范围及二次确认；本地模型的结构化 Wiki 生成
+该验收构建的原生生成只支持已完成章节，尚无全书范围及独立授权；本地模型的结构化 Wiki 生成
 在非法 JSON 输出后安全停止，不能标记全书或已读范围生成验收通过。
 
 ## P0：AI 工作台、阅读排版、词典翻译

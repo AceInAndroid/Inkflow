@@ -1,5 +1,20 @@
 # Anx Reader AI 系统功能地图与处理流程
 
+## Inkflow 原生状态与正式规格（2026-11-27）
+
+[总体路线](../todo/inkflow-master-roadmap.md)是当前排期与真实状态入口，
+[UI](../todo/inkflow-ui-structure-and-specs.md)、
+[AI/Skill](../todo/inkflow-ai-interaction-and-skills-spec.md)、
+[阅读交互](../todo/inkflow-reader-interaction-spec.md)定义已批准的待交付行为。
+本文中 `lib/`、Riverpod 和 Flutter 入口记录原端实现/扩展边界，不能视作原生功能已完成。
+原生代码映射优先查 [Native AI Contract](native-ai-contract.md) 和
+[Native P1](native-reading-p1.md)，验收以
+[持续阅读与生成报告](../../android/CONTINUED_TEST_2026-11-26.md)、
+[四语报告](../../android/LOCALIZATION.md)为基线。
+GenerationAuthorization 已由主线程初步实现，**待测试**；scope 扩展、v5 兼容与整阶段交付
+须分别验证。默认展示已读与本书本次“查看全部”授权必须隔离。
+当前同步为 WebDAV、自托管 HTTPS 进度与本地 ZIP；新功能不得另起同步/剧透链路。
+
 原生 Android/KMP 迁移同时遵循 [Native AI Contract](native-ai-contract.md)，实施范围见
 [原生迁移验收记录](../../android/NATIVE_MIGRATION_PLAN.md)。
 
@@ -138,7 +153,7 @@ flowchart TB
 
   subgraph Data[数据与同步层]
     DB[(SQLite v22)]
-    Sync[WebDAV / CloudBase]
+    Sync[WebDAV]
   end
 
   Reader --> Runtime
@@ -392,7 +407,7 @@ flowchart TB
 ```text
 本地 SQLite 变更
   -> ReadingAgentSyncService 按书/设备捕获增量
-  -> WebDAV 或 CloudBase transport
+  -> WebDAV transport；自托管 HTTPS 进度只传位置
   -> 下载其他设备包
   -> 稳定 ID / 时间 / 状态 / tombstone 合并
   -> 恢复本设备当前位置

@@ -2,16 +2,36 @@
 
 ## 状态
 
-- Status: Proposed
+- Status: 原生部分基础已有；完整闭环待实现/待验收
 - Priority: P1
-- Target release: Unscheduled
+- Target release: v0.5（归档/行动/悬念/成本），v0.6（偏好/外部验收）
 - Scope: Reading Agent Beta、三类阅读闭环、阅读成果、多设备恢复
 - Architecture reference: [`../architecture/ai-architecture.md`](../architecture/ai-architecture.md)
 - Product decisions: [`../../DESIGN.md`](../../DESIGN.md)
 
+## 原生状态与排期（2026-11-27）
+
+统一入口：[总体路线](inkflow-master-roadmap.md)、[AI/Skill](inkflow-ai-interaction-and-skills-spec.md)、
+[原生 AI 契约](../architecture/native-ai-contract.md)。正文“当前”未特别说明时是原方案背景，
+原生事实以本表和验收为准，不因旧端有页面就标原生完成。
+
+| 缺口 | 原生已有/未完成 | 目标 |
+| --- | --- | --- |
+| 完成本书/BookCompletionArchive | 已有成果投影；明确完成、预览、归档、重开与撤销尚待闭环 | v0.5 |
+| NextReadingAction | 确定性 Resolver 和局部动作已有；跨入口执行、返回重算及归档回流待完整验收 | v0.5 |
+| Reader Profile | 基础模型/存储可参考；三会话证据、确认生效记录与状态同步待实现 | v0.6 |
+| 悬念→线索→揭示 | Atlas 已有安全投影/静态关系图；解决状态、关联编辑与撤销待闭环 | v0.5 |
+| Token 成本归因/健康度 | 网关用量已有；按能力/书/模型与闭环本机计数待实现 | v0.5 |
+
+[P1 说明](../architecture/native-reading-p1.md)仅证明已有集成边界；
+[最新持续验收](../../android/CONTINUED_TEST_2026-11-26.md)保留生成失败和覆盖限制。
+GenerationAuthorization 已初步实现、待测试；完整 scope/查看全部/一次纠正必须单独验收，
+不代表 v0.4/v0.5 已交付。v0.5 消费统一范围任务，不另起全书分析管线。
+复用 v22 与偏好备份 v5（读取 v1–v4）；当前同步/恢复为 WebDAV、自托管 HTTPS 进度和本地 ZIP。
+
 ## 背景
 
-当前实现已经形成“目标 → 阅读现场 → 章节 checkpoint → 掌握度/难点/记忆/Artifact → 复习卡/阅读成果 → 跨会话与跨设备恢复”的可用主链路。剩余问题不在于缺少更多 AI 按钮，而在于已有成果没有完全回流到全书完成、下一步行动、个性化策略和成本优化。
+旧端实现已形成“目标 → 阅读现场 → 章节 checkpoint → 掌握度/难点/记忆/Artifact → 复习卡/阅读成果 → 跨会话与跨设备恢复”的可用主链路。剩余问题不在于缺少更多 AI 按钮，而在于已有成果没有完全回流到全书完成、下一步行动、个性化策略和成本优化。
 
 本文只记录尚未闭合的部分。现有低打扰、用户确认、来源追溯、剧透边界、可撤销写入和本设备位置优先规则继续生效。
 
@@ -76,7 +96,7 @@ Profile 的候选、三会话证据、确认、拒绝和 90 天抑制已经存�
 - 候选卡说明“观察到什么”和“将改变什么”，确认后才进入 Agent 上下文。
 - 每次 prompt 构建记录实际采用的已确认 profile keys，便于验证和排错。
 - 用户能够撤销确认、恢复默认；拒绝后 90 天不重复建议。
-- 明确 CloudBase 增量同步规则，使同一账号设备共享已确认 Profile，但候选行为证据不必同步。
+- 复用 WebDAV 增量同步规则共享已确认/拒绝 Profile 状态；候选行为证据保持本机，自托管 HTTPS 仅传阅读位置。
 
 ### 完成标准
 

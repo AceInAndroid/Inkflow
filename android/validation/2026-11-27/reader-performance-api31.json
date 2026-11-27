@@ -1,0 +1,2477 @@
+{
+  "version": 1,
+  "runId": "87aeb9ee-2aa9-42fc-aaf9-06241662910e",
+  "startedAtEpochMs": 1795784946104,
+  "status": "passed",
+  "device": {
+    "manufacturer": "unknown",
+    "model": "Android SDK built for arm64",
+    "device": "emulator64_arm64",
+    "product": "sdk_phone64_arm64",
+    "fingerprint": "Android/sdk_phone64_arm64/emulator64_arm64:12/SE1A.220621.001/8752307:userdebug/test-keys",
+    "buildId": "SE1A.220621.001",
+    "display": "sdk_phone64_arm64-userdebug 12 SE1A.220621.001 8752307 test-keys",
+    "sdk": 31,
+    "abis": [
+      "arm64-v8a"
+    ],
+    "package": "com.aceinandroid.inkflow",
+    "versionName": "0.2.0",
+    "versionCode": 2,
+    "widthDp": 392,
+    "heightDp": 750,
+    "densityDpi": 440,
+    "fontScale": 1
+  },
+  "protocol": {
+    "engine": "NATIVE_PAGED",
+    "chapterCharacters": 100000,
+    "requestedOpens": 20,
+    "requestedHardwareTurns": 100,
+    "hardwareKey": "KEYCODE_PAGE_DOWN: ACTION_DOWN + ACTION_UP via Activity.dispatchKeyEvent",
+    "runBudgetMs": 600000,
+    "stepBudgetMs": 30000,
+    "pollIntervalMs": 25,
+    "stabilityWindowMs": 150,
+    "duration": "dispatch start to first matching body semantics in the subsequently stable window",
+    "confirmedDuration": "dispatch start through stability confirmation; memory sampled afterwards",
+    "visibleOffsetSource": "native paged SemanticsProperties.Text uniquely mapped to fixture chapter",
+    "firstOpenMeaning": "first fixture UI open after import in this process; not process-cold",
+    "percentileMethod": "nearest rank; no pre-change baseline or speedup claim"
+  },
+  "opens": [
+    {
+      "index": 1,
+      "durationMs": 3902.193252,
+      "confirmedDurationMs": 4055.044419,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 15913672,
+        "javaCommittedBytes": 22958973,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 42814240,
+        "totalPssKiB": 239331,
+        "dalvikPssKiB": 12474,
+        "nativePssKiB": 46980
+      },
+      "kind": "firstFixtureOpen"
+    },
+    {
+      "index": 2,
+      "durationMs": 2780.174793,
+      "confirmedDurationMs": 2932.75546,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 18466064,
+        "javaCommittedBytes": 24616605,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 42982640,
+        "totalPssKiB": 268222,
+        "dalvikPssKiB": 14982,
+        "nativePssKiB": 72988
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 3,
+      "durationMs": 2829.022127,
+      "confirmedDurationMs": 2982.440418,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 10417192,
+        "javaCommittedBytes": 30045213,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 42931072,
+        "totalPssKiB": 235153,
+        "dalvikPssKiB": 9158,
+        "nativePssKiB": 45248
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 4,
+      "durationMs": 2782.593668,
+      "confirmedDurationMs": 2944.988501,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 11216672,
+        "javaCommittedBytes": 18458527,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 42205776,
+        "totalPssKiB": 235261,
+        "dalvikPssKiB": 9554,
+        "nativePssKiB": 44972
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 5,
+      "durationMs": 2852.580418,
+      "confirmedDurationMs": 3035.688001,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 10917960,
+        "javaCommittedBytes": 35081864,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 42173488,
+        "totalPssKiB": 235865,
+        "dalvikPssKiB": 9446,
+        "nativePssKiB": 45216
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 6,
+      "durationMs": 2780.530793,
+      "confirmedDurationMs": 2952.79171,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 29735216,
+        "javaCommittedBytes": 35081864,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 50736032,
+        "totalPssKiB": 277925,
+        "dalvikPssKiB": 24582,
+        "nativePssKiB": 71756
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 7,
+      "durationMs": 2761.624668,
+      "confirmedDurationMs": 2918.875459,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 25105728,
+        "javaCommittedBytes": 32602749,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 41512576,
+        "totalPssKiB": 297777,
+        "dalvikPssKiB": 20650,
+        "nativePssKiB": 95508
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 8,
+      "durationMs": 2764.179626,
+      "confirmedDurationMs": 2915.41321,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 18079176,
+        "javaCommittedBytes": 18833997,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 41468448,
+        "totalPssKiB": 257349,
+        "dalvikPssKiB": 13802,
+        "nativePssKiB": 61776
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 9,
+      "durationMs": 2788.437918,
+      "confirmedDurationMs": 2964.406501,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 12292456,
+        "javaCommittedBytes": 18639247,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 41355328,
+        "totalPssKiB": 272021,
+        "dalvikPssKiB": 10206,
+        "nativePssKiB": 79828
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 10,
+      "durationMs": 2785.922377,
+      "confirmedDurationMs": 2965.844002,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 18524112,
+        "javaCommittedBytes": 26658206,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 41332688,
+        "totalPssKiB": 305257,
+        "dalvikPssKiB": 14038,
+        "nativePssKiB": 108852
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 11,
+      "durationMs": 2806.393126,
+      "confirmedDurationMs": 2967.037502,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 23752240,
+        "javaCommittedBytes": 26887838,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 40893824,
+        "totalPssKiB": 271720,
+        "dalvikPssKiB": 19314,
+        "nativePssKiB": 69979
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 12,
+      "durationMs": 2754.191793,
+      "confirmedDurationMs": 2928.749543,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 27458312,
+        "javaCommittedBytes": 28204718,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 40606560,
+        "totalPssKiB": 314088,
+        "dalvikPssKiB": 22538,
+        "nativePssKiB": 109083
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 13,
+      "durationMs": 2765.542918,
+      "confirmedDurationMs": 2925.698084,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 17177216,
+        "javaCommittedBytes": 28204718,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 49167952,
+        "totalPssKiB": 250924,
+        "dalvikPssKiB": 13834,
+        "nativePssKiB": 54355
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 14,
+      "durationMs": 2755.385834,
+      "confirmedDurationMs": 2929.456543,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 9500480,
+        "javaCommittedBytes": 26382861,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 40441104,
+        "totalPssKiB": 297988,
+        "dalvikPssKiB": 21426,
+        "nativePssKiB": 93707
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 15,
+      "durationMs": 2771.788752,
+      "confirmedDurationMs": 2953.637543,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 13381400,
+        "javaCommittedBytes": 25698621,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 40432336,
+        "totalPssKiB": 247788,
+        "dalvikPssKiB": 10886,
+        "nativePssKiB": 53887
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 16,
+      "durationMs": 2765.381377,
+      "confirmedDurationMs": 2938.181793,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 23839776,
+        "javaCommittedBytes": 26822143,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 40287488,
+        "totalPssKiB": 276084,
+        "dalvikPssKiB": 19026,
+        "nativePssKiB": 74023
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 17,
+      "durationMs": 2766.613585,
+      "confirmedDurationMs": 2938.557127,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 12450280,
+        "javaCommittedBytes": 24831343,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 40252688,
+        "totalPssKiB": 302908,
+        "dalvikPssKiB": 10366,
+        "nativePssKiB": 109283
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 18,
+      "durationMs": 2816.737002,
+      "confirmedDurationMs": 2997.267168,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 24729432,
+        "javaCommittedBytes": 28512909,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 39768064,
+        "totalPssKiB": 272628,
+        "dalvikPssKiB": 19666,
+        "nativePssKiB": 69987
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 19,
+      "durationMs": 2731.303085,
+      "confirmedDurationMs": 2899.265335,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 23574520,
+        "javaCommittedBytes": 27507213,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 39715152,
+        "totalPssKiB": 248192,
+        "dalvikPssKiB": 18746,
+        "nativePssKiB": 46155
+      },
+      "kind": "subsequentOpen"
+    },
+    {
+      "index": 20,
+      "durationMs": 2779.219752,
+      "confirmedDurationMs": 2938.125627,
+      "page": 20,
+      "pageCount": 962,
+      "visibleStartOffset": 1985,
+      "visibleEndOffset": 2089,
+      "persistedAnchor": 2000,
+      "memory": {
+        "javaUsedBytes": 12450936,
+        "javaCommittedBytes": 25360989,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 39689984,
+        "totalPssKiB": 239896,
+        "dalvikPssKiB": 10354,
+        "nativePssKiB": 46055
+      },
+      "kind": "subsequentOpen"
+    }
+  ],
+  "hardwareTurns": [
+    {
+      "index": 1,
+      "durationMs": 2583.463334,
+      "confirmedDurationMs": 2766.421584,
+      "page": 21,
+      "pageCount": 962,
+      "visibleStartOffset": 2089,
+      "visibleEndOffset": 2193,
+      "persistedAnchor": 2089,
+      "memory": {
+        "javaUsedBytes": 23262312,
+        "javaCommittedBytes": 25360989,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47654704,
+        "totalPssKiB": 302848,
+        "dalvikPssKiB": 16794,
+        "nativePssKiB": 102559
+      },
+      "previousVisibleOffset": 1985
+    },
+    {
+      "index": 2,
+      "durationMs": 1701.195709,
+      "confirmedDurationMs": 1851.431917,
+      "page": 22,
+      "pageCount": 962,
+      "visibleStartOffset": 2193,
+      "visibleEndOffset": 2297,
+      "persistedAnchor": 2193,
+      "memory": {
+        "javaUsedBytes": 17325600,
+        "javaCommittedBytes": 25360989,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47668608,
+        "totalPssKiB": 299424,
+        "dalvikPssKiB": 13362,
+        "nativePssKiB": 102563
+      },
+      "previousVisibleOffset": 2089
+    },
+    {
+      "index": 3,
+      "durationMs": 1702.380168,
+      "confirmedDurationMs": 1876.987501,
+      "page": 23,
+      "pageCount": 962,
+      "visibleStartOffset": 2297,
+      "visibleEndOffset": 2401,
+      "persistedAnchor": 2297,
+      "memory": {
+        "javaUsedBytes": 11357344,
+        "javaCommittedBytes": 18740030,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47668560,
+        "totalPssKiB": 295640,
+        "dalvikPssKiB": 9690,
+        "nativePssKiB": 102571
+      },
+      "previousVisibleOffset": 2193
+    },
+    {
+      "index": 4,
+      "durationMs": 1692.473417,
+      "confirmedDurationMs": 1844.322001,
+      "page": 24,
+      "pageCount": 962,
+      "visibleStartOffset": 2401,
+      "visibleEndOffset": 2505,
+      "persistedAnchor": 2401,
+      "memory": {
+        "javaUsedBytes": 12439856,
+        "javaCommittedBytes": 18740030,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47670048,
+        "totalPssKiB": 296428,
+        "dalvikPssKiB": 10354,
+        "nativePssKiB": 102567
+      },
+      "previousVisibleOffset": 2297
+    },
+    {
+      "index": 5,
+      "durationMs": 1719.621334,
+      "confirmedDurationMs": 1874.725167,
+      "page": 25,
+      "pageCount": 962,
+      "visibleStartOffset": 2505,
+      "visibleEndOffset": 2609,
+      "persistedAnchor": 2505,
+      "memory": {
+        "javaUsedBytes": 13347272,
+        "javaCommittedBytes": 18810765,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47670576,
+        "totalPssKiB": 296800,
+        "dalvikPssKiB": 10854,
+        "nativePssKiB": 102567
+      },
+      "previousVisibleOffset": 2401
+    },
+    {
+      "index": 6,
+      "durationMs": 1702.903084,
+      "confirmedDurationMs": 1855.694793,
+      "page": 26,
+      "pageCount": 962,
+      "visibleStartOffset": 2609,
+      "visibleEndOffset": 2713,
+      "persistedAnchor": 2609,
+      "memory": {
+        "javaUsedBytes": 13517328,
+        "javaCommittedBytes": 18810765,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47662352,
+        "totalPssKiB": 297056,
+        "dalvikPssKiB": 11026,
+        "nativePssKiB": 102559
+      },
+      "previousVisibleOffset": 2505
+    },
+    {
+      "index": 7,
+      "durationMs": 1722.354001,
+      "confirmedDurationMs": 1901.312793,
+      "page": 27,
+      "pageCount": 962,
+      "visibleStartOffset": 2713,
+      "visibleEndOffset": 2817,
+      "persistedAnchor": 2713,
+      "memory": {
+        "javaUsedBytes": 15288144,
+        "javaCommittedBytes": 18816254,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47663232,
+        "totalPssKiB": 297884,
+        "dalvikPssKiB": 11978,
+        "nativePssKiB": 102559
+      },
+      "previousVisibleOffset": 2609
+    },
+    {
+      "index": 8,
+      "durationMs": 1703.410626,
+      "confirmedDurationMs": 1877.098085,
+      "page": 28,
+      "pageCount": 962,
+      "visibleStartOffset": 2817,
+      "visibleEndOffset": 2921,
+      "persistedAnchor": 2817,
+      "memory": {
+        "javaUsedBytes": 16444792,
+        "javaCommittedBytes": 18816254,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47672400,
+        "totalPssKiB": 298756,
+        "dalvikPssKiB": 12710,
+        "nativePssKiB": 102567
+      },
+      "previousVisibleOffset": 2713
+    },
+    {
+      "index": 9,
+      "durationMs": 1720.020834,
+      "confirmedDurationMs": 1871.565084,
+      "page": 29,
+      "pageCount": 962,
+      "visibleStartOffset": 2921,
+      "visibleEndOffset": 3025,
+      "persistedAnchor": 2921,
+      "memory": {
+        "javaUsedBytes": 17424128,
+        "javaCommittedBytes": 18856351,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47673136,
+        "totalPssKiB": 299264,
+        "dalvikPssKiB": 13350,
+        "nativePssKiB": 102563
+      },
+      "previousVisibleOffset": 2817
+    },
+    {
+      "index": 10,
+      "durationMs": 1738.971751,
+      "confirmedDurationMs": 1911.62771,
+      "page": 30,
+      "pageCount": 962,
+      "visibleStartOffset": 3025,
+      "visibleEndOffset": 3129,
+      "persistedAnchor": 3025,
+      "memory": {
+        "javaUsedBytes": 10429736,
+        "javaCommittedBytes": 18822895,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47673408,
+        "totalPssKiB": 295108,
+        "dalvikPssKiB": 9170,
+        "nativePssKiB": 102567
+      },
+      "previousVisibleOffset": 2921
+    },
+    {
+      "index": 11,
+      "durationMs": 1699.058543,
+      "confirmedDurationMs": 1873.024501,
+      "page": 31,
+      "pageCount": 962,
+      "visibleStartOffset": 3129,
+      "visibleEndOffset": 3233,
+      "persistedAnchor": 3129,
+      "memory": {
+        "javaUsedBytes": 11599008,
+        "javaCommittedBytes": 18822895,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47664096,
+        "totalPssKiB": 259988,
+        "dalvikPssKiB": 9918,
+        "nativePssKiB": 67011
+      },
+      "previousVisibleOffset": 3025
+    },
+    {
+      "index": 12,
+      "durationMs": 1691.202834,
+      "confirmedDurationMs": 1869.317251,
+      "page": 32,
+      "pageCount": 962,
+      "visibleStartOffset": 3233,
+      "visibleEndOffset": 3337,
+      "persistedAnchor": 3233,
+      "memory": {
+        "javaUsedBytes": 13356712,
+        "javaCommittedBytes": 18829615,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47665232,
+        "totalPssKiB": 260804,
+        "dalvikPssKiB": 10862,
+        "nativePssKiB": 67011
+      },
+      "previousVisibleOffset": 3129
+    },
+    {
+      "index": 13,
+      "durationMs": 1700.17121,
+      "confirmedDurationMs": 1858.968751,
+      "page": 33,
+      "pageCount": 962,
+      "visibleStartOffset": 3337,
+      "visibleEndOffset": 3441,
+      "persistedAnchor": 3337,
+      "memory": {
+        "javaUsedBytes": 13541496,
+        "javaCommittedBytes": 18829615,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47666688,
+        "totalPssKiB": 261116,
+        "dalvikPssKiB": 11046,
+        "nativePssKiB": 67011
+      },
+      "previousVisibleOffset": 3233
+    },
+    {
+      "index": 14,
+      "durationMs": 1714.630543,
+      "confirmedDurationMs": 1887.045709,
+      "page": 34,
+      "pageCount": 962,
+      "visibleStartOffset": 3441,
+      "visibleEndOffset": 3545,
+      "persistedAnchor": 3441,
+      "memory": {
+        "javaUsedBytes": 15297152,
+        "javaCommittedBytes": 18834271,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47667568,
+        "totalPssKiB": 261928,
+        "dalvikPssKiB": 11986,
+        "nativePssKiB": 67007
+      },
+      "previousVisibleOffset": 3337
+    },
+    {
+      "index": 15,
+      "durationMs": 1728.929418,
+      "confirmedDurationMs": 1879.681543,
+      "page": 35,
+      "pageCount": 962,
+      "visibleStartOffset": 3545,
+      "visibleEndOffset": 3649,
+      "persistedAnchor": 3545,
+      "memory": {
+        "javaUsedBytes": 15481272,
+        "javaCommittedBytes": 18834271,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47668960,
+        "totalPssKiB": 262244,
+        "dalvikPssKiB": 12170,
+        "nativePssKiB": 67007
+      },
+      "previousVisibleOffset": 3441
+    },
+    {
+      "index": 16,
+      "durationMs": 1696.549251,
+      "confirmedDurationMs": 1847.481293,
+      "page": 36,
+      "pageCount": 962,
+      "visibleStartOffset": 3649,
+      "visibleEndOffset": 3753,
+      "persistedAnchor": 3649,
+      "memory": {
+        "javaUsedBytes": 16482488,
+        "javaCommittedBytes": 18873614,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47670544,
+        "totalPssKiB": 262692,
+        "dalvikPssKiB": 12750,
+        "nativePssKiB": 67003
+      },
+      "previousVisibleOffset": 3545
+    },
+    {
+      "index": 17,
+      "durationMs": 1707.834293,
+      "confirmedDurationMs": 1862.939001,
+      "page": 37,
+      "pageCount": 962,
+      "visibleStartOffset": 3753,
+      "visibleEndOffset": 3857,
+      "persistedAnchor": 3753,
+      "memory": {
+        "javaUsedBytes": 17018088,
+        "javaCommittedBytes": 18873614,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47672000,
+        "totalPssKiB": 263228,
+        "dalvikPssKiB": 13154,
+        "nativePssKiB": 67003
+      },
+      "previousVisibleOffset": 3649
+    },
+    {
+      "index": 18,
+      "durationMs": 1690.274042,
+      "confirmedDurationMs": 1859.924501,
+      "page": 38,
+      "pageCount": 962,
+      "visibleStartOffset": 3857,
+      "visibleEndOffset": 3961,
+      "persistedAnchor": 3857,
+      "memory": {
+        "javaUsedBytes": 18524688,
+        "javaCommittedBytes": 18878157,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47673040,
+        "totalPssKiB": 264012,
+        "dalvikPssKiB": 14058,
+        "nativePssKiB": 67007
+      },
+      "previousVisibleOffset": 3753
+    },
+    {
+      "index": 19,
+      "durationMs": 1699.015084,
+      "confirmedDurationMs": 1872.432125,
+      "page": 39,
+      "pageCount": 962,
+      "visibleStartOffset": 3961,
+      "visibleEndOffset": 4065,
+      "persistedAnchor": 3961,
+      "memory": {
+        "javaUsedBytes": 19398424,
+        "javaCommittedBytes": 19398424,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47665552,
+        "totalPssKiB": 265224,
+        "dalvikPssKiB": 14590,
+        "nativePssKiB": 66887
+      },
+      "previousVisibleOffset": 3857
+    },
+    {
+      "index": 20,
+      "durationMs": 1709.569876,
+      "confirmedDurationMs": 1881.434835,
+      "page": 40,
+      "pageCount": 962,
+      "visibleStartOffset": 4065,
+      "visibleEndOffset": 4169,
+      "persistedAnchor": 4065,
+      "memory": {
+        "javaUsedBytes": 10625856,
+        "javaCommittedBytes": 18946526,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47665472,
+        "totalPssKiB": 259832,
+        "dalvikPssKiB": 9358,
+        "nativePssKiB": 66907
+      },
+      "previousVisibleOffset": 3961
+    },
+    {
+      "index": 21,
+      "durationMs": 1708.161376,
+      "confirmedDurationMs": 1861.489876,
+      "page": 41,
+      "pageCount": 962,
+      "visibleStartOffset": 4169,
+      "visibleEndOffset": 4273,
+      "persistedAnchor": 4169,
+      "memory": {
+        "javaUsedBytes": 11412080,
+        "javaCommittedBytes": 18849343,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47637552,
+        "totalPssKiB": 260064,
+        "dalvikPssKiB": 9742,
+        "nativePssKiB": 66883
+      },
+      "previousVisibleOffset": 4065
+    },
+    {
+      "index": 22,
+      "durationMs": 1701.830417,
+      "confirmedDurationMs": 1877.280959,
+      "page": 42,
+      "pageCount": 962,
+      "visibleStartOffset": 4273,
+      "visibleEndOffset": 4377,
+      "persistedAnchor": 4273,
+      "memory": {
+        "javaUsedBytes": 12596552,
+        "javaCommittedBytes": 18849343,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47638544,
+        "totalPssKiB": 260940,
+        "dalvikPssKiB": 10494,
+        "nativePssKiB": 66879
+      },
+      "previousVisibleOffset": 4169
+    },
+    {
+      "index": 23,
+      "durationMs": 1693.853501,
+      "confirmedDurationMs": 1873.705209,
+      "page": 43,
+      "pageCount": 962,
+      "visibleStartOffset": 4377,
+      "visibleEndOffset": 4481,
+      "persistedAnchor": 4377,
+      "memory": {
+        "javaUsedBytes": 14337760,
+        "javaCommittedBytes": 18853629,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47639872,
+        "totalPssKiB": 261752,
+        "dalvikPssKiB": 11438,
+        "nativePssKiB": 66871
+      },
+      "previousVisibleOffset": 4273
+    },
+    {
+      "index": 24,
+      "durationMs": 1711.520668,
+      "confirmedDurationMs": 1866.329001,
+      "page": 44,
+      "pageCount": 962,
+      "visibleStartOffset": 4481,
+      "visibleEndOffset": 4585,
+      "persistedAnchor": 4481,
+      "memory": {
+        "javaUsedBytes": 14521896,
+        "javaCommittedBytes": 18853629,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47641776,
+        "totalPssKiB": 262068,
+        "dalvikPssKiB": 11622,
+        "nativePssKiB": 66871
+      },
+      "previousVisibleOffset": 4377
+    },
+    {
+      "index": 25,
+      "durationMs": 1740.451417,
+      "confirmedDurationMs": 1913.216251,
+      "page": 45,
+      "pageCount": 962,
+      "visibleStartOffset": 4585,
+      "visibleEndOffset": 4689,
+      "persistedAnchor": 4585,
+      "memory": {
+        "javaUsedBytes": 16294424,
+        "javaCommittedBytes": 18857935,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47642464,
+        "totalPssKiB": 262868,
+        "dalvikPssKiB": 12562,
+        "nativePssKiB": 66859
+      },
+      "previousVisibleOffset": 4481
+    },
+    {
+      "index": 26,
+      "durationMs": 1868.557334,
+      "confirmedDurationMs": 2039.087959,
+      "page": 46,
+      "pageCount": 962,
+      "visibleStartOffset": 4689,
+      "visibleEndOffset": 4793,
+      "persistedAnchor": 4689,
+      "memory": {
+        "javaUsedBytes": 17911720,
+        "javaCommittedBytes": 18857935,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47633824,
+        "totalPssKiB": 264128,
+        "dalvikPssKiB": 13658,
+        "nativePssKiB": 66891
+      },
+      "previousVisibleOffset": 4585
+    },
+    {
+      "index": 27,
+      "durationMs": 1887.798251,
+      "confirmedDurationMs": 2040.229335,
+      "page": 47,
+      "pageCount": 962,
+      "visibleStartOffset": 4793,
+      "visibleEndOffset": 4897,
+      "persistedAnchor": 4793,
+      "memory": {
+        "javaUsedBytes": 18323104,
+        "javaCommittedBytes": 19145359,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47635728,
+        "totalPssKiB": 264252,
+        "dalvikPssKiB": 13910,
+        "nativePssKiB": 66891
+      },
+      "previousVisibleOffset": 4689
+    },
+    {
+      "index": 28,
+      "durationMs": 1912.822543,
+      "confirmedDurationMs": 2063.730459,
+      "page": 48,
+      "pageCount": 962,
+      "visibleStartOffset": 4897,
+      "visibleEndOffset": 5001,
+      "persistedAnchor": 4897,
+      "memory": {
+        "javaUsedBytes": 18506344,
+        "javaCommittedBytes": 19145359,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47637056,
+        "totalPssKiB": 264564,
+        "dalvikPssKiB": 14094,
+        "nativePssKiB": 66891
+      },
+      "previousVisibleOffset": 4793
+    },
+    {
+      "index": 29,
+      "durationMs": 1795.486626,
+      "confirmedDurationMs": 1948.394918,
+      "page": 49,
+      "pageCount": 962,
+      "visibleStartOffset": 5001,
+      "visibleEndOffset": 5105,
+      "persistedAnchor": 5001,
+      "memory": {
+        "javaUsedBytes": 18314480,
+        "javaCommittedBytes": 19165454,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47638416,
+        "totalPssKiB": 264260,
+        "dalvikPssKiB": 13910,
+        "nativePssKiB": 66895
+      },
+      "previousVisibleOffset": 4897
+    },
+    {
+      "index": 30,
+      "durationMs": 1716.104751,
+      "confirmedDurationMs": 1884.86446,
+      "page": 50,
+      "pageCount": 962,
+      "visibleStartOffset": 5105,
+      "visibleEndOffset": 5209,
+      "persistedAnchor": 5105,
+      "memory": {
+        "javaUsedBytes": 19467688,
+        "javaCommittedBytes": 19467688,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47643632,
+        "totalPssKiB": 265384,
+        "dalvikPssKiB": 14670,
+        "nativePssKiB": 66887
+      },
+      "previousVisibleOffset": 5001
+    },
+    {
+      "index": 31,
+      "durationMs": 1723.544084,
+      "confirmedDurationMs": 1878.593918,
+      "page": 51,
+      "pageCount": 962,
+      "visibleStartOffset": 5209,
+      "visibleEndOffset": 5313,
+      "persistedAnchor": 5209,
+      "memory": {
+        "javaUsedBytes": 9622928,
+        "javaCommittedBytes": 18937677,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47638384,
+        "totalPssKiB": 265032,
+        "dalvikPssKiB": 14546,
+        "nativePssKiB": 66879
+      },
+      "previousVisibleOffset": 5105
+    },
+    {
+      "index": 32,
+      "durationMs": 1714.652626,
+      "confirmedDurationMs": 1889.825834,
+      "page": 52,
+      "pageCount": 962,
+      "visibleStartOffset": 5313,
+      "visibleEndOffset": 5417,
+      "persistedAnchor": 5313,
+      "memory": {
+        "javaUsedBytes": 10454792,
+        "javaCommittedBytes": 18873007,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47638976,
+        "totalPssKiB": 259556,
+        "dalvikPssKiB": 9194,
+        "nativePssKiB": 66883
+      },
+      "previousVisibleOffset": 5209
+    },
+    {
+      "index": 33,
+      "durationMs": 1712.350084,
+      "confirmedDurationMs": 1863.450292,
+      "page": 53,
+      "pageCount": 962,
+      "visibleStartOffset": 5417,
+      "visibleEndOffset": 5521,
+      "persistedAnchor": 5417,
+      "memory": {
+        "javaUsedBytes": 10653872,
+        "javaCommittedBytes": 18873007,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47640816,
+        "totalPssKiB": 259876,
+        "dalvikPssKiB": 9382,
+        "nativePssKiB": 66883
+      },
+      "previousVisibleOffset": 5313
+    },
+    {
+      "index": 34,
+      "durationMs": 1724.370084,
+      "confirmedDurationMs": 1898.976376,
+      "page": 54,
+      "pageCount": 962,
+      "visibleStartOffset": 5521,
+      "visibleEndOffset": 5625,
+      "persistedAnchor": 5521,
+      "memory": {
+        "javaUsedBytes": 12411480,
+        "javaCommittedBytes": 18877293,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47631952,
+        "totalPssKiB": 260708,
+        "dalvikPssKiB": 10322,
+        "nativePssKiB": 66891
+      },
+      "previousVisibleOffset": 5417
+    },
+    {
+      "index": 35,
+      "durationMs": 1708.882834,
+      "confirmedDurationMs": 1876.771084,
+      "page": 55,
+      "pageCount": 962,
+      "visibleStartOffset": 5625,
+      "visibleEndOffset": 5729,
+      "persistedAnchor": 5625,
+      "memory": {
+        "javaUsedBytes": 12595208,
+        "javaCommittedBytes": 18877293,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47633216,
+        "totalPssKiB": 261028,
+        "dalvikPssKiB": 10506,
+        "nativePssKiB": 66899
+      },
+      "previousVisibleOffset": 5521
+    },
+    {
+      "index": 36,
+      "durationMs": 1744.507918,
+      "confirmedDurationMs": 1921.734751,
+      "page": 56,
+      "pageCount": 962,
+      "visibleStartOffset": 5729,
+      "visibleEndOffset": 5833,
+      "persistedAnchor": 5729,
+      "memory": {
+        "javaUsedBytes": 14351800,
+        "javaCommittedBytes": 18881709,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47633968,
+        "totalPssKiB": 261840,
+        "dalvikPssKiB": 11450,
+        "nativePssKiB": 66895
+      },
+      "previousVisibleOffset": 5625
+    },
+    {
+      "index": 37,
+      "durationMs": 1726.636084,
+      "confirmedDurationMs": 1903.546668,
+      "page": 57,
+      "pageCount": 962,
+      "visibleStartOffset": 5833,
+      "visibleEndOffset": 5937,
+      "persistedAnchor": 5833,
+      "memory": {
+        "javaUsedBytes": 15397256,
+        "javaCommittedBytes": 18881709,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47635456,
+        "totalPssKiB": 262608,
+        "dalvikPssKiB": 12090,
+        "nativePssKiB": 66891
+      },
+      "previousVisibleOffset": 5729
+    },
+    {
+      "index": 38,
+      "durationMs": 1724.091792,
+      "confirmedDurationMs": 1901.193334,
+      "page": 58,
+      "pageCount": 962,
+      "visibleStartOffset": 5937,
+      "visibleEndOffset": 6041,
+      "persistedAnchor": 5937,
+      "memory": {
+        "javaUsedBytes": 16308424,
+        "javaCommittedBytes": 18885933,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47635856,
+        "totalPssKiB": 262944,
+        "dalvikPssKiB": 12578,
+        "nativePssKiB": 66867
+      },
+      "previousVisibleOffset": 5833
+    },
+    {
+      "index": 39,
+      "durationMs": 1729.682542,
+      "confirmedDurationMs": 1901.676751,
+      "page": 59,
+      "pageCount": 962,
+      "visibleStartOffset": 6041,
+      "visibleEndOffset": 6145,
+      "persistedAnchor": 6041,
+      "memory": {
+        "javaUsedBytes": 18290056,
+        "javaCommittedBytes": 18885933,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47637664,
+        "totalPssKiB": 264432,
+        "dalvikPssKiB": 13938,
+        "nativePssKiB": 66863
+      },
+      "previousVisibleOffset": 5937
+    },
+    {
+      "index": 40,
+      "durationMs": 1720.776876,
+      "confirmedDurationMs": 1901.038501,
+      "page": 60,
+      "pageCount": 962,
+      "visibleStartOffset": 6145,
+      "visibleEndOffset": 6249,
+      "persistedAnchor": 6145,
+      "memory": {
+        "javaUsedBytes": 9661512,
+        "javaCommittedBytes": 18890846,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47638320,
+        "totalPssKiB": 265016,
+        "dalvikPssKiB": 14522,
+        "nativePssKiB": 66859
+      },
+      "previousVisibleOffset": 6041
+    },
+    {
+      "index": 41,
+      "durationMs": 1736.692085,
+      "confirmedDurationMs": 1886.81646,
+      "page": 61,
+      "pageCount": 962,
+      "visibleStartOffset": 6249,
+      "visibleEndOffset": 6353,
+      "persistedAnchor": 6249,
+      "memory": {
+        "javaUsedBytes": 10464504,
+        "javaCommittedBytes": 18892430,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47639104,
+        "totalPssKiB": 259640,
+        "dalvikPssKiB": 9206,
+        "nativePssKiB": 66883
+      },
+      "previousVisibleOffset": 6145
+    },
+    {
+      "index": 42,
+      "durationMs": 1741.560001,
+      "confirmedDurationMs": 1920.37546,
+      "page": 62,
+      "pageCount": 962,
+      "visibleStartOffset": 6353,
+      "visibleEndOffset": 6457,
+      "persistedAnchor": 6353,
+      "memory": {
+        "javaUsedBytes": 12573144,
+        "javaCommittedBytes": 18892430,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47640496,
+        "totalPssKiB": 261024,
+        "dalvikPssKiB": 10486,
+        "nativePssKiB": 66859
+      },
+      "previousVisibleOffset": 6249
+    },
+    {
+      "index": 43,
+      "durationMs": 1741.929251,
+      "confirmedDurationMs": 1893.407084,
+      "page": 63,
+      "pageCount": 962,
+      "visibleStartOffset": 6457,
+      "visibleEndOffset": 6561,
+      "persistedAnchor": 6457,
+      "memory": {
+        "javaUsedBytes": 12421192,
+        "javaCommittedBytes": 18896719,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47641376,
+        "totalPssKiB": 260744,
+        "dalvikPssKiB": 10330,
+        "nativePssKiB": 66855
+      },
+      "previousVisibleOffset": 6353
+    },
+    {
+      "index": 44,
+      "durationMs": 1730.169918,
+      "confirmedDurationMs": 1897.167584,
+      "page": 64,
+      "pageCount": 962,
+      "visibleStartOffset": 6561,
+      "visibleEndOffset": 6665,
+      "persistedAnchor": 6561,
+      "memory": {
+        "javaUsedBytes": 13589424,
+        "javaCommittedBytes": 18896719,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47642800,
+        "totalPssKiB": 261628,
+        "dalvikPssKiB": 11086,
+        "nativePssKiB": 66855
+      },
+      "previousVisibleOffset": 6457
+    },
+    {
+      "index": 45,
+      "durationMs": 1869.092709,
+      "confirmedDurationMs": 2025.578792,
+      "page": 65,
+      "pageCount": 962,
+      "visibleStartOffset": 6665,
+      "visibleEndOffset": 6769,
+      "persistedAnchor": 6665,
+      "memory": {
+        "javaUsedBytes": 14361448,
+        "javaCommittedBytes": 18901005,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47616896,
+        "totalPssKiB": 261580,
+        "dalvikPssKiB": 11462,
+        "nativePssKiB": 67007
+      },
+      "previousVisibleOffset": 6561
+    },
+    {
+      "index": 46,
+      "durationMs": 1985.950251,
+      "confirmedDurationMs": 2157.564751,
+      "page": 66,
+      "pageCount": 962,
+      "visibleStartOffset": 6769,
+      "visibleEndOffset": 6873,
+      "persistedAnchor": 6769,
+      "memory": {
+        "javaUsedBytes": 15528096,
+        "javaCommittedBytes": 18901005,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47618704,
+        "totalPssKiB": 262464,
+        "dalvikPssKiB": 12218,
+        "nativePssKiB": 67003
+      },
+      "previousVisibleOffset": 6665
+    },
+    {
+      "index": 47,
+      "durationMs": 1708.964043,
+      "confirmedDurationMs": 1879.135501,
+      "page": 67,
+      "pageCount": 962,
+      "visibleStartOffset": 6873,
+      "visibleEndOffset": 6977,
+      "persistedAnchor": 6873,
+      "memory": {
+        "javaUsedBytes": 17452176,
+        "javaCommittedBytes": 18940351,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47619488,
+        "totalPssKiB": 263432,
+        "dalvikPssKiB": 13314,
+        "nativePssKiB": 66999
+      },
+      "previousVisibleOffset": 6769
+    },
+    {
+      "index": 48,
+      "durationMs": 1731.906125,
+      "confirmedDurationMs": 1903.348542,
+      "page": 68,
+      "pageCount": 962,
+      "visibleStartOffset": 6977,
+      "visibleEndOffset": 7081,
+      "persistedAnchor": 6977,
+      "memory": {
+        "javaUsedBytes": 9471208,
+        "javaCommittedBytes": 18942415,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47620368,
+        "totalPssKiB": 264856,
+        "dalvikPssKiB": 14406,
+        "nativePssKiB": 66999
+      },
+      "previousVisibleOffset": 6873
+    },
+    {
+      "index": 49,
+      "durationMs": 1720.276376,
+      "confirmedDurationMs": 1893.324084,
+      "page": 69,
+      "pageCount": 962,
+      "visibleStartOffset": 7081,
+      "visibleEndOffset": 7185,
+      "persistedAnchor": 7081,
+      "memory": {
+        "javaUsedBytes": 10642624,
+        "javaCommittedBytes": 18942415,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47620960,
+        "totalPssKiB": 259624,
+        "dalvikPssKiB": 9374,
+        "nativePssKiB": 66999
+      },
+      "previousVisibleOffset": 6977
+    },
+    {
+      "index": 50,
+      "durationMs": 1722.631543,
+      "confirmedDurationMs": 1875.705751,
+      "page": 70,
+      "pageCount": 962,
+      "visibleStartOffset": 7185,
+      "visibleEndOffset": 7289,
+      "persistedAnchor": 7185,
+      "memory": {
+        "javaUsedBytes": 10474152,
+        "javaCommittedBytes": 18911726,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47621264,
+        "totalPssKiB": 259332,
+        "dalvikPssKiB": 9214,
+        "nativePssKiB": 66995
+      },
+      "previousVisibleOffset": 7081
+    },
+    {
+      "index": 51,
+      "durationMs": 1699.873751,
+      "confirmedDurationMs": 1853.518626,
+      "page": 71,
+      "pageCount": 962,
+      "visibleStartOffset": 7289,
+      "visibleEndOffset": 7393,
+      "persistedAnchor": 7289,
+      "memory": {
+        "javaUsedBytes": 10643832,
+        "javaCommittedBytes": 18911726,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47623296,
+        "totalPssKiB": 259632,
+        "dalvikPssKiB": 9378,
+        "nativePssKiB": 66999
+      },
+      "previousVisibleOffset": 7185
+    },
+    {
+      "index": 52,
+      "durationMs": 1706.914792,
+      "confirmedDurationMs": 1863.005542,
+      "page": 72,
+      "pageCount": 962,
+      "visibleStartOffset": 7393,
+      "visibleEndOffset": 7497,
+      "persistedAnchor": 7393,
+      "memory": {
+        "javaUsedBytes": 11445512,
+        "javaCommittedBytes": 18916207,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47623632,
+        "totalPssKiB": 259896,
+        "dalvikPssKiB": 9774,
+        "nativePssKiB": 66995
+      },
+      "previousVisibleOffset": 7289
+    },
+    {
+      "index": 53,
+      "durationMs": 1731.063334,
+      "confirmedDurationMs": 1887.853001,
+      "page": 73,
+      "pageCount": 962,
+      "visibleStartOffset": 7497,
+      "visibleEndOffset": 7601,
+      "persistedAnchor": 7497,
+      "memory": {
+        "javaUsedBytes": 11630296,
+        "javaCommittedBytes": 18916207,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47615792,
+        "totalPssKiB": 260560,
+        "dalvikPssKiB": 9954,
+        "nativePssKiB": 66895
+      },
+      "previousVisibleOffset": 7393
+    },
+    {
+      "index": 54,
+      "durationMs": 1723.530501,
+      "confirmedDurationMs": 1899.441293,
+      "page": 74,
+      "pageCount": 962,
+      "visibleStartOffset": 7601,
+      "visibleEndOffset": 7705,
+      "persistedAnchor": 7601,
+      "memory": {
+        "javaUsedBytes": 13402152,
+        "javaCommittedBytes": 18920493,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47616416,
+        "totalPssKiB": 261380,
+        "dalvikPssKiB": 10906,
+        "nativePssKiB": 66891
+      },
+      "previousVisibleOffset": 7497
+    },
+    {
+      "index": 55,
+      "durationMs": 1707.544625,
+      "confirmedDurationMs": 1861.5745,
+      "page": 75,
+      "pageCount": 962,
+      "visibleStartOffset": 7705,
+      "visibleEndOffset": 7809,
+      "persistedAnchor": 7705,
+      "memory": {
+        "javaUsedBytes": 13587112,
+        "javaCommittedBytes": 18920493,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47618448,
+        "totalPssKiB": 261688,
+        "dalvikPssKiB": 11082,
+        "nativePssKiB": 66891
+      },
+      "previousVisibleOffset": 7601
+    },
+    {
+      "index": 56,
+      "durationMs": 1722.107376,
+      "confirmedDurationMs": 1901.217918,
+      "page": 76,
+      "pageCount": 962,
+      "visibleStartOffset": 7809,
+      "visibleEndOffset": 7913,
+      "persistedAnchor": 7809,
+      "memory": {
+        "javaUsedBytes": 14373336,
+        "javaCommittedBytes": 18924782,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47619808,
+        "totalPssKiB": 261960,
+        "dalvikPssKiB": 11474,
+        "nativePssKiB": 66895
+      },
+      "previousVisibleOffset": 7705
+    },
+    {
+      "index": 57,
+      "durationMs": 1722.620209,
+      "confirmedDurationMs": 1891.226126,
+      "page": 77,
+      "pageCount": 962,
+      "visibleStartOffset": 7913,
+      "visibleEndOffset": 8017,
+      "persistedAnchor": 7913,
+      "memory": {
+        "javaUsedBytes": 15483240,
+        "javaCommittedBytes": 18924782,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47621744,
+        "totalPssKiB": 262796,
+        "dalvikPssKiB": 12174,
+        "nativePssKiB": 66899
+      },
+      "previousVisibleOffset": 7809
+    },
+    {
+      "index": 58,
+      "durationMs": 1716.458084,
+      "confirmedDurationMs": 1873.646084,
+      "page": 78,
+      "pageCount": 962,
+      "visibleStartOffset": 8017,
+      "visibleEndOffset": 8121,
+      "persistedAnchor": 8017,
+      "memory": {
+        "javaUsedBytes": 16413040,
+        "javaCommittedBytes": 18964094,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47622368,
+        "totalPssKiB": 263176,
+        "dalvikPssKiB": 12682,
+        "nativePssKiB": 66899
+      },
+      "previousVisibleOffset": 7913
+    },
+    {
+      "index": 59,
+      "durationMs": 1706.834042,
+      "confirmedDurationMs": 1876.728001,
+      "page": 79,
+      "pageCount": 962,
+      "visibleStartOffset": 8121,
+      "visibleEndOffset": 8225,
+      "persistedAnchor": 8121,
+      "memory": {
+        "javaUsedBytes": 17966792,
+        "javaCommittedBytes": 18964094,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47624624,
+        "totalPssKiB": 264336,
+        "dalvikPssKiB": 13710,
+        "nativePssKiB": 66899
+      },
+      "previousVisibleOffset": 8017
+    },
+    {
+      "index": 60,
+      "durationMs": 1720.219418,
+      "confirmedDurationMs": 1896.649418,
+      "page": 80,
+      "pageCount": 962,
+      "visibleStartOffset": 8225,
+      "visibleEndOffset": 8329,
+      "persistedAnchor": 8225,
+      "memory": {
+        "javaUsedBytes": 9651696,
+        "javaCommittedBytes": 18966686,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47624832,
+        "totalPssKiB": 265152,
+        "dalvikPssKiB": 14530,
+        "nativePssKiB": 66895
+      },
+      "previousVisibleOffset": 8121
+    },
+    {
+      "index": 61,
+      "durationMs": 1718.635584,
+      "confirmedDurationMs": 1886.578959,
+      "page": 81,
+      "pageCount": 962,
+      "visibleStartOffset": 8329,
+      "visibleEndOffset": 8433,
+      "persistedAnchor": 8329,
+      "memory": {
+        "javaUsedBytes": 10486040,
+        "javaCommittedBytes": 18935503,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47615744,
+        "totalPssKiB": 259756,
+        "dalvikPssKiB": 9226,
+        "nativePssKiB": 66919
+      },
+      "previousVisibleOffset": 8225
+    },
+    {
+      "index": 62,
+      "durationMs": 1705.663917,
+      "confirmedDurationMs": 1860.721709,
+      "page": 82,
+      "pageCount": 962,
+      "visibleStartOffset": 8433,
+      "visibleEndOffset": 8537,
+      "persistedAnchor": 8433,
+      "memory": {
+        "javaUsedBytes": 10685488,
+        "javaCommittedBytes": 18935503,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47617264,
+        "totalPssKiB": 260076,
+        "dalvikPssKiB": 9414,
+        "nativePssKiB": 66907
+      },
+      "previousVisibleOffset": 8329
+    },
+    {
+      "index": 63,
+      "durationMs": 1694.804793,
+      "confirmedDurationMs": 1874.730793,
+      "page": 83,
+      "pageCount": 962,
+      "visibleStartOffset": 8537,
+      "visibleEndOffset": 8641,
+      "persistedAnchor": 8537,
+      "memory": {
+        "javaUsedBytes": 12442728,
+        "javaCommittedBytes": 18939789,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47618912,
+        "totalPssKiB": 260888,
+        "dalvikPssKiB": 10350,
+        "nativePssKiB": 66907
+      },
+      "previousVisibleOffset": 8433
+    },
+    {
+      "index": 64,
+      "durationMs": 1718.304876,
+      "confirmedDurationMs": 1895.440459,
+      "page": 84,
+      "pageCount": 962,
+      "visibleStartOffset": 8641,
+      "visibleEndOffset": 8745,
+      "persistedAnchor": 8641,
+      "memory": {
+        "javaUsedBytes": 13565824,
+        "javaCommittedBytes": 18939789,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47620656,
+        "totalPssKiB": 261740,
+        "dalvikPssKiB": 11070,
+        "nativePssKiB": 66907
+      },
+      "previousVisibleOffset": 8537
+    },
+    {
+      "index": 65,
+      "durationMs": 1703.505376,
+      "confirmedDurationMs": 1858.546418,
+      "page": 85,
+      "pageCount": 962,
+      "visibleStartOffset": 8745,
+      "visibleEndOffset": 8849,
+      "persistedAnchor": 8745,
+      "memory": {
+        "javaUsedBytes": 13413944,
+        "javaCommittedBytes": 18944078,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47621344,
+        "totalPssKiB": 261464,
+        "dalvikPssKiB": 10918,
+        "nativePssKiB": 66911
+      },
+      "previousVisibleOffset": 8641
+    },
+    {
+      "index": 66,
+      "durationMs": 1691.041667,
+      "confirmedDurationMs": 1860.992667,
+      "page": 86,
+      "pageCount": 962,
+      "visibleStartOffset": 8849,
+      "visibleEndOffset": 8953,
+      "persistedAnchor": 8849,
+      "memory": {
+        "javaUsedBytes": 14568424,
+        "javaCommittedBytes": 18944078,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47612960,
+        "totalPssKiB": 262352,
+        "dalvikPssKiB": 11662,
+        "nativePssKiB": 66923
+      },
+      "previousVisibleOffset": 8745
+    },
+    {
+      "index": 67,
+      "durationMs": 1719.414584,
+      "confirmedDurationMs": 1897.442168,
+      "page": 87,
+      "pageCount": 962,
+      "visibleStartOffset": 8953,
+      "visibleEndOffset": 9057,
+      "persistedAnchor": 8953,
+      "memory": {
+        "javaUsedBytes": 16339608,
+        "javaCommittedBytes": 18981069,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47613840,
+        "totalPssKiB": 263168,
+        "dalvikPssKiB": 12606,
+        "nativePssKiB": 66919
+      },
+      "previousVisibleOffset": 8849
+    },
+    {
+      "index": 68,
+      "durationMs": 1696.401459,
+      "confirmedDurationMs": 1863.485751,
+      "page": 88,
+      "pageCount": 962,
+      "visibleStartOffset": 9057,
+      "visibleEndOffset": 9161,
+      "persistedAnchor": 9057,
+      "memory": {
+        "javaUsedBytes": 17878856,
+        "javaCommittedBytes": 18981069,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47615456,
+        "totalPssKiB": 264320,
+        "dalvikPssKiB": 13626,
+        "nativePssKiB": 66923
+      },
+      "previousVisibleOffset": 8953
+    },
+    {
+      "index": 69,
+      "durationMs": 1701.261667,
+      "confirmedDurationMs": 1863.090667,
+      "page": 89,
+      "pageCount": 962,
+      "visibleStartOffset": 9161,
+      "visibleEndOffset": 9265,
+      "persistedAnchor": 9161,
+      "memory": {
+        "javaUsedBytes": 18351792,
+        "javaCommittedBytes": 19235822,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47617680,
+        "totalPssKiB": 264524,
+        "dalvikPssKiB": 13950,
+        "nativePssKiB": 66927
+      },
+      "previousVisibleOffset": 9057
+    },
+    {
+      "index": 70,
+      "durationMs": 1715.271459,
+      "confirmedDurationMs": 1869.593876,
+      "page": 90,
+      "pageCount": 962,
+      "visibleStartOffset": 9265,
+      "visibleEndOffset": 9369,
+      "persistedAnchor": 9265,
+      "memory": {
+        "javaUsedBytes": 18526152,
+        "javaCommittedBytes": 19235822,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47619008,
+        "totalPssKiB": 264824,
+        "dalvikPssKiB": 14130,
+        "nativePssKiB": 66919
+      },
+      "previousVisibleOffset": 9161
+    },
+    {
+      "index": 71,
+      "durationMs": 1706.182084,
+      "confirmedDurationMs": 1888.913876,
+      "page": 91,
+      "pageCount": 962,
+      "visibleStartOffset": 9369,
+      "visibleEndOffset": 9473,
+      "persistedAnchor": 9369,
+      "memory": {
+        "javaUsedBytes": 9695720,
+        "javaCommittedBytes": 18958461,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47618256,
+        "totalPssKiB": 265304,
+        "dalvikPssKiB": 14562,
+        "nativePssKiB": 66943
+      },
+      "previousVisibleOffset": 9265
+    },
+    {
+      "index": 72,
+      "durationMs": 1729.712042,
+      "confirmedDurationMs": 1902.424876,
+      "page": 92,
+      "pageCount": 962,
+      "visibleStartOffset": 9473,
+      "visibleEndOffset": 9577,
+      "persistedAnchor": 9473,
+      "memory": {
+        "javaUsedBytes": 10497832,
+        "javaCommittedBytes": 18959085,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47618848,
+        "totalPssKiB": 259828,
+        "dalvikPssKiB": 9238,
+        "nativePssKiB": 66919
+      },
+      "previousVisibleOffset": 9369
+    },
+    {
+      "index": 73,
+      "durationMs": 1719.407793,
+      "confirmedDurationMs": 1887.476876,
+      "page": 93,
+      "pageCount": 962,
+      "visibleStartOffset": 9577,
+      "visibleEndOffset": 9681,
+      "persistedAnchor": 9577,
+      "memory": {
+        "javaUsedBytes": 10668072,
+        "javaCommittedBytes": 18959085,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47620048,
+        "totalPssKiB": 260120,
+        "dalvikPssKiB": 9398,
+        "nativePssKiB": 66923
+      },
+      "previousVisibleOffset": 9473
+    },
+    {
+      "index": 74,
+      "durationMs": 1709.679626,
+      "confirmedDurationMs": 1877.816376,
+      "page": 94,
+      "pageCount": 962,
+      "visibleStartOffset": 9681,
+      "visibleEndOffset": 9785,
+      "persistedAnchor": 9681,
+      "memory": {
+        "javaUsedBytes": 12454520,
+        "javaCommittedBytes": 18963374,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47620480,
+        "totalPssKiB": 260960,
+        "dalvikPssKiB": 10362,
+        "nativePssKiB": 66927
+      },
+      "previousVisibleOffset": 9577
+    },
+    {
+      "index": 75,
+      "durationMs": 1702.92025,
+      "confirmedDurationMs": 1878.386334,
+      "page": 95,
+      "pageCount": 962,
+      "visibleStartOffset": 9785,
+      "visibleEndOffset": 9889,
+      "persistedAnchor": 9785,
+      "memory": {
+        "javaUsedBytes": 13594208,
+        "javaCommittedBytes": 18963374,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47621776,
+        "totalPssKiB": 261812,
+        "dalvikPssKiB": 11090,
+        "nativePssKiB": 66923
+      },
+      "previousVisibleOffset": 9681
+    },
+    {
+      "index": 76,
+      "durationMs": 1717.839001,
+      "confirmedDurationMs": 1890.718418,
+      "page": 96,
+      "pageCount": 962,
+      "visibleStartOffset": 9889,
+      "visibleEndOffset": 9993,
+      "persistedAnchor": 9889,
+      "memory": {
+        "javaUsedBytes": 14395248,
+        "javaCommittedBytes": 18968606,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47622112,
+        "totalPssKiB": 262096,
+        "dalvikPssKiB": 11494,
+        "nativePssKiB": 66931
+      },
+      "previousVisibleOffset": 9785
+    },
+    {
+      "index": 77,
+      "durationMs": 1729.318085,
+      "confirmedDurationMs": 1910.43546,
+      "page": 97,
+      "pageCount": 962,
+      "visibleStartOffset": 9993,
+      "visibleEndOffset": 10097,
+      "persistedAnchor": 9993,
+      "memory": {
+        "javaUsedBytes": 15549104,
+        "javaCommittedBytes": 18968606,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47623408,
+        "totalPssKiB": 262972,
+        "dalvikPssKiB": 12238,
+        "nativePssKiB": 66931
+      },
+      "previousVisibleOffset": 9889
+    },
+    {
+      "index": 78,
+      "durationMs": 1696.894626,
+      "confirmedDurationMs": 1850.961168,
+      "page": 98,
+      "pageCount": 962,
+      "visibleStartOffset": 10097,
+      "visibleEndOffset": 10201,
+      "persistedAnchor": 10097,
+      "memory": {
+        "javaUsedBytes": 16467408,
+        "javaCommittedBytes": 19007294,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47624096,
+        "totalPssKiB": 263340,
+        "dalvikPssKiB": 12734,
+        "nativePssKiB": 66931
+      },
+      "previousVisibleOffset": 9993
+    },
+    {
+      "index": 79,
+      "durationMs": 1699.797876,
+      "confirmedDurationMs": 1873.682709,
+      "page": 99,
+      "pageCount": 962,
+      "visibleStartOffset": 10201,
+      "visibleEndOffset": 10305,
+      "persistedAnchor": 10201,
+      "memory": {
+        "javaUsedBytes": 17984680,
+        "javaCommittedBytes": 19007294,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47615488,
+        "totalPssKiB": 264480,
+        "dalvikPssKiB": 13730,
+        "nativePssKiB": 66947
+      },
+      "previousVisibleOffset": 10097
+    },
+    {
+      "index": 80,
+      "durationMs": 1712.990835,
+      "confirmedDurationMs": 1878.288251,
+      "page": 100,
+      "pageCount": 962,
+      "visibleStartOffset": 10305,
+      "visibleEndOffset": 10409,
+      "persistedAnchor": 10305,
+      "memory": {
+        "javaUsedBytes": 18371472,
+        "javaCommittedBytes": 18977085,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47618208,
+        "totalPssKiB": 264596,
+        "dalvikPssKiB": 13970,
+        "nativePssKiB": 66947
+      },
+      "previousVisibleOffset": 10201
+    },
+    {
+      "index": 81,
+      "durationMs": 1710.67171,
+      "confirmedDurationMs": 1862.864001,
+      "page": 101,
+      "pageCount": 962,
+      "visibleStartOffset": 10409,
+      "visibleEndOffset": 10513,
+      "persistedAnchor": 10409,
+      "memory": {
+        "javaUsedBytes": 18544120,
+        "javaCommittedBytes": 18977085,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47619584,
+        "totalPssKiB": 264900,
+        "dalvikPssKiB": 14146,
+        "nativePssKiB": 66947
+      },
+      "previousVisibleOffset": 10305
+    },
+    {
+      "index": 82,
+      "durationMs": 1705.657167,
+      "confirmedDurationMs": 1855.980792,
+      "page": 102,
+      "pageCount": 962,
+      "visibleStartOffset": 10513,
+      "visibleEndOffset": 10617,
+      "persistedAnchor": 10513,
+      "memory": {
+        "javaUsedBytes": 18374072,
+        "javaCommittedBytes": 18983054,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47620352,
+        "totalPssKiB": 264596,
+        "dalvikPssKiB": 13970,
+        "nativePssKiB": 66943
+      },
+      "previousVisibleOffset": 10409
+    },
+    {
+      "index": 83,
+      "durationMs": 1709.337209,
+      "confirmedDurationMs": 1884.112251,
+      "page": 103,
+      "pageCount": 962,
+      "visibleStartOffset": 10617,
+      "visibleEndOffset": 10721,
+      "persistedAnchor": 10617,
+      "memory": {
+        "javaUsedBytes": 10510000,
+        "javaCommittedBytes": 18983421,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47618624,
+        "totalPssKiB": 259876,
+        "dalvikPssKiB": 9250,
+        "nativePssKiB": 66943
+      },
+      "previousVisibleOffset": 10513
+    },
+    {
+      "index": 84,
+      "durationMs": 1710.881251,
+      "confirmedDurationMs": 1861.384667,
+      "page": 104,
+      "pageCount": 962,
+      "visibleStartOffset": 10721,
+      "visibleEndOffset": 10825,
+      "persistedAnchor": 10721,
+      "memory": {
+        "javaUsedBytes": 10696656,
+        "javaCommittedBytes": 18983421,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47619968,
+        "totalPssKiB": 260176,
+        "dalvikPssKiB": 9422,
+        "nativePssKiB": 66943
+      },
+      "previousVisibleOffset": 10617
+    },
+    {
+      "index": 85,
+      "durationMs": 1714.351584,
+      "confirmedDurationMs": 1887.882668,
+      "page": 105,
+      "pageCount": 962,
+      "visibleStartOffset": 10825,
+      "visibleEndOffset": 10929,
+      "persistedAnchor": 10825,
+      "memory": {
+        "javaUsedBytes": 11481264,
+        "javaCommittedBytes": 18987710,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47620960,
+        "totalPssKiB": 260436,
+        "dalvikPssKiB": 9810,
+        "nativePssKiB": 66939
+      },
+      "previousVisibleOffset": 10721
+    },
+    {
+      "index": 86,
+      "durationMs": 1700.906876,
+      "confirmedDurationMs": 1867.363834,
+      "page": 106,
+      "pageCount": 962,
+      "visibleStartOffset": 10929,
+      "visibleEndOffset": 11033,
+      "persistedAnchor": 10929,
+      "memory": {
+        "javaUsedBytes": 11665344,
+        "javaCommittedBytes": 18987710,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47622112,
+        "totalPssKiB": 260748,
+        "dalvikPssKiB": 9994,
+        "nativePssKiB": 66939
+      },
+      "previousVisibleOffset": 10825
+    },
+    {
+      "index": 87,
+      "durationMs": 1707.276543,
+      "confirmedDurationMs": 1883.149501,
+      "page": 107,
+      "pageCount": 962,
+      "visibleStartOffset": 11033,
+      "visibleEndOffset": 11137,
+      "persistedAnchor": 11033,
+      "memory": {
+        "javaUsedBytes": 13437904,
+        "javaCommittedBytes": 18991999,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47623136,
+        "totalPssKiB": 261596,
+        "dalvikPssKiB": 10942,
+        "nativePssKiB": 66943
+      },
+      "previousVisibleOffset": 10929
+    },
+    {
+      "index": 88,
+      "durationMs": 1738.078168,
+      "confirmedDurationMs": 1901.039209,
+      "page": 108,
+      "pageCount": 962,
+      "visibleStartOffset": 11137,
+      "visibleEndOffset": 11241,
+      "persistedAnchor": 11137,
+      "memory": {
+        "javaUsedBytes": 13608056,
+        "javaCommittedBytes": 18991999,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47624800,
+        "totalPssKiB": 261880,
+        "dalvikPssKiB": 11106,
+        "nativePssKiB": 66935
+      },
+      "previousVisibleOffset": 11033
+    },
+    {
+      "index": 89,
+      "durationMs": 1730.649167,
+      "confirmedDurationMs": 1903.926293,
+      "page": 109,
+      "pageCount": 962,
+      "visibleStartOffset": 11241,
+      "visibleEndOffset": 11345,
+      "persistedAnchor": 11241,
+      "memory": {
+        "javaUsedBytes": 14409088,
+        "javaCommittedBytes": 18996285,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47615664,
+        "totalPssKiB": 262168,
+        "dalvikPssKiB": 11506,
+        "nativePssKiB": 66943
+      },
+      "previousVisibleOffset": 11137
+    },
+    {
+      "index": 90,
+      "durationMs": 1695.095418,
+      "confirmedDurationMs": 1872.397376,
+      "page": 110,
+      "pageCount": 962,
+      "visibleStartOffset": 11345,
+      "visibleEndOffset": 11449,
+      "persistedAnchor": 11345,
+      "memory": {
+        "javaUsedBytes": 15457888,
+        "javaCommittedBytes": 18996285,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47617168,
+        "totalPssKiB": 262936,
+        "dalvikPssKiB": 12150,
+        "nativePssKiB": 66939
+      },
+      "previousVisibleOffset": 11241
+    },
+    {
+      "index": 91,
+      "durationMs": 1731.053876,
+      "confirmedDurationMs": 1909.164584,
+      "page": 111,
+      "pageCount": 962,
+      "visibleStartOffset": 11449,
+      "visibleEndOffset": 11553,
+      "persistedAnchor": 11449,
+      "memory": {
+        "javaUsedBytes": 16365696,
+        "javaCommittedBytes": 19000509,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47617712,
+        "totalPssKiB": 263292,
+        "dalvikPssKiB": 12634,
+        "nativePssKiB": 66935
+      },
+      "previousVisibleOffset": 11345
+    },
+    {
+      "index": 92,
+      "durationMs": 1711.190125,
+      "confirmedDurationMs": 1883.165334,
+      "page": 112,
+      "pageCount": 962,
+      "visibleStartOffset": 11553,
+      "visibleEndOffset": 11657,
+      "persistedAnchor": 11553,
+      "memory": {
+        "javaUsedBytes": 18281832,
+        "javaCommittedBytes": 19000509,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47619312,
+        "totalPssKiB": 264720,
+        "dalvikPssKiB": 13926,
+        "nativePssKiB": 66943
+      },
+      "previousVisibleOffset": 11449
+    },
+    {
+      "index": 93,
+      "durationMs": 1751.765709,
+      "confirmedDurationMs": 1903.528459,
+      "page": 113,
+      "pageCount": 962,
+      "visibleStartOffset": 11657,
+      "visibleEndOffset": 11761,
+      "persistedAnchor": 11657,
+      "memory": {
+        "javaUsedBytes": 18385240,
+        "javaCommittedBytes": 19038189,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47621712,
+        "totalPssKiB": 264640,
+        "dalvikPssKiB": 13978,
+        "nativePssKiB": 66931
+      },
+      "previousVisibleOffset": 11553
+    },
+    {
+      "index": 94,
+      "durationMs": 1706.866501,
+      "confirmedDurationMs": 1858.541209,
+      "page": 114,
+      "pageCount": 962,
+      "visibleStartOffset": 11761,
+      "visibleEndOffset": 11865,
+      "persistedAnchor": 11761,
+      "memory": {
+        "javaUsedBytes": 18563520,
+        "javaCommittedBytes": 19038189,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47622800,
+        "totalPssKiB": 264932,
+        "dalvikPssKiB": 14138,
+        "nativePssKiB": 66935
+      },
+      "previousVisibleOffset": 11657
+    },
+    {
+      "index": 95,
+      "durationMs": 1697.698626,
+      "confirmedDurationMs": 1867.805334,
+      "page": 115,
+      "pageCount": 962,
+      "visibleStartOffset": 11865,
+      "visibleEndOffset": 11969,
+      "persistedAnchor": 11865,
+      "memory": {
+        "javaUsedBytes": 9719624,
+        "javaCommittedBytes": 19308511,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47621232,
+        "totalPssKiB": 265372,
+        "dalvikPssKiB": 14582,
+        "nativePssKiB": 66931
+      },
+      "previousVisibleOffset": 11761
+    },
+    {
+      "index": 96,
+      "durationMs": 1704.906709,
+      "confirmedDurationMs": 1858.844417,
+      "page": 116,
+      "pageCount": 962,
+      "visibleStartOffset": 11969,
+      "visibleEndOffset": 12073,
+      "persistedAnchor": 11969,
+      "memory": {
+        "javaUsedBytes": 9523744,
+        "javaCommittedBytes": 19047487,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47623792,
+        "totalPssKiB": 265760,
+        "dalvikPssKiB": 14746,
+        "nativePssKiB": 66935
+      },
+      "previousVisibleOffset": 11865
+    },
+    {
+      "index": 97,
+      "durationMs": 1725.195876,
+      "confirmedDurationMs": 1907.492543,
+      "page": 117,
+      "pageCount": 962,
+      "visibleStartOffset": 12073,
+      "visibleEndOffset": 12177,
+      "persistedAnchor": 12073,
+      "memory": {
+        "javaUsedBytes": 11679648,
+        "javaCommittedBytes": 19047487,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47614624,
+        "totalPssKiB": 261602,
+        "dalvikPssKiB": 10006,
+        "nativePssKiB": 66971
+      },
+      "previousVisibleOffset": 11969
+    },
+    {
+      "index": 98,
+      "durationMs": 1702.645168,
+      "confirmedDurationMs": 1890.009001,
+      "page": 118,
+      "pageCount": 962,
+      "visibleStartOffset": 12177,
+      "visibleEndOffset": 12281,
+      "persistedAnchor": 12177,
+      "memory": {
+        "javaUsedBytes": 13449696,
+        "javaCommittedBytes": 19015581,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47608848,
+        "totalPssKiB": 261668,
+        "dalvikPssKiB": 10954,
+        "nativePssKiB": 66927
+      },
+      "previousVisibleOffset": 12073
+    },
+    {
+      "index": 99,
+      "durationMs": 1702.947042,
+      "confirmedDurationMs": 1873.314459,
+      "page": 119,
+      "pageCount": 962,
+      "visibleStartOffset": 12281,
+      "visibleEndOffset": 12385,
+      "persistedAnchor": 12281,
+      "memory": {
+        "javaUsedBytes": 14587608,
+        "javaCommittedBytes": 19015581,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47610736,
+        "totalPssKiB": 262556,
+        "dalvikPssKiB": 11686,
+        "nativePssKiB": 66923
+      },
+      "previousVisibleOffset": 12177
+    },
+    {
+      "index": 100,
+      "durationMs": 1731.851043,
+      "confirmedDurationMs": 1901.877001,
+      "page": 120,
+      "pageCount": 962,
+      "visibleStartOffset": 12385,
+      "visibleEndOffset": 12489,
+      "persistedAnchor": 12385,
+      "memory": {
+        "javaUsedBytes": 15393256,
+        "javaCommittedBytes": 19026477,
+        "javaMaxBytes": 201326592,
+        "nativeAllocatedBytes": 47611280,
+        "totalPssKiB": 262820,
+        "dalvikPssKiB": 12082,
+        "nativePssKiB": 66919
+      },
+      "previousVisibleOffset": 12281
+    }
+  ],
+  "fixture": {
+    "bookId": 98,
+    "restoreAnchor": 2000,
+    "chapterCount": 1,
+    "chapterCharacters": 100000
+  },
+  "existingBookPositionsUnchanged": true,
+  "aiUsageUnchanged": true,
+  "finishedAtEpochMs": 1795785209384,
+  "summary": {
+    "firstOpen": {
+      "count": 1,
+      "p50Ms": 3902.193252,
+      "p95Ms": 3902.193252
+    },
+    "subsequentOpens": {
+      "count": 19,
+      "p50Ms": 2779.219752,
+      "p95Ms": 2852.580418
+    },
+    "allOpens": {
+      "count": 20,
+      "p50Ms": 2779.219752,
+      "p95Ms": 2852.580418
+    },
+    "hardwareTurns": {
+      "count": 100,
+      "p50Ms": 1714.351584,
+      "p95Ms": 1868.557334
+    }
+  }
+}
