@@ -1,6 +1,6 @@
 /// Ensures that callers sharing a sync action join the same in-flight Future.
 ///
-/// This is intentionally transport-agnostic: WebDAV, CloudBase and UI entry
+/// This is intentionally transport-agnostic: WebDAV, self-hosted sync and UI entry
 /// points can use one gate without adding another queue or spawning duplicate
 /// network/database work.
 class SyncRequestGate<T> {

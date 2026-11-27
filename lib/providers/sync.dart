@@ -13,7 +13,6 @@ import 'package:anx_reader/providers/tb_groups.dart';
 import 'package:anx_reader/service/sync/sync_client_factory.dart';
 import 'package:anx_reader/service/sync/sync_client_base.dart';
 import 'package:anx_reader/service/sync/reading_agent_sync_service.dart';
-import 'package:anx_reader/service/sync/cloudbase_reading_sync_coordinator.dart';
 import 'package:anx_reader/service/sync/self_hosted_progress_sync_coordinator.dart';
 import 'package:anx_reader/service/sync/sync_request_gate.dart';
 import 'package:anx_reader/service/sync/reading_activity_coordinator.dart';
@@ -466,24 +465,6 @@ class Sync extends _$Sync {
     }
 
     readingExperienceDiagnostics.recordSyncExecution();
-
-    if (Prefs().cloudBaseSyncEnabled) {
-      try {
-        final wifiAllowed = !Prefs().onlySyncWhenWifi ||
-            (await Connectivity().checkConnectivity()).contains(
-              ConnectivityResult.wifi,
-            );
-        if (wifiAllowed) {
-          await const CloudBaseReadingSyncCoordinator().synchronize();
-        }
-      } catch (error, stackTrace) {
-        readingExperienceDiagnostics.recordSyncFailure();
-        AnxLog.warning('CloudBase Reading Sync failed: $error\n$stackTrace');
-        if (trigger == SyncTrigger.manual) {
-          AnxToast.show('CloudBase 阅读同步失败：$error');
-        }
-      }
-    }
 
     if (Prefs().selfHostedProgressSyncEnabled) {
       try {

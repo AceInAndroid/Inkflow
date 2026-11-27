@@ -9,8 +9,6 @@ import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
 import 'package:anx_reader/providers/sync.dart';
 import 'package:anx_reader/service/sync/sync_client_factory.dart';
-import 'package:anx_reader/service/sync/cloudbase_reading_sync_coordinator.dart';
-import 'package:anx_reader/service/sync/cloudbase_reading_sync_transport.dart';
 import 'package:anx_reader/service/sync/self_hosted_progress_sync_transport.dart';
 import 'package:anx_reader/utils/platform_utils.dart';
 import 'package:anx_reader/utils/save_file_to_download.dart';
@@ -117,7 +115,6 @@ class _SyncSettingState extends ConsumerState<SyncSetting> {
                 leading: const Icon(Icons.sync),
                 initialValue: Prefs().autoSync,
                 enabled: Prefs().webdavStatus ||
-                    Prefs().cloudBaseSyncEnabled ||
                     Prefs().selfHostedProgressSyncEnabled,
                 onToggle: (bool value) {
                   setState(() {
@@ -130,39 +127,6 @@ class _SyncSettingState extends ConsumerState<SyncSetting> {
                 onPressed: (context) {
                   ref.read(syncProvider.notifier).showBackupManagementDialog();
                 })
-          ],
-        ),
-        SettingsSection(
-          title: Text(L10n.of(context).cloudBaseReadingSync),
-          tiles: [
-            SettingsTile.switchTile(
-              title: Text(L10n.of(context).cloudBaseReadingSyncEnable),
-              description:
-                  Text(L10n.of(context).cloudBaseReadingSyncScopeDescription),
-              leading: const Icon(Icons.cloud_sync_outlined),
-              initialValue: Prefs().cloudBaseSyncEnabled,
-              onToggle: (value) {
-                if (value && Prefs().cloudBaseSyncAccountToken.isEmpty) {
-                  _showCloudBaseDialog();
-                  return;
-                }
-                setState(() => Prefs().cloudBaseSyncEnabled = value);
-              },
-            ),
-            SettingsTile.navigation(
-              title: Text(L10n.of(context).cloudBaseReadingSyncConfigure),
-              leading: const Icon(Icons.key_outlined),
-              value: Text(Prefs().cloudBaseSyncAccountUsername.isNotEmpty
-                  ? Prefs().cloudBaseSyncAccountUsername
-                  : L10n.of(context).commonNotSet),
-              onPressed: (_) => _showCloudBaseDialog(),
-            ),
-            SettingsTile.navigation(
-              title: Text(L10n.of(context).cloudBaseReadingSyncNow),
-              leading: const Icon(Icons.sync),
-              enabled: Prefs().cloudBaseSyncEnabled,
-              onPressed: (_) => _syncCloudBase(),
-            ),
           ],
         ),
         SettingsSection(
@@ -219,17 +183,6 @@ class _SyncSettingState extends ConsumerState<SyncSetting> {
         ),
       ],
     );
-  }
-
-  Future<void> _syncCloudBase() async {
-    try {
-      await const CloudBaseReadingSyncCoordinator().synchronize();
-      if (mounted) AnxToast.show(L10n.of(context).cloudBaseReadingSyncComplete);
-    } catch (error) {
-      if (mounted) {
-        AnxToast.show(L10n.of(context).cloudBaseReadingSyncFailed(error));
-      }
-    }
   }
 
   Future<void> _syncSelfHostedProgress() async {
@@ -419,246 +372,6 @@ class _SyncSettingState extends ConsumerState<SyncSetting> {
     endpoint.dispose();
     username.dispose();
     password.dispose();
-  }
-
-  Future<void> _showCloudBaseDialog() async {
-    final endpoint = TextEditingController(text: Prefs().cloudBaseSyncEndpoint);
-    final username = TextEditingController(
-      text: Prefs().cloudBaseSyncAccountUsername,
-    );
-    final password = TextEditingController();
-    final confirmPassword = TextEditingController();
-    var registerMode = false;
-    var busy = false;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(L10n.of(context).cloudBaseReadingSyncConfigure),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(L10n.of(context).cloudBaseReadingSyncCredentialHint),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: endpoint,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: L10n.of(context).cloudBaseReadingSyncEndpoint,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: username,
-                  enabled: Prefs().cloudBaseSyncAccountToken.isEmpty && !busy,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: L10n.of(context).cloudBaseReadingSyncUsername,
-                  ),
-                ),
-                if (Prefs().cloudBaseSyncAccountToken.isEmpty) ...[
-                  const SizedBox(height: 12),
-                  SegmentedButton<bool>(
-                    segments: [
-                      ButtonSegment(
-                        value: false,
-                        label: Text(
-                          L10n.of(context).cloudBaseReadingSyncLoginMode,
-                        ),
-                      ),
-                      ButtonSegment(
-                        value: true,
-                        label: Text(
-                          L10n.of(context).cloudBaseReadingSyncRegisterMode,
-                        ),
-                      ),
-                    ],
-                    selected: {registerMode},
-                    onSelectionChanged: busy
-                        ? null
-                        : (selection) => setDialogState(() {
-                              registerMode = selection.first;
-                              password.clear();
-                              confirmPassword.clear();
-                            }),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: password,
-                    enabled: !busy,
-                    obscureText: true,
-                    textInputAction: registerMode
-                        ? TextInputAction.next
-                        : TextInputAction.done,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText:
-                          L10n.of(context).cloudBaseReadingSyncPasswordHint,
-                    ),
-                  ),
-                  if (registerMode) ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: confirmPassword,
-                      enabled: !busy,
-                      obscureText: true,
-                      textInputAction: TextInputAction.done,
-                      decoration: InputDecoration(
-                        border: const OutlineInputBorder(),
-                        labelText: L10n.of(context)
-                            .cloudBaseReadingSyncConfirmPassword,
-                      ),
-                    ),
-                  ],
-                ] else ...[
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '${L10n.of(context).cloudBaseReadingSyncCurrentAccount}: '
-                      '${Prefs().cloudBaseSyncAccountUsername}',
-                    ),
-                  ),
-                ],
-                if (busy) ...[
-                  const SizedBox(height: 16),
-                  const LinearProgressIndicator(),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            if (Prefs().cloudBaseSyncAccountToken.isNotEmpty)
-              TextButton(
-                onPressed: busy
-                    ? null
-                    : () async {
-                        setDialogState(() => busy = true);
-                        try {
-                          await CloudBaseReadingSyncTransport(
-                            endpoint: endpoint.text,
-                            accessToken: Prefs().cloudBaseSyncAccountToken,
-                          ).logoutAccount();
-                        } catch (_) {
-                          // Local logout must remain available while offline.
-                        }
-                        Prefs().clearCloudBaseSyncAccount();
-                        Prefs().cloudBaseSyncEnabled = false;
-                        if (dialogContext.mounted) {
-                          setDialogState(() => busy = false);
-                        }
-                      },
-                child: Text(L10n.of(context).cloudBaseReadingSyncLogout),
-              ),
-            if (Prefs().cloudBaseSyncAccountToken.isEmpty)
-              FilledButton(
-                onPressed: busy
-                    ? null
-                    : () async {
-                        final name = username.text.trim();
-                        if (name.isEmpty || password.text.isEmpty) {
-                          AnxToast.show(
-                              L10n.of(context).commonInputCannotBeEmpty);
-                          return;
-                        }
-                        if (registerMode &&
-                            password.text != confirmPassword.text) {
-                          AnxToast.show(L10n.of(context)
-                              .cloudBaseReadingSyncPasswordMismatch);
-                          return;
-                        }
-                        setDialogState(() => busy = true);
-                        try {
-                          final transport = CloudBaseReadingSyncTransport(
-                            endpoint: endpoint.text,
-                            accessToken: '',
-                          );
-                          final session = registerMode
-                              ? await transport.registerAccount(
-                                  username: name,
-                                  password: password.text,
-                                )
-                              : await transport.loginAccount(
-                                  username: name,
-                                  password: password.text,
-                                );
-                          Prefs().cloudBaseSyncEndpoint = endpoint.text.trim();
-                          Prefs().cloudBaseSyncAccountUsername =
-                              session.username;
-                          Prefs().cloudBaseSyncAccountToken =
-                              session.accessToken;
-                          Prefs().cloudBaseSyncEnabled = true;
-                          if (context.mounted) {
-                            AnxToast.show(
-                              registerMode
-                                  ? L10n.of(context)
-                                      .cloudBaseReadingSyncRegistered
-                                  : L10n.of(context)
-                                      .cloudBaseReadingSyncLoggedIn,
-                            );
-                            Navigator.pop(dialogContext);
-                          }
-                        } catch (error) {
-                          if (context.mounted) {
-                            AnxToast.show(
-                              L10n.of(context)
-                                  .cloudBaseReadingSyncFailed(error),
-                            );
-                          }
-                        } finally {
-                          if (context.mounted) {
-                            setDialogState(() => busy = false);
-                          }
-                        }
-                      },
-                child: Text(registerMode
-                    ? L10n.of(context).cloudBaseReadingSyncRegister
-                    : L10n.of(context).cloudBaseReadingSyncLogin),
-              ),
-            TextButton(
-              onPressed: busy
-                  ? null
-                  : () async {
-                      setDialogState(() => busy = true);
-                      try {
-                        final accountToken =
-                            Prefs().cloudBaseSyncAccountToken.trim();
-                        await CloudBaseReadingSyncTransport(
-                          endpoint: endpoint.text,
-                          accessToken: accountToken,
-                        ).ping();
-                        // A successful test confirms the endpoint and makes
-                        // it the active endpoint without a second Save action.
-                        Prefs().cloudBaseSyncEndpoint = endpoint.text.trim();
-                        if (context.mounted) {
-                          AnxToast.show(L10n.of(context).commonSuccess);
-                        }
-                      } catch (error) {
-                        if (context.mounted) {
-                          AnxToast.show(
-                            L10n.of(context).cloudBaseReadingSyncFailed(error),
-                          );
-                        }
-                      } finally {
-                        if (context.mounted) {
-                          setDialogState(() => busy = false);
-                        }
-                      }
-                    },
-              child: Text(L10n.of(context).settingsSyncWebdavTestConnection),
-            ),
-          ],
-        ),
-      ),
-    );
-    endpoint.dispose();
-    username.dispose();
-    password.dispose();
-    confirmPassword.dispose();
-    if (mounted) setState(() {});
   }
 
   void _showDataDialog(String title) {

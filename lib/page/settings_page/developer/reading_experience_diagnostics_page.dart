@@ -129,7 +129,7 @@ class _ReadingExperienceDiagnosticsPageState
                 ),
               const SizedBox(height: 12),
               const Text(
-                '这些数据不会参与偏好备份、WebDAV、CloudBase 或遥测上传。电量只在阅读会话开始和结束时各读取一次。',
+                '这些数据不会参与偏好备份、WebDAV、自托管同步或遥测上传。电量只在阅读会话开始和结束时各读取一次。',
               ),
             ],
           );

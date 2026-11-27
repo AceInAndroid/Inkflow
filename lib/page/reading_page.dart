@@ -811,8 +811,7 @@ class ReadingPageState extends ConsumerState<ReadingPage>
   Future<void> _offerRemoteProgressIfAvailable({bool manual = false}) async {
     if (!mounted || (!manual && widget.cfi != null)) return;
     if (_checkingRemoteProgress) return;
-    final syncEnabled = Prefs().cloudBaseSyncEnabled ||
-        Prefs().selfHostedProgressSyncEnabled ||
+    final syncEnabled = Prefs().selfHostedProgressSyncEnabled ||
         Prefs().webdavStatus;
     if (!syncEnabled) {
       if (manual) {
@@ -3235,7 +3234,7 @@ class ReadingPageState extends ConsumerState<ReadingPage>
             nextAction: next,
             atlas: atlas,
             syncing: _syncingRemoteProgress,
-            syncEnabled: Prefs().cloudBaseSyncEnabled || Prefs().webdavStatus,
+            syncEnabled: Prefs().selfHostedProgressSyncEnabled || Prefs().webdavStatus,
             syncNeedsManualResolution: Sync().automaticConflictPending,
             onNextAction: () => _handleBookHubNextAction(next),
             onOpenOutcomes: _showReadingOutcomes,

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:core';
 
+import 'package:anx_reader/config/prefs_backup_config.dart';
+
 import 'package:anx_reader/enums/ai_prompts.dart';
 import 'package:anx_reader/enums/bgimg_alignment.dart';
 import 'package:anx_reader/enums/bgimg_type.dart';
@@ -55,8 +57,6 @@ const String prefsBackupVersionKey = '__prefsBackupVersion';
 const int prefsBackupSchemaVersion = 1;
 const String _prefsBackupEntryTypeKey = 'type';
 const String _prefsBackupEntryValueKey = 'value';
-const String defaultCloudBaseSyncEndpoint =
-    'https://mytripmap-d3gxxk1psd0b28d72-1257836777.ap-shanghai.app.tcloudbase.com/v1/anx-reading-sync';
 const String defaultSelfHostedProgressSyncEndpoint = '';
 
 const Set<String> _prefsImportSkipKeys = {
@@ -65,9 +65,6 @@ const Set<String> _prefsImportSkipKeys = {
   // Installation identity must never be cloned by backup restore; otherwise
   // two physical devices would overwrite the same Reading Agent sync branch.
   'readingAgentSyncDeviceId',
-  // The bearer token grants access to a private CloudBase sync space. Users
-  // authenticate each device directly, so a backup must never clone it.
-  'cloudBaseSyncAccountToken',
   // Self-hosted progress sync credentials are installation-local secrets.
   'selfHostedProgressSyncEndpoint',
   'selfHostedProgressSyncEnabled',
@@ -94,6 +91,189 @@ const Set<String> _prefsImportSkipKeys = {
   'themeColor',
   'trueDarkMode',
 };
+
+/// Preferences supported by the current reader. Both backup directions use
+/// this registry so removed features and unknown keys stay out of backups.
+/// Register new preference keys here alongside their accessors.
+final Set<String> _prefsBackupSupportedKeys = {
+  'activeReadingExpertIds',
+  'activeReadingExpertWebSearch',
+  'aiChatDisplayMode',
+  'aiChatFontSize',
+  'aiFallbackProvider',
+  'aiPanelHeight',
+  'aiPanelPosition',
+  'aiPanelWidth',
+  'aiPanelWidthRatio',
+  'aiProviders',
+  'aiRpm',
+  'allowMixWithOtherAudio',
+  'annotationColor',
+  'annotationType',
+  'autoAdjustReadingTheme',
+  'autoHideBottomBar',
+  'autoMarkSelection',
+  'autoSummaryPreviousContent',
+  'autoSync',
+  'autoTranslateSelection',
+  'awakeTime',
+  'beginDate',
+  'bgimg',
+  'bgimgFit',
+  'bookCoverWidth',
+  'bookTranslationModes',
+  'bookTranslationProgresses',
+  'bookshelfFolderStyle',
+  'bottomNavigatorShowAI',
+  'bottomNavigatorShowNote',
+  'bottomNavigatorShowStatistics',
+  'bottomNavigatorShowVocabulary',
+  'chapterSplitCustomRules',
+  'chapterSplitSelectedRuleId',
+  'clearLogWhenStart',
+  'codeHighlightTheme',
+  'customCSS',
+  'customCSSEnabled',
+  'customPageTurnConfig',
+  'customReadingSkills',
+  'customStoragePath',
+  'defaultReadingAiMode',
+  'defaultReadingAnalysisDepth',
+  'defaultReadingOutputTemplate',
+  'developerOptionsEnabled',
+  'enableJsForEpub',
+  'enabledAiTools',
+  'enabledSelectionMenuActions',
+  'excerptShareBgimgIndex',
+  'excerptShareColorIndex',
+  'excerptShareFont',
+  'excerptShareTemplate',
+  'fictionCharacterArchiveModes',
+  'font',
+  'fullTextTranslateFrom',
+  'fullTextTranslateRpm',
+  'fullTextTranslateService',
+  'fullTextTranslateTo',
+  'hideStatusBar',
+  'httpProxyEnabled',
+  'httpProxyHost',
+  'httpProxyPort',
+  'httpProxyTestUrl',
+  'isSystemTts',
+  'keyboardShortcutTurnPage',
+  'lastAppVersion',
+  'lastServerPort',
+  'lastShowUpdate',
+  'lastSyncLocalDatabaseTime',
+  'lastUploadBookDate',
+  'localMdxDictionaries',
+  'locale',
+  'longPressSelectionMode',
+  'maxAiCacheCount',
+  'notesExportMergeChapters',
+  'notesExportSortDirection',
+  'notesExportSortField',
+  'notesViewSortDirection',
+  'notesViewSortField',
+  'onlineTtsService',
+  'onlySyncWhenWifi',
+  'openBookAnimation',
+  'pageFooterFontSize',
+  'pageFooterLeftMargin',
+  'pageFooterMargin',
+  'pageFooterRightMargin',
+  'pageHeaderFontSize',
+  'pageHeaderLeftMargin',
+  'pageHeaderMargin',
+  'pageHeaderRightMargin',
+  'pageTurnMode',
+  'pageTurnStyle',
+  'pageTurningType',
+  'readStyle',
+  'readTheme',
+  'readingAgentBetaEnabled',
+  'readingAiModesByBook',
+  'readingAnalysisAutoRecommend',
+  'readingAnalysisByBook',
+  'readingAnalysisConfirmBeforeSend',
+  'readingAnalysisMaxFrameworks',
+  'readingClosureTypesByBook',
+  'readingExpertsByBook',
+  'readingInfo',
+  'readingMultiAgentEnabled',
+  'readingResearchWebSearch',
+  'readingRules',
+  'readingSkillsByBook',
+  'readingTrustedSourceDomains',
+  'readingWebSearchConfig',
+  'reduceVibrationFeedback',
+  'selectedAiService',
+  'selectionMenuActionOrder',
+  'selectionMenuKnownActions',
+  'selfHostedProgressSyncAccountUsername',
+  'showActionLabels',
+  'showAuthorOnDefaultCover',
+  'showBookTitleOnDefaultCover',
+  'showMenuOnHover',
+  'showTextUnderIconButton',
+  'sortField',
+  'sortOrder',
+  'statisticsDashboardTiles',
+  'swapPageTurnArea',
+  'swipeToTurnPage',
+  'syncCompletedToast',
+  'syncProtocol',
+  'textAlignment',
+  'translateFrom',
+  'translateService',
+  'translateTo',
+  'translationAiProvider',
+  'translationMargin',
+  'translationMode',
+  'ttsPitch',
+  'ttsRate',
+  'ttsService',
+  'ttsVolume',
+  'useBookStyles',
+  'useOriginalCoverRatio',
+  'userPrompts',
+  'volumeKeyTurnPage',
+  'webdavStatus',
+  'windowInfo',
+  'wirelessTransferAutoShutdown',
+  'wirelessTransferPort',
+  'writingMode',
+  // Closed namespaces track the application's current enum values.
+  ...SyncProtocol.values.map((protocol) => '${protocol.name}Info'),
+  ...AiPrompts.values.map((prompt) => 'aiPrompt_${prompt.name}'),
+  ...HintKey.values.map((hint) => 'hint_${hint.code}'),
+  ...TranslateService.values.map(
+    (service) => 'translateServiceConfig_${service.name}',
+  ),
+};
+
+// Provider and TTS ids are user-extensible. Keep saved configurations even if
+// a provider is not selected on the installation restoring the backup.
+const List<String> _prefsBackupDynamicPrefixes = [
+  'aiConfig_',
+  'ttsVoiceModel_',
+  'onlineTtsConfig_',
+];
+
+final List<RegExp> _prefsBackupDynamicKeyPatterns = [
+  RegExp(r'^fictionTimelineLastViewedChapter:[0-9]+$'),
+  RegExp(r"^englishDictionaryEntry_[a-z][a-z'-]{0,63}$"),
+  RegExp(r'^translation(?:Dom|Text)Cache_[0-9]+_.+$'),
+];
+
+bool _isSupportedPrefsBackupKey(String key) {
+  if (_prefsImportSkipKeys.contains(key)) return false;
+  return _prefsBackupSupportedKeys.contains(key) ||
+      _prefsBackupDynamicPrefixes.any(
+        (prefix) => key.startsWith(prefix) && key.length > prefix.length,
+      ) ||
+      _prefsBackupDynamicKeyPatterns.any((pattern) => pattern.hasMatch(key));
+}
 
 class Prefs extends ChangeNotifier {
   late SharedPreferences prefs;
@@ -182,8 +362,8 @@ class Prefs extends ChangeNotifier {
       prefsBackupVersionKey: prefsBackupSchemaVersion,
     };
     for (final String key in prefs.getKeys()) {
-      if (_prefsImportSkipKeys.contains(key)) continue;
-      final Object? value = prefs.get(key);
+      if (!_isSupportedPrefsBackupKey(key)) continue;
+      final Object? value = filterPrefsBackupConfig(key, prefs.get(key));
       final Map<String, Object?>? encoded = encodePrefsBackupEntry(value);
       if (encoded != null) {
         backup[key] = encoded;
@@ -195,14 +375,18 @@ class Prefs extends ChangeNotifier {
   Future<void> applyPrefsBackupMap(Map<String, dynamic> backup) async {
     for (final MapEntry<String, dynamic> entry in backup.entries) {
       final String key = entry.key;
-      if (key == prefsBackupVersionKey || _prefsImportSkipKeys.contains(key)) {
+      if (!_isSupportedPrefsBackupKey(key)) {
         continue;
       }
       final dynamic entryValue = entry.value;
       if (entryValue is! Map) continue;
       final dynamic type = entryValue[_prefsBackupEntryTypeKey];
-      final dynamic value = entryValue[_prefsBackupEntryValueKey];
-      if (type is! String) continue;
+      final dynamic value = filterPrefsBackupConfig(
+        key,
+        entryValue[_prefsBackupEntryValueKey],
+        localValue: prefs.get(key),
+      );
+      if (type is! String || value == null) continue;
       switch (type) {
         case 'bool':
           if (value is bool) await prefs.setBool(key, value);
@@ -217,10 +401,8 @@ class Prefs extends ChangeNotifier {
           if (value is String) await prefs.setString(key, value);
           break;
         case 'stringList':
-          if (value is List) {
-            final List<String> list =
-                value.map((dynamic v) => v as String).toList();
-            await prefs.setStringList(key, list);
+          if (value is List && value.every((dynamic item) => item is String)) {
+            await prefs.setStringList(key, List<String>.from(value));
           }
           break;
         default:
@@ -382,44 +564,6 @@ class Prefs extends ChangeNotifier {
 
   bool get webdavStatus {
     return prefs.getBool('webdavStatus') ?? false;
-  }
-
-  bool get cloudBaseSyncEnabled =>
-      prefs.getBool('cloudBaseSyncEnabled') ?? false;
-
-  set cloudBaseSyncEnabled(bool value) {
-    prefs.setBool('cloudBaseSyncEnabled', value);
-    notifyListeners();
-  }
-
-  String get cloudBaseSyncEndpoint =>
-      prefs.getString('cloudBaseSyncEndpoint') ?? defaultCloudBaseSyncEndpoint;
-
-  set cloudBaseSyncEndpoint(String value) {
-    prefs.setString('cloudBaseSyncEndpoint', value.trim());
-    notifyListeners();
-  }
-
-  String get cloudBaseSyncAccountUsername =>
-      prefs.getString('cloudBaseSyncAccountUsername') ?? '';
-
-  set cloudBaseSyncAccountUsername(String value) {
-    prefs.setString('cloudBaseSyncAccountUsername', value.trim());
-    notifyListeners();
-  }
-
-  String get cloudBaseSyncAccountToken =>
-      prefs.getString('cloudBaseSyncAccountToken') ?? '';
-
-  set cloudBaseSyncAccountToken(String value) {
-    prefs.setString('cloudBaseSyncAccountToken', value.trim());
-    notifyListeners();
-  }
-
-  void clearCloudBaseSyncAccount() {
-    prefs.remove('cloudBaseSyncAccountUsername');
-    prefs.remove('cloudBaseSyncAccountToken');
-    notifyListeners();
   }
 
   bool get selfHostedProgressSyncEnabled =>

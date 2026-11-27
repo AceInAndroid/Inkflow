@@ -41,34 +41,6 @@ void main() {
     );
   });
 
-  test('CloudBase account token is excluded from normal backup', () async {
-    SharedPreferences.setMockInitialValues({
-      'cloudBaseSyncEndpoint': 'https://sync.example.test',
-      'cloudBaseSyncAccountToken': 'account-secret-token',
-    });
-    Prefs().prefs = await SharedPreferences.getInstance();
-
-    final backup = await Prefs().buildPrefsBackupMap();
-    expect(backup, contains('cloudBaseSyncEndpoint'));
-    expect(backup, isNot(contains('cloudBaseSyncAccountToken')));
-
-    await Prefs().applyPrefsBackupMap({
-      'cloudBaseSyncAccountToken': {
-        'type': 'string',
-        'value': 'overwritten-account-token',
-      },
-    });
-    expect(Prefs().cloudBaseSyncAccountToken, 'account-secret-token');
-  });
-
-  test('CloudBase sync uses the deployed endpoint by default', () async {
-    SharedPreferences.setMockInitialValues({});
-    Prefs().prefs = await SharedPreferences.getInstance();
-
-    expect(Prefs().cloudBaseSyncEndpoint, defaultCloudBaseSyncEndpoint);
-    expect(Prefs().cloudBaseSyncEnabled, isFalse);
-  });
-
   test('self-hosted progress endpoint and session stay device-local', () async {
     SharedPreferences.setMockInitialValues({
       'selfHostedProgressSyncEndpoint': 'https://progress.example.test',

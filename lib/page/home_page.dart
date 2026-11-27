@@ -107,7 +107,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     AnxToast.init(context);
     checkUpdate(false);
     InitializationCheck.check();
-    if (Prefs().webdavStatus || Prefs().cloudBaseSyncEnabled) {
+    if (Prefs().webdavStatus || Prefs().selfHostedProgressSyncEnabled) {
       if (Prefs().webdavStatus) await Sync().init();
       await Sync().syncData(SyncDirection.both, ref, trigger: SyncTrigger.auto);
     }
