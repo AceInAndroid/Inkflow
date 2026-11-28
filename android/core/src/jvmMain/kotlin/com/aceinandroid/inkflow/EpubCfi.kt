@@ -178,6 +178,8 @@ class EpubText private constructor(
     val visuals: List<EpubVisualRange>,
     val images: List<EpubImage>,
     val anchors: Map<String, Int>,
+    /** Untrusted presentation metadata; canonical text, CFIs and reading blocks stay unchanged. */
+    val renderFragments: List<EpubRenderFragment>,
     private val runs: List<Run>,
     private val leadingTrim: Int,
 ) {
@@ -281,6 +283,8 @@ class EpubText private constructor(
             val visuals = mutableListOf<EpubVisualRange>()
             val images = mutableListOf<EpubImage>()
             val anchors = mutableMapOf<String, Int>()
+            val renderFragments = mutableListOf<EpubRenderFragment>()
+            val fragmentCollector = EpubRenderFragmentCollector()
             val rootScale = fontScaleValue(propertyFor(root, "font-size", cssProperties), 1f, 1f) ?: 1f
             val scaleCache = mutableMapOf<Element, Float>()
             fun scaleFor(element: Element): Float = scaleCache.getOrPut(element) {
@@ -300,7 +304,7 @@ class EpubText private constructor(
                     EpubVisualRange(0, 0, color, fontScale) else null
             }
 
-            fun append(node: Node, path: List<Int>) {
+            fun append(node: Node, path: List<Int>, insideFragment: Boolean = false) {
                 if (node is TextNode) {
                     val raw = node.wholeText
                     val map = IntArray(raw.length + 1)
@@ -344,7 +348,13 @@ class EpubText private constructor(
                 val styleStart = output.length
                 val styleInsertAt = styles.size
                 val visualInsertAt = visuals.size
-                node.childNodes().forEach { child -> append(child, path + step(child)) }
+                val fragmentKind = (node as? Element)?.renderFragmentKind().takeUnless { insideFragment }
+                node.childNodes().forEach { child ->
+                    append(child, path + step(child), insideFragment || fragmentKind != null)
+                }
+                if (fragmentKind != null && node is Element) {
+                    renderFragments += fragmentCollector.capture(node, fragmentKind, styleStart, output.length, path)
+                }
                 val style = when (node.nodeName().lowercase()) {
                     "b", "strong" -> EpubTextStyle.BOLD
                     "i", "em", "cite" -> EpubTextStyle.ITALIC
@@ -397,6 +407,10 @@ class EpubText private constructor(
                 images.filter { it.offset in leading until end }
                     .map { it.copy(offset = it.offset - leading) },
                 anchors.mapValues { (_, offset) -> (offset - leading).coerceIn(0, trimmed.length) },
+                renderFragments.map { fragment ->
+                    fragment.copy(start = fragment.start.coerceIn(leading, end) - leading,
+                        end = fragment.end.coerceIn(leading, end) - leading)
+                },
                 runs, leading)
         }
 
