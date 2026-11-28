@@ -10,6 +10,7 @@ struct TextKitReader: UIViewRepresentable {
     let pageTurn: Int
     var onPage: (NSRange, Int, Int, Int) -> Void
     var onSelection: (NSRange) -> Void
+    var requestedPage: ReaderPageRequest? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> PagedTextView {
@@ -42,6 +43,7 @@ struct TextKitReader: UIViewRepresentable {
         private var layout = TextPageLayout(ranges: [])
         private var index = 0
         private var anchor: Int
+        private var lastRequest: UUID?
         private var lastTurn: Int
         private var updating = false
         private var revision = 0
@@ -72,7 +74,13 @@ struct TextKitReader: UIViewRepresentable {
                 let target = min(max(0, index + turn), layout.ranges.count - 1)
                 if target != index { index = target; anchor = layout.ranges[index].location }
             }
-            guard changed || turn != 0, !layout.ranges.isEmpty else { return }
+            let requestChanged = parent.requestedPage != nil && parent.requestedPage?.id != lastRequest
+            if requestChanged, let request = parent.requestedPage, !layout.ranges.isEmpty {
+                lastRequest = request.id
+                index = ReadingLocation.pageIndex(request.index, count: layout.ranges.count)
+                anchor = layout.ranges[index].location
+            }
+            guard changed || turn != 0 || requestChanged, !layout.ranges.isEmpty else { return }
             let range = layout.ranges[index]
             view.font = nextFont
             view.text = (source as NSString).substring(with: range)
@@ -113,6 +121,7 @@ final class PagedTextView: UITextView {
 struct PDFKitReader: UIViewRepresentable {
     let document: PDFDocument
     let initialPage: Int
+    var requestedPage: ReaderPageRequest? = nil
     var onPage: (Int) -> Void
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> PDFView {
@@ -123,14 +132,19 @@ struct PDFKitReader: UIViewRepresentable {
         view.usePageViewController(true)
         view.document = document
         context.coordinator.observe(view)
-        if let page = document.page(at: min(initialPage, document.pageCount - 1)) { view.go(to: page) }
+        if let page = document.page(at: ReadingLocation.pageIndex(initialPage, count: document.pageCount)) { view.go(to: page) }
         DispatchQueue.main.async { context.coordinator.report(view) }
         return view
     }
-    func updateUIView(_ view: PDFView, context: Context) { context.coordinator.parent = self }
+    func updateUIView(_ view: PDFView, context: Context) {
+        context.coordinator.parent = self
+        context.coordinator.applyRequest(view)
+    }
     final class Coordinator: NSObject {
         var parent: PDFKitReader
         private var observer: NSObjectProtocol?
+        private var lastRequest: UUID?
+        private var revision = 0
         init(_ parent: PDFKitReader) { self.parent = parent }
         func observe(_ view: PDFView) {
             observer = NotificationCenter.default.addObserver(forName: .PDFViewPageChanged, object: view, queue: .main) { [weak self, weak view] _ in
@@ -138,11 +152,24 @@ struct PDFKitReader: UIViewRepresentable {
                 self.report(view)
             }
         }
+        func applyRequest(_ view: PDFView) {
+            guard let request = parent.requestedPage, request.id != lastRequest else { return }
+            lastRequest = request.id
+            if let page = parent.document.page(at: ReadingLocation.pageIndex(request.index, count: parent.document.pageCount)) {
+                view.go(to: page)
+                report(view)
+            }
+        }
         func report(_ view: PDFView) {
             guard let page = view.currentPage else { return }
             let index = parent.document.index(for: page)
             guard index != NSNotFound else { return }
-            DispatchQueue.main.async { self.parent.onPage(index) }
+            revision += 1
+            let currentRevision = revision
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.revision == currentRevision else { return }
+                self.parent.onPage(index)
+            }
         }
         deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
     }

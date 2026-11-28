@@ -16,9 +16,7 @@ struct TextPageLayout {
     }
 
     static func clusterBoundary(atOrBefore offset: Int, in source: NSString) -> Int {
-        let offset = min(max(0, offset), source.length)
-        guard offset < source.length else { return offset }
-        return source.rangeOfComposedCharacterSequence(at: offset).location
+        ReadingLocation.textOffset(offset, in: source)
     }
 
     /// Measures each page with TextKit 2 using the rendering view's font and usable container size.
@@ -34,7 +32,7 @@ struct TextPageLayout {
             while true {
                 let proposedEnd = start + lookahead
                 let end = proposedEnd < source.length
-                    ? NSMaxRange(source.rangeOfComposedCharacterSequence(at: proposedEnd - 1)) : source.length
+                    ? ReadingLocation.nextTextOffset(after: proposedEnd - 1, in: source) : source.length
                 let candidate = source.substring(with: NSRange(location: start, length: end - start))
                 let measurement = fittingLength(candidate, size: size, font: font)
                 length = measurement.length
@@ -43,7 +41,7 @@ struct TextPageLayout {
             }
             var end = clusterBoundary(atOrBefore: start + length, in: source)
             // Even an undersized container must advance by a whole cluster, never by a UTF-16 unit.
-            if end <= start { end = NSMaxRange(source.rangeOfComposedCharacterSequence(at: start)) }
+            if end <= start { end = ReadingLocation.nextTextOffset(after: start, in: source) }
             ranges.append(NSRange(location: start, length: end - start))
             start = end
         }

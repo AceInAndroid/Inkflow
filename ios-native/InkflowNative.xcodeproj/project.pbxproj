@@ -10,14 +10,23 @@
 		0C3F8AA79438EE0AA3647DEE /* TextPageLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F89DE96430E95024724C30F /* TextPageLayoutTests.swift */; };
 		16CA67F083EB6A5DFC894607 /* NativeReaderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8EB706F986B475FE806DAC /* NativeReaderViews.swift */; };
 		26D1D09F3131E10EFBE15E46 /* LibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BE35CC55CAAA60DF060960 /* LibraryStoreTests.swift */; };
+		2DC4A64CE17C31CEEA0DD52A /* ReadingLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC4985E6A8FE0521C11C077 /* ReadingLocation.swift */; };
+		331DA54295269927FA7EF1E5 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B56512DA7BE9788EFF6517 /* AppPreferences.swift */; };
 		3798DFA761C9348BE2630189 /* InkflowNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07C50F32F93DB92CE83D31B /* InkflowNativeApp.swift */; };
+		48AB98BEB4CEC5CD7A7F61ED /* SharedCoreBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8B63D6AC577ED659560F8B /* SharedCoreBridgeTests.swift */; };
+		49EC8E406132836E26173CA7 /* NativeRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98FA839DE22AE9BFB6316745 /* NativeRootView.swift */; };
 		4BF18A2DD4A624FC7148DDCA /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8EB6F5AE244A9247C004422 /* LibraryStore.swift */; };
 		61ECFA1D6428F4DA5585EFBD /* SharedCoreBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09E18657CB7C22A6A33E2976 /* SharedCoreBridge.swift */; };
 		7A096479E05DDE444788BB02 /* TextPageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110064BA5C10885F4010DDE4 /* TextPageLayout.swift */; };
+		88EABEF4E42302CFF5013EB9 /* HomeLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09AB1AA63B36196DE2CE7EE /* HomeLibraryTests.swift */; };
 		8CBA69F651FB93B1BB000266 /* SpeechController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D9DC46A87B99EEB97BC485 /* SpeechController.swift */; };
+		8EDB9650DF743223172D9356 /* LibraryRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADCB44164FB54D0D01A2CEC /* LibraryRecoveryTests.swift */; };
+		A5225B7C7B226409DA9EB072 /* AppPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A20EB1D1477BDF77E431CF /* AppPreferencesTests.swift */; };
+		A7B3DA0C35A542042A7E95A2 /* InterfaceStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9882D31917F79FF4A52FC03 /* InterfaceStrings.swift */; };
 		B38D95A43A7F297E1E0401A5 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072E8A6E344CA523FF6CF515 /* ReaderView.swift */; };
 		D5B9F8BF20D68864F0B63E6C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1822B58FD8EB438308CD44D0 /* Foundation.framework */; };
 		E7D75F8E34AFBA43B58740A7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1822B58FD8EB438308CD44D0 /* Foundation.framework */; };
+		F7DC4A8EA3E26674548C6B90 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC8AC2DA0D56112BF50D1FDF /* HomeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,12 +46,21 @@
 		110064BA5C10885F4010DDE4 /* TextPageLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextPageLayout.swift; sourceTree = "<group>"; };
 		1822B58FD8EB438308CD44D0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		21D9DC46A87B99EEB97BC485 /* SpeechController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechController.swift; sourceTree = "<group>"; };
+		3DC4985E6A8FE0521C11C077 /* ReadingLocation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadingLocation.swift; sourceTree = "<group>"; };
 		4F89DE96430E95024724C30F /* TextPageLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TextPageLayoutTests.swift; sourceTree = "<group>"; };
 		5D8EB706F986B475FE806DAC /* NativeReaderViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativeReaderViews.swift; sourceTree = "<group>"; };
 		66549FC2D74F528B365195A4 /* InkflowNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InkflowNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7ADCB44164FB54D0D01A2CEC /* LibraryRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LibraryRecoveryTests.swift; sourceTree = "<group>"; };
+		90B56512DA7BE9788EFF6517 /* AppPreferences.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
+		98FA839DE22AE9BFB6316745 /* NativeRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativeRootView.swift; sourceTree = "<group>"; };
+		9D8B63D6AC577ED659560F8B /* SharedCoreBridgeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedCoreBridgeTests.swift; sourceTree = "<group>"; };
+		B2A20EB1D1477BDF77E431CF /* AppPreferencesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppPreferencesTests.swift; sourceTree = "<group>"; };
 		B8EB6F5AE244A9247C004422 /* LibraryStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
 		C07C50F32F93DB92CE83D31B /* InkflowNativeApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InkflowNativeApp.swift; sourceTree = "<group>"; };
+		C09AB1AA63B36196DE2CE7EE /* HomeLibraryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeLibraryTests.swift; sourceTree = "<group>"; };
+		D9882D31917F79FF4A52FC03 /* InterfaceStrings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InterfaceStrings.swift; sourceTree = "<group>"; };
 		E5DD117D1A890BACBB0FA5F2 /* InkflowNativeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InkflowNativeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC8AC2DA0D56112BF50D1FDF /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +103,11 @@
 				09E18657CB7C22A6A33E2976 /* SharedCoreBridge.swift */,
 				21D9DC46A87B99EEB97BC485 /* SpeechController.swift */,
 				110064BA5C10885F4010DDE4 /* TextPageLayout.swift */,
+				90B56512DA7BE9788EFF6517 /* AppPreferences.swift */,
+				FC8AC2DA0D56112BF50D1FDF /* HomeView.swift */,
+				D9882D31917F79FF4A52FC03 /* InterfaceStrings.swift */,
+				98FA839DE22AE9BFB6316745 /* NativeRootView.swift */,
+				3DC4985E6A8FE0521C11C077 /* ReadingLocation.swift */,
 			);
 			name = InkflowNative;
 			path = InkflowNative;
@@ -112,6 +135,10 @@
 			children = (
 				01BE35CC55CAAA60DF060960 /* LibraryStoreTests.swift */,
 				4F89DE96430E95024724C30F /* TextPageLayoutTests.swift */,
+				B2A20EB1D1477BDF77E431CF /* AppPreferencesTests.swift */,
+				C09AB1AA63B36196DE2CE7EE /* HomeLibraryTests.swift */,
+				7ADCB44164FB54D0D01A2CEC /* LibraryRecoveryTests.swift */,
+				9D8B63D6AC577ED659560F8B /* SharedCoreBridgeTests.swift */,
 			);
 			name = InkflowNativeTests;
 			path = InkflowNativeTests;
@@ -178,7 +205,9 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
-				Base,
+				"zh-Hans",
+				ja,
+				ko,
 			);
 			mainGroup = 6F5BEB1E5CAF7608E18316ED;
 			minimizedProjectReferenceProxies = 0;
@@ -222,6 +251,11 @@
 				61ECFA1D6428F4DA5585EFBD /* SharedCoreBridge.swift in Sources */,
 				8CBA69F651FB93B1BB000266 /* SpeechController.swift in Sources */,
 				7A096479E05DDE444788BB02 /* TextPageLayout.swift in Sources */,
+				331DA54295269927FA7EF1E5 /* AppPreferences.swift in Sources */,
+				F7DC4A8EA3E26674548C6B90 /* HomeView.swift in Sources */,
+				A7B3DA0C35A542042A7E95A2 /* InterfaceStrings.swift in Sources */,
+				49EC8E406132836E26173CA7 /* NativeRootView.swift in Sources */,
+				2DC4A64CE17C31CEEA0DD52A /* ReadingLocation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -231,6 +265,10 @@
 			files = (
 				26D1D09F3131E10EFBE15E46 /* LibraryStoreTests.swift in Sources */,
 				0C3F8AA79438EE0AA3647DEE /* TextPageLayoutTests.swift in Sources */,
+				A5225B7C7B226409DA9EB072 /* AppPreferencesTests.swift in Sources */,
+				88EABEF4E42302CFF5013EB9 /* HomeLibraryTests.swift in Sources */,
+				8EDB9650DF743223172D9356 /* LibraryRecoveryTests.swift in Sources */,
+				48AB98BEB4CEC5CD7A7F61ED /* SharedCoreBridgeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,6 +368,15 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				"FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../android/core/build/XCFrameworks/debug/InkflowCore.xcframework/ios-arm64",
+				);
+				"FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../android/core/build/XCFrameworks/debug/InkflowCore.xcframework/ios-arm64-simulator",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.inkflow.native.tests;
@@ -350,6 +397,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = InkflowNative/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Inkflow Native";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -436,6 +484,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = InkflowNative/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Inkflow Native";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -531,11 +580,17 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				FRAMEWORK_SEARCH_PATHS = (
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				"FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"$(inherited)",
-					"$(SRCROOT)/../android/core/build/XCFrameworks/debug",
+					"$(SRCROOT)/../android/core/build/XCFrameworks/debug/InkflowCore.xcframework/ios-arm64",
+				);
+				"FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(SRCROOT)/../android/core/build/XCFrameworks/debug/InkflowCore.xcframework/ios-arm64-simulator",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = InkflowNative/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Inkflow Native";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -165,4 +165,41 @@ final class TextPageLayoutTests: XCTestCase {
         let resized = TextPageLayout.paginate(text, size: CGSize(width: 500, height: 220), font: .systemFont(ofSize: 30))
         XCTAssertTrue(NSLocationInRange(restored.textOffset, resized.ranges[resized.pageIndex(containing: restored.textOffset)]))
     }
+    func testExplicitJumpCoalescesQueuedLayoutAndRetainsAnchorOnReflow() async {
+        let source = String(repeating: "Pages 中文 👩‍💻 and words.\n", count: 300)
+        var reportedIndex = -1
+        var reportedAnchor = -1
+        var callback = expectation(description: "only latest queued page callback")
+        var reader = TextKitReader(text: source, fontSize: 20, initialOffset: 0, pageTurn: 0,
+            onPage: { _, index, _, anchor in reportedIndex = index; reportedAnchor = anchor; callback.fulfill() },
+            onSelection: { _ in })
+        let coordinator = reader.makeCoordinator()
+        let view = PagedTextView(usingTextLayoutManager: true)
+        view.textContainerInset = .zero
+        view.textContainer.lineFragmentPadding = 0
+        view.frame = CGRect(origin: .zero, size: portrait)
+        coordinator.update(view)
+        reader.requestedPage = ReaderPageRequest(number: 3)
+        coordinator.parent = reader
+        coordinator.update(view)
+        await fulfillment(of: [callback], timeout: 2)
+        XCTAssertEqual(reportedIndex, 2)
+        let anchor = reportedAnchor
+        callback = expectation(description: "reflow preserves explicit jump anchor")
+        reader = TextKitReader(text: source, fontSize: 30, initialOffset: 0, pageTurn: 0,
+            onPage: reader.onPage, onSelection: reader.onSelection, requestedPage: reader.requestedPage)
+        coordinator.parent = reader
+        view.frame.size = CGSize(width: 500, height: 220)
+        coordinator.update(view)
+        await fulfillment(of: [callback], timeout: 2)
+        XCTAssertEqual(reportedAnchor, anchor)
+        callback = expectation(description: "explicit jump back to first page")
+        reader.requestedPage = ReaderPageRequest(number: 1)
+        coordinator.parent = reader
+        coordinator.update(view)
+        await fulfillment(of: [callback], timeout: 2)
+        XCTAssertEqual(reportedIndex, 0)
+        XCTAssertEqual(reportedAnchor, 0)
+    }
+
 }

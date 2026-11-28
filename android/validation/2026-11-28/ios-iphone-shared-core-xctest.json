@@ -1,0 +1,42 @@
+{
+  "devicesAndConfigurations": [
+    {
+      "device": {
+        "architecture": "arm64",
+        "deviceId": "75AD4C60-8B3A-466B-8F5E-6C6DA798E70E",
+        "deviceName": "Inkflow M7 iPhone",
+        "modelName": "iPhone 17",
+        "osBuildNumber": "23E244",
+        "osVersion": "26.4",
+        "platform": "iOS Simulator"
+      },
+      "expectedFailures": 0,
+      "failedTests": 0,
+      "passedTests": 41,
+      "skippedTests": 0,
+      "testPlanConfiguration": {
+        "configurationId": "1",
+        "configurationName": "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription": "InkflowNativeSharedCore · Built with macOS 26.7",
+  "expectedFailures": 0,
+  "failedTests": 0,
+  "finishTime": 1795830232.642,
+  "passedTests": 41,
+  "result": "Passed",
+  "skippedTests": 0,
+  "startTime": 1795830230.217,
+  "statistics": [],
+  "testFailures": [],
+  "title": "Test - InkflowNativeSharedCore",
+  "topInsights": [
+    {
+      "category": "Longest Test Runs",
+      "impact": "19% of duration",
+      "text": "1 longest test run with outlier durations exceeding 0.11s (three standard deviations)"
+    }
+  ],
+  "totalTestCount": 41
+}
