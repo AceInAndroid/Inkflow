@@ -161,25 +161,40 @@ object SentenceBoundaryResolver {
         return if (end > start) TextSelectionRange(start, end) else null
     }
 
-    fun wordRangeAt(text: String, offset: Int): TextSelectionRange? {
+    fun wordRangeAt(text: String, offset: Int): TextSelectionRange? =
+        wordRangeAt(text, offset, LocalChineseWordLexicon.CommonReading)
+
+    /** Local vocabulary expansion with safe character fallback and existing Latin word boundaries. */
+    fun wordRangeAt(text: String, offset: Int, lexicon: LocalChineseWordLexicon): TextSelectionRange? {
         if (text.isEmpty()) return null
-        val anchor = offset.coerceIn(0, text.lastIndex)
+        val character = TextCharacterBoundaries.rangeAt(text, offset)
+        val anchor = character.start
         val ch = text[anchor]
         if (ch.isWhitespace() || ch == '\uFFFC') return null
 
-        if (isCjk(ch)) {
-            // For CJK, select a 1-2 character candidate or stay on the single character.
-            val end = if (anchor + 1 < text.length && isCjk(text[anchor + 1])) anchor + 2 else anchor + 1
-            return TextSelectionRange(anchor, end)
+        if (LocalChineseWordLexicon.isHan(TextCharacterBoundaries.codePointAt(text, anchor)))
+            return lexicon.rangeAt(text, anchor) ?: character
+
+        fun isWordCharacter(range: TextSelectionRange): Boolean {
+            val code = TextCharacterBoundaries.codePointAt(text, range.start)
+            if ((range.start until range.end).any { text[it] == '\u20E3' }) return false // Emoji keycap.
+            return !LocalChineseWordLexicon.isHan(code) && (text[range.start].isLetterOrDigit() ||
+                (code in 0x21..0x7E && text[range.start] !in wordSeparators))
         }
-
-        if (ch in wordSeparators) return TextSelectionRange(anchor, anchor + 1)
-
+        if (!isWordCharacter(character)) return character
         var start = anchor
-        while (start > 0 && text[start - 1] !in wordSeparators && !isCjk(text[start - 1])) start--
-        var end = anchor + 1
-        while (end < text.length && text[end] !in wordSeparators && !isCjk(text[end])) end++
-        return if (end > start) TextSelectionRange(start, end) else null
+        while (start > 0) {
+            val previous = TextCharacterBoundaries.rangeAt(text, start - 1)
+            if (!isWordCharacter(previous)) break
+            start = previous.start
+        }
+        var end = character.end
+        while (end < text.length) {
+            val next = TextCharacterBoundaries.rangeAt(text, end)
+            if (!isWordCharacter(next)) break
+            end = next.end
+        }
+        return TextSelectionRange(start, end)
     }
 
     fun paragraphRangeAt(text: String, offset: Int): TextSelectionRange? {

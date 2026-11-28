@@ -85,30 +85,7 @@ class SelectionRangeController(private val text: String) {
     private fun publish(range: TextSelectionRange, page: Int?): Snapshot =
         Snapshot(session, ++revision, range, page, extensions.isNotEmpty()).also { snapshot = it }
 
-    // UTF-16 boundaries keep combining marks, surrogate pairs and joined emoji together.
-    private val boundaries: List<Int> by lazy {
-        buildList {
-            add(0)
-            var index = 0
-            var regionalCount = 0
-            while (index < text.length) {
-                val start = index
-                val high = text[index]
-                val code = if (high.isHighSurrogate() && index + 1 < text.length && text[index + 1].isLowSurrogate()) {
-                    index += 2
-                    0x10000 + ((high.code - 0xD800) shl 10) + (text[index - 1].code - 0xDC00)
-                } else { index++; high.code }
-                val mark = high.category in setOf(CharCategory.NON_SPACING_MARK, CharCategory.COMBINING_SPACING_MARK, CharCategory.ENCLOSING_MARK)
-                val regional = code in 0x1F1E6..0x1F1FF
-                val joins = mark || code in 0xFE00..0xFE0F || code in 0x1F3FB..0x1F3FF || code in 0xE0100..0xE01EF || code in 0xE0020..0xE007F || code == 0x200D ||
-                    (start > 0 && text[start - 1] == '\u200D') || (regional && regionalCount % 2 == 1) ||
-                    (code == 10 && start > 0 && text[start - 1] == '\r')
-                if (start > 0 && !joins) add(start)
-                regionalCount = if (regional) regionalCount + 1 else 0
-            }
-            if (last() != text.length) add(text.length)
-        }
-    }
+    private val boundaries: List<Int> by lazy { TextCharacterBoundaries.all(text) }
     private fun floorCharacter(offset: Int) = boundaries.last { it <= offset }
     private fun ceilCharacter(offset: Int) = boundaries.first { it >= offset }
     private fun nextCharacter(offset: Int) = boundaries.firstOrNull { it > offset } ?: text.length
